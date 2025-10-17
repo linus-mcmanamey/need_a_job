@@ -1,0 +1,14 @@
+loguru
+pyyaml
+polars
+openpyxl
+claude-agent-sdk
+pytest
+ruff
+rich
+icecream
+tomli
+tabulate
+python-dotenv
+
+

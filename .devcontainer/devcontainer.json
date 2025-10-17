@@ -1,0 +1,58 @@
+{
+    "name": "need_a_job",
+    "dockerFile": "Dockerfile",
+    "context": ".",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "tamasfe.even-better-toml",
+                "ms-python.isort",
+                "inferrinizzard.prettier-sql-vscode",
+                "oderwat.indent-rainbow",
+                "ms-vscode.makefile-tools",
+                "ms-mssql.mssql",
+                "ms-toolsai.jupyter",
+                "ms-azure-devops.azure-pipelines",
+                "formulahendry.theme-ubuntu-style",
+                "ms-vscode-remote.remote-wsl",
+                "ms-vscode-remote.remote-containers",
+                "ms-vscode.azure-repos",
+                "ThiagoLcioBittencourt.ubuntuvscode",
+                "VisualStudioExptTeam.vscodeintellicode",
+                "mhutchie.git-graph",
+                "eamodio.gitlens",
+                "ms-python.debugpy",
+                "ms-vscode.azurecli",
+                "ms-azuretools.vscode-azurestorage",
+                "Anthropic.claude-code"
+            ],
+            "settings": [
+                {
+                    "terminal.integrated.shell.linux": "/bin/bash"
+                }
+            ]
+        }
+    },
+    "containerEnv": {
+        "USERNAME": "${env:username}"
+    },
+    "remoteEnv": {
+        "WAYLAND_DISPLAY": "",
+        "DISPLAY": "",
+        "XDG_RUNTIME_DIR": ""
+    },
+    "runArgs": [
+        "--add-host=host.docker.internal:host-gateway",
+        "--add-host=localhost:127.0.0.1",
+        "--cap-add=SYS_ADMIN",
+        "--security-opt",
+        "seccomp:unconfined",
+    ],
+    "mounts": [
+        "source=C:/Users/${env:username}/.ssh,target=/root/.ssh,type=bind",
+        "source=C:/Users/${env:username}/.claude,target=/root/.claude,type=bind"
+    ],
+    "postCreateCommand": "chmod 700 ~/.ssh || true; chmod 600 ~/.ssh/* || true; sed -i 's/\r$//' .devcontainer/loader_script.sh; chmod +x .devcontainer/loader_script.sh; ./.devcontainer/loader_script.sh",
+    "remoteUser": "vscode"
+}
