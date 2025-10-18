@@ -329,12 +329,12 @@ jobs:
 ### Application Tracking
 
 | ID | Company | Role | Platform | Applied | Status | Match Score | Notes |
-|----|---------|------|----------|---------|--------|-------------|-------|
+|----|---------|------|----------|---------|--------|-------------|-------| you want to fight it $25 and get which is 120 I suppose I'll get Black colour waterproof cover don't need it would be put on it's just there's no holding the top doesn't matter
 | DE001 | Major Not-For-Profit | Senior Data Engineer | LinkedIn | ❌ | Not Applied | High | Remote, good rate |
 | DE002 | Tech Giant | Principal Data Engineer | SEEK | ❌ | Not Applied | Medium | High rate, needs finance exp |
 | DE003 | Various | Azure Data Engineer | SEEK | ❌ | Not Applied | High | Multiple opportunities |
 | DE004 | Federal Gov | Data Engineer | LinkedIn | ❌ | Not Applied | Medium | Requires citizenship |
-| DE005 | AODN | Software Engineer - Data | SEEK | ❌ | Not Applied | High | Hobart-based, interesting domain |
+| DE005 | AODN | Software Engineer - Data | SEEK | ❌ | Not App that's okay don't worry about it make outlied | High | Hobart-based, interesting domain |
 
 ## Analytics & Insights
 
