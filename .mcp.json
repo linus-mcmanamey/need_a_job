@@ -1,18 +1,1 @@
-{
-  "mcpServers": {
-    "linkedin": {
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/stickerdaniel/linkedin-mcp-server",
-        "linkedin-mcp-server",
-        "--cookie",
-        "li_at=AQEDAQGE4QMD5wSKAAABkKXB4q4AAAGaBREpZlYAPjbeBqD6SdoFPc6K7YY7d3D_mkEuJQBNIPDLt9sgnxAJFLYq9jfclEWE512dq7TmXBUkOkBx-3oVxSdA9E-QBZEQ0Fh8tJ5uWar_cpLRP-8vVuk8"
-      ],
-      "env": {
-        "NO_PROXY": "localhost,127.0.0.1,::1",
-        "no_proxy": "localhost,127.0.0.1,::1"
-      }
-    }
-  }
-}
+{"mcpServers":{"linkedin":{"command":"uvx","args":["--from","git+https://github.com/stickerdaniel/linkedin-mcp-server","linkedin-mcp-server","--cookie","li_at=AQEDAQGE4QMD5wSKAAABkKXB4q4AAAGaBREpZlYAPjbeBqD6SdoFPc6K7YY7d3D_mkEuJQBNIPDLt9sgnxAJFLYq9jfclEWE512dq7TmXBUkOkBx-3oVxSdA9E-QBZEQ0Fh8tJ5uWar_cpLRP-8vVuk8"],"env":{"NO_PROXY":"localhost,127.0.0.1,::1","no_proxy":"localhost,127.0.0.1,::1"}},"MCP_DOCKER":{"command":"docker","args":["mcp","gateway","run"],"type":"stdio"}}}

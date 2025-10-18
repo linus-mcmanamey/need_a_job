@@ -25,7 +25,8 @@
                 "ms-python.debugpy",
                 "ms-vscode.azurecli",
                 "ms-azuretools.vscode-azurestorage",
-                "Anthropic.claude-code"
+                "Anthropic.claude-code",
+                "ms-vscode.vscode-speech"
             ],
             "settings": [
                 {
@@ -34,25 +35,11 @@
             ]
         }
     },
-    "containerEnv": {
-        "USERNAME": "${env:username}"
-    },
     "remoteEnv": {
         "WAYLAND_DISPLAY": "",
         "DISPLAY": "",
         "XDG_RUNTIME_DIR": ""
     },
-    "runArgs": [
-        "--add-host=host.docker.internal:host-gateway",
-        "--add-host=localhost:127.0.0.1",
-        "--cap-add=SYS_ADMIN",
-        "--security-opt",
-        "seccomp:unconfined",
-    ],
-    "mounts": [
-        "source=C:/Users/${env:username}/.ssh,target=/root/.ssh,type=bind",
-        "source=C:/Users/${env:username}/.claude,target=/root/.claude,type=bind"
-    ],
     "postCreateCommand": "chmod 700 ~/.ssh || true; chmod 600 ~/.ssh/* || true; sed -i 's/\r$//' .devcontainer/loader_script.sh; chmod +x .devcontainer/loader_script.sh; ./.devcontainer/loader_script.sh",
     "remoteUser": "vscode"
 }
