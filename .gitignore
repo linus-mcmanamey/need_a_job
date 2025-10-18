@@ -48,9 +48,9 @@ Thumbs.db
 # Logs
 *.log
 logs/
-
+.claude
 # CV and Cover Letter Documents (Personal Information)
-current_cv_coverletter/*.docx
-export_cv_cover_letter/**/*.docx
-export_cv_cover_letter/**/*.pdf
-export_cv_cover_letter/**/job_info.json
+# current_cv_coverletter/*.docx
+# export_cv_cover_letter/**/*.docx
+# export_cv_cover_letter/**/*.pdf
+# export_cv_cover_letter/**/job_info.json
