@@ -16,7 +16,7 @@ job_matcher_agent:
 
 # Salary Validator Agent - Validates salary against expectations
 salary_validator_agent:
-  model: claude-haiku-3.5  # Claude Haiku for simple validation
+  model: claude-haiku-4.5  # Claude Haiku for simple validation
   strict_validation: false  # Allow unclear salary if job otherwise matches
 
 # CV Tailor Agent - Customizes CV for each job
@@ -48,12 +48,12 @@ qa_agent:
 
 # Orchestrator Agent - Makes final application decisions
 orchestrator_agent:
-  model: claude-sonnet-4      # Claude Sonnet 4 for decision-making
+  model: claude-sonnet-4.5     # Claude Sonnet 4 for decision-making
   decision_policy: conservative  # Options: conservative, aggressive
   approval_mode: false        # Set true to require human approval
 
 # Form Handler Agent - Automates web form submissions
 form_handler_agent:
-  model: claude-sonnet-4  # Claude Sonnet 4 for form automation
+  model: claude-sonnet-4.5  # Claude Sonnet 4 for form automation
   timeout_seconds: 120    # Maximum time for form submission
   retry_attempts: 3       # Number of retry attempts on failure
