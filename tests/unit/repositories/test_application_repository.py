@@ -17,21 +17,13 @@ from app.repositories.jobs_repository import JobsRepository
 def repos():
     """Create repositories with initialized database."""
     initialize_database()
-    return {
-        "jobs": JobsRepository(),
-        "applications": ApplicationRepository(),
-    }
+    return {"jobs": JobsRepository(), "applications": ApplicationRepository()}
 
 
 @pytest.fixture
 def sample_job(repos):
     """Create and insert a sample job for testing."""
-    job = Job(
-        company_name="Test Company",
-        job_title="Data Engineer",
-        job_url="https://linkedin.com/jobs/test",
-        platform_source="linkedin",
-    )
+    job = Job(company_name="Test Company", job_title="Data Engineer", job_url="https://linkedin.com/jobs/test", platform_source="linkedin")
     repos["jobs"].insert_job(job)
     return job
 
@@ -39,10 +31,7 @@ def sample_job(repos):
 @pytest.fixture
 def sample_application(sample_job):
     """Create a sample application for testing."""
-    return Application(
-        job_id=sample_job.job_id,
-        status="discovered",
-    )
+    return Application(job_id=sample_job.job_id, status="discovered")
 
 
 class TestApplicationRepositoryInsert:
@@ -104,9 +93,7 @@ class TestApplicationRepositoryGet:
 
     def test_get_application_by_job_id_returns_none_for_nonexistent(self, repos):
         """Test that get_application_by_job_id returns None for non-existent job ID."""
-        result = repos["applications"].get_application_by_job_id(
-            "00000000-0000-0000-0000-000000000000"
-        )
+        result = repos["applications"].get_application_by_job_id("00000000-0000-0000-0000-000000000000")
         assert result is None
 
 
@@ -126,10 +113,7 @@ class TestApplicationRepositoryUpdate:
         """Test that update_application_stage updates stage information."""
         app_id = repos["applications"].insert_application(sample_application)
 
-        stage_output = {
-            "match_score": 0.85,
-            "match_reasons": ["Python", "Cloud"],
-        }
+        stage_output = {"match_score": 0.85, "match_reasons": ["Python", "Cloud"]}
         repos["applications"].update_application_stage(app_id, "job_matcher_agent", stage_output)
 
         updated_app = repos["applications"].get_application_by_id(app_id)
@@ -141,9 +125,7 @@ class TestApplicationRepositoryUpdate:
         """Test that update_application_error sets error information."""
         app_id = repos["applications"].insert_application(sample_application)
 
-        repos["applications"].update_application_error(
-            app_id, "cv_tailor_agent", "APIError", "Claude API timeout"
-        )
+        repos["applications"].update_application_error(app_id, "cv_tailor_agent", "APIError", "Claude API timeout")
 
         updated_app = repos["applications"].get_application_by_id(app_id)
         assert updated_app.status == "failed"

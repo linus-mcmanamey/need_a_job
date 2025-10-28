@@ -23,12 +23,7 @@ from app.repositories.jobs_repository import JobsRepository
 def main():
     """Clear queue."""
     parser = argparse.ArgumentParser(description="Clear all jobs from queue")
-    parser.add_argument(
-        "--confirm",
-        action="store_true",
-        required=True,
-        help="Confirmation required (safety check)",
-    )
+    parser.add_argument("--confirm", action="store_true", required=True, help="Confirmation required (safety check)")
 
     args = parser.parse_args()
 
@@ -45,11 +40,7 @@ def main():
     app_repo = ApplicationRepository(db_conn)
 
     # Create JobQueue
-    job_queue = JobQueue(
-        redis_connection=redis,
-        jobs_repository=jobs_repo,
-        application_repository=app_repo,
-    )
+    job_queue = JobQueue(redis_connection=redis, jobs_repository=jobs_repo, application_repository=app_repo)
 
     # Get queue depth before clearing
     depth_before = job_queue.get_queue_depth()

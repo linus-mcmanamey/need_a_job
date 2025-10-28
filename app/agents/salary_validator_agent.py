@@ -34,12 +34,7 @@ class SalaryValidatorAgent(BaseAgent):
         _salary_expectations: Cached salary expectations from search.yaml
     """
 
-    def __init__(
-        self,
-        config: dict[str, Any],
-        claude_client: Any,
-        app_repository: Any,
-    ):
+    def __init__(self, config: dict[str, Any], claude_client: Any, app_repository: Any):
         """
         Initialize Salary Validator Agent.
 
@@ -76,13 +71,7 @@ class SalaryValidatorAgent(BaseAgent):
             # Validate job_id
             if not job_id:
                 logger.error("[salary_validator] Missing job_id parameter")
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message="Missing job_id parameter",
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message="Missing job_id parameter", execution_time_ms=int((time.time() - start_time) * 1000))
 
             # Load job data from database
             logger.info(f"[salary_validator] Processing job: {job_id}")
@@ -90,13 +79,7 @@ class SalaryValidatorAgent(BaseAgent):
 
             if not job_data:
                 logger.error(f"[salary_validator] Job not found: {job_id}")
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=f"Job not found: {job_id}",
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message=f"Job not found: {job_id}", execution_time_ms=int((time.time() - start_time) * 1000))
 
             # Update current stage
             await self._update_current_stage(job_id, self.agent_name)
@@ -153,32 +136,17 @@ class SalaryValidatorAgent(BaseAgent):
             await self._add_completed_stage(job_id, self.agent_name, output)
 
             # Log validation result
-            logger.info(
-                f"[salary_validator] Job {job_id}: salary={salary_aud_per_day}, "
-                f"meets_threshold={meets_threshold}, missing={missing_salary}"
-            )
+            logger.info(f"[salary_validator] Job {job_id}: salary={salary_aud_per_day}, meets_threshold={meets_threshold}, missing={missing_salary}")
 
             execution_time_ms = int((time.time() - start_time) * 1000)
 
-            return AgentResult(
-                success=True,
-                agent_name=self.agent_name,
-                output=output,
-                error_message=None,
-                execution_time_ms=execution_time_ms,
-            )
+            return AgentResult(success=True, agent_name=self.agent_name, output=output, error_message=None, execution_time_ms=execution_time_ms)
 
         except Exception as e:
             logger.error(f"[salary_validator] Error processing job {job_id}: {e}")
             execution_time_ms = int((time.time() - start_time) * 1000)
 
-            return AgentResult(
-                success=False,
-                agent_name=self.agent_name,
-                output={},
-                error_message=str(e),
-                execution_time_ms=execution_time_ms,
-            )
+            return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message=str(e), execution_time_ms=execution_time_ms)
 
     def _load_salary_expectations(self) -> dict[str, Any]:
         """
@@ -201,14 +169,9 @@ class SalaryValidatorAgent(BaseAgent):
 
             salary_expectations = search_config.get("salary_expectations", {})
 
-            self._salary_expectations = {
-                "minimum": salary_expectations.get("minimum", 800.0),
-                "maximum": salary_expectations.get("maximum", 1500.0),
-            }
+            self._salary_expectations = {"minimum": salary_expectations.get("minimum", 800.0), "maximum": salary_expectations.get("maximum", 1500.0)}
 
-            logger.debug(
-                f"[salary_validator] Loaded salary expectations: {self._salary_expectations}"
-            )
+            logger.debug(f"[salary_validator] Loaded salary expectations: {self._salary_expectations}")
             return self._salary_expectations
 
         except Exception as e:

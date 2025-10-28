@@ -29,11 +29,7 @@ class JobProcessorService:
         app_repo: Repository for application tracking
     """
 
-    def __init__(
-        self,
-        jobs_repository: JobsRepository,
-        application_repository: ApplicationRepository,
-    ):
+    def __init__(self, jobs_repository: JobsRepository, application_repository: ApplicationRepository):
         """Initialize JobProcessorService with dependencies.
 
         Args:
@@ -84,12 +80,7 @@ class JobProcessorService:
         job = self.jobs_repo.get_job_by_id(job_id)
         if job is None:
             logger.error(f"Job not found: {job_id}")
-            return {
-                "status": "failed",
-                "job_id": str(job_id),
-                "stages_completed": [],
-                "error": "Job not found",
-            }
+            return {"status": "failed", "job_id": str(job_id), "stages_completed": [], "error": "Job not found"}
 
         # STUB: Return mock success
         # TODO (Epic 2): Implement full agent pipeline
@@ -118,14 +109,6 @@ class JobProcessorService:
         application = self.app_repo.get_application_by_job_id(job_id)
 
         if application is None:
-            return {
-                "job_id": str(job_id),
-                "status": "not_found",
-            }
+            return {"job_id": str(job_id), "status": "not_found"}
 
-        return {
-            "job_id": str(job_id),
-            "status": application.status,
-            "current_stage": application.current_stage,
-            "completed_stages": application.completed_stages,
-        }
+        return {"job_id": str(job_id), "status": application.status, "current_stage": application.current_stage, "completed_stages": application.completed_stages}

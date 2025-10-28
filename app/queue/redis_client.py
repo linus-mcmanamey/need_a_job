@@ -45,12 +45,7 @@ def get_redis_connection() -> Redis:
 
     if redis_url:
         logger.info("Connecting to Redis using REDIS_URL")
-        _redis_client = Redis.from_url(
-            redis_url,
-            decode_responses=True,
-            socket_connect_timeout=5,
-            socket_timeout=5,
-        )
+        _redis_client = Redis.from_url(redis_url, decode_responses=True, socket_connect_timeout=5, socket_timeout=5)
     else:
         # Use individual environment variables
         host = os.getenv("REDIS_HOST", "localhost")
@@ -60,15 +55,7 @@ def get_redis_connection() -> Redis:
 
         logger.info(f"Connecting to Redis at {host}:{port} (db={db})")
 
-        _redis_client = Redis(
-            host=host,
-            port=port,
-            db=db,
-            password=password if password else None,
-            decode_responses=True,
-            socket_connect_timeout=5,
-            socket_timeout=5,
-        )
+        _redis_client = Redis(host=host, port=port, db=db, password=password if password else None, decode_responses=True, socket_connect_timeout=5, socket_timeout=5)
 
     return _redis_client
 

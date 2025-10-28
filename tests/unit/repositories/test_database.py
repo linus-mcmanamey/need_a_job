@@ -7,13 +7,7 @@ Tests database connection, initialization, and schema creation.
 import duckdb
 import pytest
 
-from app.repositories.database import (
-    create_indexes,
-    create_tables,
-    get_connection,
-    get_database_info,
-    initialize_database,
-)
+from app.repositories.database import create_indexes, create_tables, get_connection, get_database_info, initialize_database
 
 
 class TestDatabaseConnection:
@@ -48,16 +42,12 @@ class TestDatabaseInitialization:
         initialize_database()
 
         # Check that jobs table exists
-        result = conn.execute(
-            "SELECT table_name FROM information_schema.tables WHERE table_name = 'jobs'"
-        ).fetchone()
+        result = conn.execute("SELECT table_name FROM information_schema.tables WHERE table_name = 'jobs'").fetchone()
         assert result is not None
         assert result[0] == "jobs"
 
         # Check that application_tracking table exists
-        result = conn.execute(
-            "SELECT table_name FROM information_schema.tables WHERE table_name = 'application_tracking'"
-        ).fetchone()
+        result = conn.execute("SELECT table_name FROM information_schema.tables WHERE table_name = 'application_tracking'").fetchone()
         assert result is not None
         assert result[0] == "application_tracking"
 
@@ -68,9 +58,7 @@ class TestDatabaseInitialization:
         initialize_database()  # Should not raise error
 
         # Tables should still exist
-        result = conn.execute(
-            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name IN ('jobs', 'application_tracking')"
-        ).fetchone()
+        result = conn.execute("SELECT COUNT(*) FROM information_schema.tables WHERE table_name IN ('jobs', 'application_tracking')").fetchone()
         assert result[0] == 2
 
     def test_create_tables_creates_jobs_table(self) -> None:
@@ -79,15 +67,11 @@ class TestDatabaseInitialization:
         create_tables()
 
         # Verify table exists
-        result = conn.execute(
-            "SELECT table_name FROM information_schema.tables WHERE table_name = 'jobs'"
-        ).fetchone()
+        result = conn.execute("SELECT table_name FROM information_schema.tables WHERE table_name = 'jobs'").fetchone()
         assert result is not None
 
         # Verify key columns exist
-        columns = conn.execute(
-            "SELECT column_name FROM information_schema.columns WHERE table_name = 'jobs'"
-        ).fetchall()
+        columns = conn.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'jobs'").fetchall()
         column_names = [col[0] for col in columns]
 
         assert "job_id" in column_names
@@ -104,15 +88,11 @@ class TestDatabaseInitialization:
         create_tables()
 
         # Verify table exists
-        result = conn.execute(
-            "SELECT table_name FROM information_schema.tables WHERE table_name = 'application_tracking'"
-        ).fetchone()
+        result = conn.execute("SELECT table_name FROM information_schema.tables WHERE table_name = 'application_tracking'").fetchone()
         assert result is not None
 
         # Verify key columns exist
-        columns = conn.execute(
-            "SELECT column_name FROM information_schema.columns WHERE table_name = 'application_tracking'"
-        ).fetchall()
+        columns = conn.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'application_tracking'").fetchall()
         column_names = [col[0] for col in columns]
 
         assert "application_id" in column_names

@@ -56,9 +56,7 @@ class RateLimiter:
             wait_seconds = (wait_until - now).total_seconds()
 
             if wait_seconds > 0:
-                logger.info(
-                    f"Rate limit reached ({self.calls_per_hour}/hour), waiting {wait_seconds:.0f}s"
-                )
+                logger.info(f"Rate limit reached ({self.calls_per_hour}/hour), waiting {wait_seconds:.0f}s")
                 time.sleep(wait_seconds)
 
                 # Clear expired calls after waiting
@@ -77,13 +75,7 @@ class LinkedInPoller:
     Searches LinkedIn for jobs matching criteria and stores them in database.
     """
 
-    def __init__(
-        self,
-        config: dict[str, Any],
-        jobs_repository: JobsRepository,
-        application_repository: ApplicationRepository,
-        mcp_client: Any,
-    ):
+    def __init__(self, config: dict[str, Any], jobs_repository: JobsRepository, application_repository: ApplicationRepository, mcp_client: Any):
         """
         Initialize LinkedIn poller.
 
@@ -103,12 +95,7 @@ class LinkedInPoller:
         self.rate_limiter = RateLimiter(calls_per_hour=rate_limit)
 
         # Initialize metrics
-        self.metrics = {
-            "jobs_found": 0,
-            "jobs_inserted": 0,
-            "duplicates_skipped": 0,
-            "errors": 0,
-        }
+        self.metrics = {"jobs_found": 0, "jobs_inserted": 0, "duplicates_skipped": 0, "errors": 0}
 
         # Shutdown flag
         self._shutdown_requested = False
@@ -235,10 +222,7 @@ class LinkedInPoller:
 
             # Create application tracking record
             try:
-                application = Application(
-                    job_id=job_id,
-                    status="discovered",
-                )
+                application = Application(job_id=job_id, status="discovered")
                 app_id = self.app_repo.insert_application(application)
                 logger.debug(f"Created application tracking record: {app_id}")
             except Exception as app_error:
@@ -256,13 +240,7 @@ class LinkedInPoller:
                 self.metrics["errors"] += 1
             return None
 
-    def search_jobs(
-        self,
-        keywords: list[str],
-        location: str | None = None,
-        job_type: str | None = None,
-        limit: int = 50,
-    ) -> list[dict[str, Any]]:
+    def search_jobs(self, keywords: list[str], location: str | None = None, job_type: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
         """
         Search LinkedIn for jobs via MCP server.
 
@@ -289,10 +267,7 @@ class LinkedInPoller:
         query = " ".join(keywords)
 
         # Build MCP call parameters
-        params = {
-            "query": query,
-            "limit": limit,
-        }
+        params = {"query": query, "limit": limit}
 
         if location:
             params["location"] = location
@@ -300,9 +275,7 @@ class LinkedInPoller:
         if job_type:
             params["job_type"] = job_type
 
-        logger.info(
-            f"Searching LinkedIn: query='{query}', location={location}, job_type={job_type}"
-        )
+        logger.info(f"Searching LinkedIn: query='{query}', location={location}, job_type={job_type}")
 
         # Call MCP server (may raise ConnectionError, TimeoutError, or other exceptions)
         response = self.mcp_client.call_tool("mcp__linkedin__search_jobs", params=params)
@@ -316,14 +289,7 @@ class LinkedInPoller:
             logger.warning(f"Unexpected MCP response format: {response}")
             return []
 
-    def search_jobs_with_retry(
-        self,
-        keywords: list[str],
-        location: str | None = None,
-        job_type: str | None = None,
-        max_retries: int = 3,
-        backoff_seconds: list[int] = None,
-    ) -> list[dict[str, Any]]:
+    def search_jobs_with_retry(self, keywords: list[str], location: str | None = None, job_type: str | None = None, max_retries: int = 3, backoff_seconds: list[int] = None) -> list[dict[str, Any]]:
         """
         Search LinkedIn with retry logic and exponential backoff.
 
@@ -388,9 +354,7 @@ class LinkedInPoller:
             job_type = search_config.get("job_type", "contract")
 
             # Search for jobs
-            raw_jobs = self.search_jobs_with_retry(
-                keywords=keywords, location=location, job_type=job_type
-            )
+            raw_jobs = self.search_jobs_with_retry(keywords=keywords, location=location, job_type=job_type)
 
             self.metrics["jobs_found"] = len(raw_jobs)
 
@@ -419,10 +383,7 @@ class LinkedInPoller:
             # Log summary
             duration = time.time() - start_time
             logger.info(
-                f"Poll cycle complete: {self.metrics['jobs_found']} found, "
-                f"{self.metrics['jobs_inserted']} inserted, "
-                f"{self.metrics['duplicates_skipped']} duplicates skipped, "
-                f"{self.metrics['errors']} errors (execution time: {duration:.2f}s)"
+                f"Poll cycle complete: {self.metrics['jobs_found']} found, {self.metrics['jobs_inserted']} inserted, {self.metrics['duplicates_skipped']} duplicates skipped, {self.metrics['errors']} errors (execution time: {duration:.2f}s)"
             )
 
         except Exception as e:
@@ -485,9 +446,4 @@ class LinkedInPoller:
 
     def reset_metrics(self) -> None:
         """Reset all metrics to zero."""
-        self.metrics = {
-            "jobs_found": 0,
-            "jobs_inserted": 0,
-            "duplicates_skipped": 0,
-            "errors": 0,
-        }
+        self.metrics = {"jobs_found": 0, "jobs_inserted": 0, "duplicates_skipped": 0, "errors": 0}

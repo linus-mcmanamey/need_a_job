@@ -14,13 +14,7 @@ class TestAgentResult:
         """Test creating a successful AgentResult"""
         from app.agents.base_agent import AgentResult
 
-        result = AgentResult(
-            success=True,
-            agent_name="test_agent",
-            output={"score": 0.85, "matched_criteria": ["Python", "FastAPI"]},
-            error_message=None,
-            execution_time_ms=150,
-        )
+        result = AgentResult(success=True, agent_name="test_agent", output={"score": 0.85, "matched_criteria": ["Python", "FastAPI"]}, error_message=None, execution_time_ms=150)
 
         assert result.success is True
         assert result.agent_name == "test_agent"
@@ -32,13 +26,7 @@ class TestAgentResult:
         """Test creating a failed AgentResult with error message"""
         from app.agents.base_agent import AgentResult
 
-        result = AgentResult(
-            success=False,
-            agent_name="test_agent",
-            output={},
-            error_message="Claude API rate limit exceeded",
-            execution_time_ms=50,
-        )
+        result = AgentResult(success=False, agent_name="test_agent", output={}, error_message="Claude API rate limit exceeded", execution_time_ms=50)
 
         assert result.success is False
         assert result.agent_name == "test_agent"
@@ -50,13 +38,7 @@ class TestAgentResult:
         """Test serializing AgentResult to dictionary"""
         from app.agents.base_agent import AgentResult
 
-        result = AgentResult(
-            success=True,
-            agent_name="job_matcher",
-            output={"match_score": 0.92},
-            error_message=None,
-            execution_time_ms=200,
-        )
+        result = AgentResult(success=True, agent_name="job_matcher", output={"match_score": 0.92}, error_message=None, execution_time_ms=200)
 
         result_dict = result.to_dict()
 
@@ -71,13 +53,7 @@ class TestAgentResult:
         """Test deserializing AgentResult from dictionary"""
         from app.agents.base_agent import AgentResult
 
-        data = {
-            "success": True,
-            "agent_name": "cv_tailor",
-            "output": {"cv_path": "export/cv_123.docx"},
-            "error_message": None,
-            "execution_time_ms": 3500,
-        }
+        data = {"success": True, "agent_name": "cv_tailor", "output": {"cv_path": "export/cv_123.docx"}, "error_message": None, "execution_time_ms": 3500}
 
         result = AgentResult.from_dict(data)
 
@@ -91,13 +67,7 @@ class TestAgentResult:
         """Test that to_dict -> from_dict preserves data"""
         from app.agents.base_agent import AgentResult
 
-        original = AgentResult(
-            success=False,
-            agent_name="orchestrator",
-            output={"decision": "reject", "reasoning": "Salary too low"},
-            error_message="Business logic rejection",
-            execution_time_ms=100,
-        )
+        original = AgentResult(success=False, agent_name="orchestrator", output={"decision": "reject", "reasoning": "Salary too low"}, error_message="Business logic rejection", execution_time_ms=100)
 
         # Serialize and deserialize
         result_dict = original.to_dict()
@@ -113,26 +83,9 @@ class TestAgentResult:
         """Test AgentResult with nested output structure"""
         from app.agents.base_agent import AgentResult
 
-        complex_output = {
-            "match_score": 0.88,
-            "matched_criteria": {
-                "must_have": ["Python", "FastAPI"],
-                "nice_to_have": ["Docker"],
-            },
-            "missing_criteria": ["Kubernetes"],
-            "metadata": {
-                "model_used": "claude-sonnet-4",
-                "tokens": 450,
-            },
-        }
+        complex_output = {"match_score": 0.88, "matched_criteria": {"must_have": ["Python", "FastAPI"], "nice_to_have": ["Docker"]}, "missing_criteria": ["Kubernetes"], "metadata": {"model_used": "claude-sonnet-4", "tokens": 450}}
 
-        result = AgentResult(
-            success=True,
-            agent_name="job_matcher",
-            output=complex_output,
-            error_message=None,
-            execution_time_ms=250,
-        )
+        result = AgentResult(success=True, agent_name="job_matcher", output=complex_output, error_message=None, execution_time_ms=250)
 
         assert result.output["match_score"] == 0.88
         assert "Python" in result.output["matched_criteria"]["must_have"]
@@ -172,18 +125,10 @@ class TestBaseAgentAbstract:
                 return "test_agent"
 
             async def process(self, job_id: str) -> AgentResult:
-                return AgentResult(
-                    success=True,
-                    agent_name=self.agent_name,
-                    output={"job_id": job_id},
-                    error_message=None,
-                    execution_time_ms=100,
-                )
+                return AgentResult(success=True, agent_name=self.agent_name, output={"job_id": job_id}, error_message=None, execution_time_ms=100)
 
         # Should not raise
-        agent = TestAgent(
-            config={"model": "claude-sonnet-4"}, claude_client=None, app_repository=None
-        )
+        agent = TestAgent(config={"model": "claude-sonnet-4"}, claude_client=None, app_repository=None)
         assert agent.agent_name == "test_agent"
         assert agent.model == "claude-sonnet-4"
 
@@ -197,19 +142,9 @@ class TestBaseAgentAbstract:
                 return "test_agent"
 
             async def process(self, job_id: str) -> AgentResult:
-                return AgentResult(
-                    success=True,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=None,
-                    execution_time_ms=0,
-                )
+                return AgentResult(success=True, agent_name=self.agent_name, output={}, error_message=None, execution_time_ms=0)
 
-        config = {
-            "model": "claude-haiku-3.5",
-            "threshold": 0.75,
-            "max_tokens": 2048,
-        }
+        config = {"model": "claude-haiku-3.5", "threshold": 0.75, "max_tokens": 2048}
 
         agent = TestAgent(config=config, claude_client=None, app_repository=None)
 
@@ -226,13 +161,7 @@ class TestBaseAgentAbstract:
                 return "test_agent"
 
             async def process(self, job_id: str) -> AgentResult:
-                return AgentResult(
-                    success=True,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=None,
-                    execution_time_ms=0,
-                )
+                return AgentResult(success=True, agent_name=self.agent_name, output={}, error_message=None, execution_time_ms=0)
 
         # Config without model key
         agent = TestAgent(config={}, claude_client=None, app_repository=None)
@@ -255,13 +184,7 @@ class TestBaseAgentDatabaseMethods:
                 return "test_agent"
 
             async def process(self, job_id: str) -> AgentResult:
-                return AgentResult(
-                    success=True,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=None,
-                    execution_time_ms=0,
-                )
+                return AgentResult(success=True, agent_name=self.agent_name, output={}, error_message=None, execution_time_ms=0)
 
         mock_repo = Mock()
         mock_repo.update_current_stage = AsyncMock()
@@ -284,13 +207,7 @@ class TestBaseAgentDatabaseMethods:
                 return "test_agent"
 
             async def process(self, job_id: str) -> AgentResult:
-                return AgentResult(
-                    success=True,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=None,
-                    execution_time_ms=0,
-                )
+                return AgentResult(success=True, agent_name=self.agent_name, output={}, error_message=None, execution_time_ms=0)
 
         mock_repo = Mock()
         mock_repo.add_completed_stage = AsyncMock()
@@ -298,9 +215,7 @@ class TestBaseAgentDatabaseMethods:
         agent = TestAgent(config={}, claude_client=None, app_repository=mock_repo)
         await agent._add_completed_stage("app-123", "job_matcher", {"score": 0.85})
 
-        mock_repo.add_completed_stage.assert_called_once_with(
-            "app-123", "job_matcher", {"score": 0.85}
-        )
+        mock_repo.add_completed_stage.assert_called_once_with("app-123", "job_matcher", {"score": 0.85})
 
     @pytest.mark.asyncio
     async def test_store_stage_output(self):
@@ -315,13 +230,7 @@ class TestBaseAgentDatabaseMethods:
                 return "test_agent"
 
             async def process(self, job_id: str) -> AgentResult:
-                return AgentResult(
-                    success=True,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=None,
-                    execution_time_ms=0,
-                )
+                return AgentResult(success=True, agent_name=self.agent_name, output={}, error_message=None, execution_time_ms=0)
 
         mock_repo = Mock()
         mock_repo.store_stage_output = AsyncMock()
@@ -329,9 +238,7 @@ class TestBaseAgentDatabaseMethods:
         agent = TestAgent(config={}, claude_client=None, app_repository=mock_repo)
         await agent._store_stage_output("app-123", "job_matcher", {"score": 0.90})
 
-        mock_repo.store_stage_output.assert_called_once_with(
-            "app-123", "job_matcher", {"score": 0.90}
-        )
+        mock_repo.store_stage_output.assert_called_once_with("app-123", "job_matcher", {"score": 0.90})
 
     @pytest.mark.asyncio
     async def test_update_error_info(self):
@@ -346,13 +253,7 @@ class TestBaseAgentDatabaseMethods:
                 return "test_agent"
 
             async def process(self, job_id: str) -> AgentResult:
-                return AgentResult(
-                    success=True,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=None,
-                    execution_time_ms=0,
-                )
+                return AgentResult(success=True, agent_name=self.agent_name, output={}, error_message=None, execution_time_ms=0)
 
         mock_repo = Mock()
         mock_repo.update_error_info = AsyncMock()
@@ -376,13 +277,7 @@ class TestBaseAgentDatabaseMethods:
                 return "test_agent"
 
             async def process(self, job_id: str) -> AgentResult:
-                return AgentResult(
-                    success=True,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=None,
-                    execution_time_ms=0,
-                )
+                return AgentResult(success=True, agent_name=self.agent_name, output={}, error_message=None, execution_time_ms=0)
 
         mock_repo = Mock()
         mock_repo.update_status = AsyncMock()
@@ -405,13 +300,7 @@ class TestBaseAgentDatabaseMethods:
                 return "test_agent"
 
             async def process(self, job_id: str) -> AgentResult:
-                return AgentResult(
-                    success=True,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=None,
-                    execution_time_ms=0,
-                )
+                return AgentResult(success=True, agent_name=self.agent_name, output={}, error_message=None, execution_time_ms=0)
 
         # Mock Claude client
         mock_claude = Mock()
@@ -419,12 +308,8 @@ class TestBaseAgentDatabaseMethods:
         mock_response.content = [Mock(text="Claude's response")]
         mock_claude.messages.create = AsyncMock(return_value=mock_response)
 
-        agent = TestAgent(
-            config={"model": "claude-sonnet-4"}, claude_client=mock_claude, app_repository=None
-        )
-        response = await agent._call_claude(
-            prompt="Test prompt", system="Test system", model="claude-sonnet-4"
-        )
+        agent = TestAgent(config={"model": "claude-sonnet-4"}, claude_client=mock_claude, app_repository=None)
+        response = await agent._call_claude(prompt="Test prompt", system="Test system", model="claude-sonnet-4")
 
         assert response == "Claude's response"
         mock_claude.messages.create.assert_called_once()
@@ -442,13 +327,7 @@ class TestBaseAgentDatabaseMethods:
                 return "test_agent"
 
             async def process(self, job_id: str) -> AgentResult:
-                return AgentResult(
-                    success=True,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=None,
-                    execution_time_ms=0,
-                )
+                return AgentResult(success=True, agent_name=self.agent_name, output={}, error_message=None, execution_time_ms=0)
 
         # Mock Claude client that raises exception
         mock_claude = Mock()
@@ -472,13 +351,7 @@ class TestBaseAgentDatabaseMethods:
                 return "test_agent"
 
             async def process(self, job_id: str) -> AgentResult:
-                return AgentResult(
-                    success=True,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=None,
-                    execution_time_ms=0,
-                )
+                return AgentResult(success=True, agent_name=self.agent_name, output={}, error_message=None, execution_time_ms=0)
 
         # Mock repo that raises exceptions
         mock_repo = Mock()

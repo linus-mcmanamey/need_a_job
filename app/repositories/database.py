@@ -270,9 +270,7 @@ def get_database_info() -> dict:
     # Count tables in database
     table_count = 0
     try:
-        result = db.fetch_all(
-            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'main'"
-        )
+        result = db.fetch_all("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'main'")
         if result:
             table_count = result[0][0]
     except Exception:
@@ -281,9 +279,7 @@ def get_database_info() -> dict:
     return {
         "path": str(db.db_path),
         "exists": db.db_path.exists() if str(db.db_path) != ":memory:" else True,
-        "size_bytes": db.db_path.stat().st_size
-        if db.db_path.exists() and str(db.db_path) != ":memory:"
-        else 0,
+        "size_bytes": db.db_path.stat().st_size if db.db_path.exists() and str(db.db_path) != ":memory:" else 0,
         "table_count": table_count,
     }
 

@@ -40,11 +40,7 @@ def parse_context_from_transcript(transcript_path):
                         total_tokens = input_tokens + cache_read + cache_creation
                         if total_tokens > 0:
                             percent_used = min(100, (total_tokens / 200000) * 100)
-                            return {
-                                "percent": percent_used,
-                                "tokens": total_tokens,
-                                "method": "usage",
-                            }
+                            return {"percent": percent_used, "tokens": total_tokens, "method": "usage"}
 
                 # Method 2: Parse system context warnings
                 elif data.get("type") == "system_message":
@@ -54,11 +50,7 @@ def parse_context_from_transcript(transcript_path):
                     match = re.search(r"Context left until auto-compact: (\d+)%", content)
                     if match:
                         percent_left = int(match.group(1))
-                        return {
-                            "percent": 100 - percent_left,
-                            "warning": "auto-compact",
-                            "method": "system",
-                        }
+                        return {"percent": 100 - percent_left, "warning": "auto-compact", "method": "system"}
 
                     # "Context low (X% remaining)"
                     match = re.search(r"Context low \((\d+)% remaining\)", content)
@@ -225,17 +217,13 @@ def main():
             model_display = f"\033[94m[{model_name}]\033[0m"
 
         # Combine all components
-        status_line = (
-            f"{model_display} \033[93m📁 {directory}\033[0m 🧠 {context_display}{session_metrics}"
-        )
+        status_line = f"{model_display} \033[93m📁 {directory}\033[0m 🧠 {context_display}{session_metrics}"
 
         print(status_line)
 
     except Exception as e:
         # Fallback display on any error
-        print(
-            f"\033[94m[Claude]\033[0m \033[93m📁 {os.path.basename(os.getcwd())}\033[0m 🧠 \033[31m[Error: {str(e)[:20]}]\033[0m"
-        )
+        print(f"\033[94m[Claude]\033[0m \033[93m📁 {os.path.basename(os.getcwd())}\033[0m 🧠 \033[31m[Error: {str(e)[:20]}]\033[0m")
 
 
 if __name__ == "__main__":

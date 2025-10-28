@@ -133,11 +133,7 @@ class TestTextExtraction:
         """Test extraction of daily rate from text."""
         mock_claude = AsyncMock()
         mock_response = Mock()
-        mock_response.content = [
-            Mock(
-                text='{"salary_found": true, "amount": 950.0, "time_period": "daily", "currency": "AUD"}'
-            )
-        ]
+        mock_response.content = [Mock(text='{"salary_found": true, "amount": 950.0, "time_period": "daily", "currency": "AUD"}')]
         mock_claude.messages.create = AsyncMock(return_value=mock_response)
 
         config = {"model": "claude-haiku-3.5"}
@@ -153,11 +149,7 @@ class TestTextExtraction:
         """Test extraction of annual salary from text."""
         mock_claude = AsyncMock()
         mock_response = Mock()
-        mock_response.content = [
-            Mock(
-                text='{"salary_found": true, "amount": 150000.0, "time_period": "annual", "currency": "AUD"}'
-            )
-        ]
+        mock_response.content = [Mock(text='{"salary_found": true, "amount": 150000.0, "time_period": "annual", "currency": "AUD"}')]
         mock_claude.messages.create = AsyncMock(return_value=mock_response)
 
         config = {"model": "claude-haiku-3.5"}
@@ -268,14 +260,7 @@ class TestNonBlockingValidation:
         mock_yaml_load.return_value = {"salary_expectations": {"minimum": 800.0, "maximum": 1500.0}}
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={
-                "id": "job-123",
-                "title": "Test Job",
-                "description": "Test description",
-                "salary_aud_per_day": "600",
-            }
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-123", "title": "Test Job", "description": "Test description", "salary_aud_per_day": "600"})
 
         config = {"model": "claude-haiku-3.5"}
         agent = SalaryValidatorAgent(config, Mock(), mock_app_repo)
@@ -300,14 +285,7 @@ class TestNonBlockingValidation:
         mock_claude.messages.create = AsyncMock(return_value=mock_response)
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={
-                "id": "job-123",
-                "title": "Test Job",
-                "description": "No salary info",
-                "salary_aud_per_day": None,
-            }
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-123", "title": "Test Job", "description": "No salary info", "salary_aud_per_day": None})
 
         config = {"model": "claude-haiku-3.5"}
         agent = SalaryValidatorAgent(config, mock_claude, mock_app_repo)
@@ -332,14 +310,7 @@ class TestDatabaseUpdates:
         mock_yaml_load.return_value = {"salary_expectations": {"minimum": 800.0, "maximum": 1500.0}}
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={
-                "id": "job-123",
-                "title": "Test Job",
-                "description": "Test",
-                "salary_aud_per_day": "950",
-            }
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-123", "title": "Test Job", "description": "Test", "salary_aud_per_day": "950"})
 
         config = {"model": "claude-haiku-3.5"}
         agent = SalaryValidatorAgent(config, Mock(), mock_app_repo)
@@ -364,22 +335,11 @@ class TestDatabaseUpdates:
 
         mock_claude = AsyncMock()
         mock_response = Mock()
-        mock_response.content = [
-            Mock(
-                text='{"salary_found": true, "amount": 950.0, "time_period": "daily", "currency": "AUD"}'
-            )
-        ]
+        mock_response.content = [Mock(text='{"salary_found": true, "amount": 950.0, "time_period": "daily", "currency": "AUD"}')]
         mock_claude.messages.create = AsyncMock(return_value=mock_response)
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={
-                "id": "job-123",
-                "title": "Test Job",
-                "description": "$950 per day",
-                "salary_aud_per_day": None,
-            }
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-123", "title": "Test Job", "description": "$950 per day", "salary_aud_per_day": None})
 
         config = {"model": "claude-haiku-3.5"}
         agent = SalaryValidatorAgent(config, mock_claude, mock_app_repo)
@@ -401,14 +361,7 @@ class TestAgentResultConstruction:
         mock_yaml_load.return_value = {"salary_expectations": {"minimum": 800.0, "maximum": 1500.0}}
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={
-                "id": "job-123",
-                "title": "Test Job",
-                "description": "Test",
-                "salary_aud_per_day": "950",
-            }
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-123", "title": "Test Job", "description": "Test", "salary_aud_per_day": "950"})
 
         config = {"model": "claude-haiku-3.5"}
         agent = SalaryValidatorAgent(config, Mock(), mock_app_repo)
@@ -432,14 +385,7 @@ class TestAgentResultConstruction:
         mock_yaml_load.return_value = {"salary_expectations": {"minimum": 800.0, "maximum": 1500.0}}
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={
-                "id": "job-123",
-                "title": "Test Job",
-                "description": "Test",
-                "salary_aud_per_day": "950.50",
-            }
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-123", "title": "Test Job", "description": "Test", "salary_aud_per_day": "950.50"})
 
         config = {"model": "claude-haiku-3.5"}
         agent = SalaryValidatorAgent(config, Mock(), mock_app_repo)
@@ -493,14 +439,7 @@ class TestErrorHandling:
         mock_claude.messages.create = AsyncMock(return_value=mock_response)
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={
-                "id": "job-123",
-                "title": "Test Job",
-                "description": "Competitive salary",
-                "salary_aud_per_day": "negotiable",
-            }
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-123", "title": "Test Job", "description": "Competitive salary", "salary_aud_per_day": "negotiable"})
 
         config = {"model": "claude-haiku-3.5"}
         agent = SalaryValidatorAgent(config, mock_claude, mock_app_repo)

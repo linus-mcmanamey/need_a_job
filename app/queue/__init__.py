@@ -2,11 +2,7 @@
 
 from app.queue.redis_client import check_redis_health, close_redis_connection, get_redis_connection
 
-__all__ = [
-    "get_redis_connection",
-    "check_redis_health",
-    "close_redis_connection",
-]
+__all__ = ["get_redis_connection", "check_redis_health", "close_redis_connection"]
 
 # Import other modules when they exist
 try:

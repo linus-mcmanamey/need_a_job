@@ -161,12 +161,7 @@ class JobsRepository:
             logger.error(f"Failed to delete job {job_id}: {e}")
             raise
 
-    def list_jobs(
-        self,
-        filters: dict | None = None,
-        limit: int = 100,
-        offset: int = 0,
-    ) -> list[Job]:
+    def list_jobs(self, filters: dict | None = None, limit: int = 100, offset: int = 0) -> list[Job]:
         """
         List jobs with optional filtering and pagination.
 

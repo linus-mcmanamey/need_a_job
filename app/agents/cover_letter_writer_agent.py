@@ -30,12 +30,7 @@ class CoverLetterWriterAgent(BaseAgent):
     - Validates output and updates database
     """
 
-    def __init__(
-        self,
-        config: dict[str, Any],
-        claude_client: Any,
-        app_repository: Any,
-    ):
+    def __init__(self, config: dict[str, Any], claude_client: Any, app_repository: Any):
         """Initialize Cover Letter Writer Agent."""
         super().__init__(config, claude_client, app_repository)
         self._cl_template_path = Path("current_cv_coverletter/Linus_McManamey_CL.docx")
@@ -61,13 +56,7 @@ class CoverLetterWriterAgent(BaseAgent):
             # Validate job_id
             if not job_id:
                 logger.error("[cover_letter_writer] Missing job_id parameter")
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message="Missing job_id parameter",
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message="Missing job_id parameter", execution_time_ms=int((time.time() - start_time) * 1000))
 
             # Load job data
             logger.info(f"[cover_letter_writer] Processing job: {job_id}")
@@ -75,13 +64,7 @@ class CoverLetterWriterAgent(BaseAgent):
 
             if not job_data:
                 logger.error(f"[cover_letter_writer] Job not found: {job_id}")
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=f"Job not found: {job_id}",
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message=f"Job not found: {job_id}", execution_time_ms=int((time.time() - start_time) * 1000))
 
             # Update current stage
             await self._update_current_stage(job_id, self.agent_name)
@@ -91,13 +74,7 @@ class CoverLetterWriterAgent(BaseAgent):
                 self._load_cl_template(self._cl_template_path)
             except FileNotFoundError:
                 logger.error(f"[cover_letter_writer] Template not found: {self._cl_template_path}")
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=f"CL template not found: {self._cl_template_path}",
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message=f"CL template not found: {self._cl_template_path}", execution_time_ms=int((time.time() - start_time) * 1000))
 
             # Load stage outputs
             stage_outputs = await self._app_repo.get_stage_outputs(job_id)
@@ -131,24 +108,13 @@ class CoverLetterWriterAgent(BaseAgent):
             # Validate output
             if not self._validate_output_file(output_path):
                 logger.error(f"[cover_letter_writer] Validation failed: {output_path}")
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message="Output file validation failed",
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message="Output file validation failed", execution_time_ms=int((time.time() - start_time) * 1000))
 
             # Get file size
             file_size = output_path.stat().st_size
 
             # Build output
-            output = {
-                "cl_file_path": str(output_path),
-                "contact_person_name": contact_person,
-                "extraction_method": extraction_method,
-                "file_size_bytes": file_size,
-            }
+            output = {"cl_file_path": str(output_path), "contact_person_name": contact_person, "extraction_method": extraction_method, "file_size_bytes": file_size}
 
             # Update database
             if hasattr(self._app_repo, "update_cl_file_path"):
@@ -158,32 +124,17 @@ class CoverLetterWriterAgent(BaseAgent):
 
             await self._add_completed_stage(job_id, self.agent_name, output)
 
-            logger.info(
-                f"[cover_letter_writer] Job {job_id}: CL generated, "
-                f"contact={contact_person}, size={file_size}"
-            )
+            logger.info(f"[cover_letter_writer] Job {job_id}: CL generated, contact={contact_person}, size={file_size}")
 
             execution_time_ms = int((time.time() - start_time) * 1000)
 
-            return AgentResult(
-                success=True,
-                agent_name=self.agent_name,
-                output=output,
-                error_message=None,
-                execution_time_ms=execution_time_ms,
-            )
+            return AgentResult(success=True, agent_name=self.agent_name, output=output, error_message=None, execution_time_ms=execution_time_ms)
 
         except Exception as e:
             logger.error(f"[cover_letter_writer] Error processing job {job_id}: {e}")
             execution_time_ms = int((time.time() - start_time) * 1000)
 
-            return AgentResult(
-                success=False,
-                agent_name=self.agent_name,
-                output={},
-                error_message=str(e),
-                execution_time_ms=execution_time_ms,
-            )
+            return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message=str(e), execution_time_ms=execution_time_ms)
 
     def _load_cl_template(self, template_path: Path) -> Document:
         """Load CL template from DOCX file."""
@@ -262,9 +213,7 @@ class CoverLetterWriterAgent(BaseAgent):
         sanitized = sanitized.rstrip("-")
         return sanitized if sanitized else "unknown"
 
-    def _prepare_job_context(
-        self, job_data: dict[str, Any], stage_outputs: dict[str, Any]
-    ) -> dict[str, Any]:
+    def _prepare_job_context(self, job_data: dict[str, Any], stage_outputs: dict[str, Any]) -> dict[str, Any]:
         """Prepare job context for Claude."""
         # Extract matched technologies
         matched_techs = []
@@ -273,18 +222,11 @@ class CoverLetterWriterAgent(BaseAgent):
             matched_techs.extend(matcher_output.get("must_have_found", []))
             matched_techs.extend(matcher_output.get("strong_pref_found", []))
 
-        context = {
-            "company_name": job_data.get("company_name", "Unknown"),
-            "job_title": job_data.get("title", "Unknown"),
-            "job_description": job_data.get("description", ""),
-            "matched_technologies": matched_techs,
-        }
+        context = {"company_name": job_data.get("company_name", "Unknown"), "job_title": job_data.get("title", "Unknown"), "job_description": job_data.get("description", ""), "matched_technologies": matched_techs}
 
         return context
 
-    async def _generate_cover_letter_with_claude(
-        self, job_context: dict[str, Any], contact_person: str
-    ) -> str:
+    async def _generate_cover_letter_with_claude(self, job_context: dict[str, Any], contact_person: str) -> str:
         """Generate cover letter using Claude."""
         prompt = f"""You are a professional Cover Letter Writer. Write a personalized, compelling cover letter for this job application.
 

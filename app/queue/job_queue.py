@@ -32,13 +32,7 @@ class JobQueue:
         queue: RQ Queue instance for job processing
     """
 
-    def __init__(
-        self,
-        redis_connection: Redis,
-        jobs_repository: JobsRepository,
-        application_repository: ApplicationRepository,
-        queue_name: str = "job_processing_queue",
-    ):
+    def __init__(self, redis_connection: Redis, jobs_repository: JobsRepository, application_repository: ApplicationRepository, queue_name: str = "job_processing_queue"):
         """Initialize JobQueue with dependencies.
 
         Args:
@@ -102,16 +96,9 @@ class JobQueue:
         # Update application status to queued
         self.app_repo.update_status(job_id, "queued")
 
-        logger.info(
-            f"Job enqueued: job_id={job_id}, rq_job_id={rq_job.id}, queue_depth={self.queue.count}"
-        )
+        logger.info(f"Job enqueued: job_id={job_id}, rq_job_id={rq_job.id}, queue_depth={self.queue.count}")
 
-        return {
-            "job_id": job_id,
-            "rq_job_id": rq_job.id,
-            "queue_position": self.queue.count,
-            "enqueued_at": datetime.utcnow(),
-        }
+        return {"job_id": job_id, "rq_job_id": rq_job.id, "queue_position": self.queue.count, "enqueued_at": datetime.utcnow()}
 
     def get_queue_depth(self) -> int:
         """Get number of pending jobs in queue.
@@ -172,13 +159,7 @@ class JobQueue:
             >>> print(f"Queue: {metrics['queue_depth']} pending, "
             ...       f"{metrics['active_workers']} workers")
         """
-        metrics = {
-            "queue_name": self.queue_name,
-            "queue_depth": self.get_queue_depth(),
-            "active_workers": self.get_active_workers(),
-            "failed_count": len(self.get_failed_jobs()),
-            "timestamp": datetime.utcnow(),
-        }
+        metrics = {"queue_name": self.queue_name, "queue_depth": self.get_queue_depth(), "active_workers": self.get_active_workers(), "failed_count": len(self.get_failed_jobs()), "timestamp": datetime.utcnow()}
 
         logger.debug(f"Queue metrics: {metrics}")
         return metrics

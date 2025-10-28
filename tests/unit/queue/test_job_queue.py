@@ -21,13 +21,7 @@ def mock_redis():
 def mock_jobs_repo():
     """Mock JobsRepository."""
     repo = Mock()
-    repo.get_job_by_id.return_value = Job(
-        job_id=uuid4(),
-        company_name="Test Corp",
-        job_title="Data Engineer",
-        job_url="https://test.com/job/123",
-        platform_source="linkedin",
-    )
+    repo.get_job_by_id.return_value = Job(job_id=uuid4(), company_name="Test Corp", job_title="Data Engineer", job_url="https://test.com/job/123", platform_source="linkedin")
     return repo
 
 
@@ -45,11 +39,7 @@ def job_queue(mock_redis, mock_jobs_repo, mock_app_repo):
         mock_queue = Mock(spec=Queue)
         mock_queue_class.return_value = mock_queue
 
-        queue = JobQueue(
-            redis_connection=mock_redis,
-            jobs_repository=mock_jobs_repo,
-            application_repository=mock_app_repo,
-        )
+        queue = JobQueue(redis_connection=mock_redis, jobs_repository=mock_jobs_repo, application_repository=mock_app_repo)
         queue.queue = mock_queue  # Inject mock queue
         return queue
 
@@ -60,11 +50,7 @@ class TestJobQueueInitialization:
     def test_job_queue_initialization(self, mock_redis, mock_jobs_repo, mock_app_repo):
         """Test JobQueue initializes with dependencies."""
         with patch("app.queue.job_queue.Queue"):
-            queue = JobQueue(
-                redis_connection=mock_redis,
-                jobs_repository=mock_jobs_repo,
-                application_repository=mock_app_repo,
-            )
+            queue = JobQueue(redis_connection=mock_redis, jobs_repository=mock_jobs_repo, application_repository=mock_app_repo)
 
             assert queue.redis == mock_redis
             assert queue.jobs_repo == mock_jobs_repo
@@ -73,11 +59,7 @@ class TestJobQueueInitialization:
     def test_job_queue_creates_rq_queue(self, mock_redis, mock_jobs_repo, mock_app_repo):
         """Test JobQueue creates RQ queue on initialization."""
         with patch("app.queue.job_queue.Queue") as mock_queue_class:
-            queue = JobQueue(
-                redis_connection=mock_redis,
-                jobs_repository=mock_jobs_repo,
-                application_repository=mock_app_repo,
-            )
+            queue = JobQueue(redis_connection=mock_redis, jobs_repository=mock_jobs_repo, application_repository=mock_app_repo)
 
             mock_queue_class.assert_called_once()
             assert queue.queue is not None
@@ -209,9 +191,7 @@ class TestJobRetry:
         mock_failed_job2 = Mock()
         mock_failed_job2.kwargs = {"job_id": str(uuid4())}
 
-        with patch.object(
-            job_queue, "get_failed_jobs", return_value=[mock_failed_job1, mock_failed_job2]
-        ):
+        with patch.object(job_queue, "get_failed_jobs", return_value=[mock_failed_job1, mock_failed_job2]):
             with patch.object(job_queue, "retry_job") as mock_retry:
                 count = job_queue.retry_all_failed_jobs()
 

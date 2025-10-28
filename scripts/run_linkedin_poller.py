@@ -40,20 +40,10 @@ def setup_logging(verbose: bool = False) -> None:
     log_level = "DEBUG" if verbose else "INFO"
 
     # Console logging
-    logger.add(
-        sys.stderr,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-        level=log_level,
-    )
+    logger.add(sys.stderr, format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>", level=log_level)
 
     # File logging
-    logger.add(
-        "logs/linkedin_poller.log",
-        rotation="1 day",
-        retention="7 days",
-        level=log_level,
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
-    )
+    logger.add("logs/linkedin_poller.log", rotation="1 day", retention="7 days", level=log_level, format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}")
 
 
 def create_mock_mcp_client():
@@ -105,35 +95,15 @@ Examples:
         """,
     )
 
-    parser.add_argument(
-        "--once",
-        action="store_true",
-        help="Run one poll cycle and exit (default: run continuously)",
-    )
+    parser.add_argument("--once", action="store_true", help="Run one poll cycle and exit (default: run continuously)")
 
-    parser.add_argument(
-        "--interval",
-        type=int,
-        metavar="MINUTES",
-        help="Polling interval in minutes (overrides config)",
-    )
+    parser.add_argument("--interval", type=int, metavar="MINUTES", help="Polling interval in minutes (overrides config)")
 
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Dry run mode: log what would be done without database writes",
-    )
+    parser.add_argument("--dry-run", action="store_true", help="Dry run mode: log what would be done without database writes")
 
-    parser.add_argument(
-        "--verbose", "-v", action="store_true", help="Enable verbose (DEBUG) logging"
-    )
+    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose (DEBUG) logging")
 
-    parser.add_argument(
-        "--config-path",
-        type=Path,
-        default=project_root / "config",
-        help="Path to configuration directory (default: config/)",
-    )
+    parser.add_argument("--config-path", type=Path, default=project_root / "config", help="Path to configuration directory (default: config/)")
 
     args = parser.parse_args()
 
@@ -185,12 +155,7 @@ Examples:
 
         # Create poller
         logger.info("Initializing LinkedIn poller...")
-        poller = LinkedInPoller(
-            config=config,
-            jobs_repository=jobs_repo,
-            application_repository=app_repo,
-            mcp_client=mcp_client,
-        )
+        poller = LinkedInPoller(config=config, jobs_repository=jobs_repo, application_repository=app_repo, mcp_client=mcp_client)
 
         # Run poller
         if args.once:

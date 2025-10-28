@@ -59,9 +59,7 @@ class Job:
             "company_name": self.company_name,
             "job_title": self.job_title,
             "job_url": self.job_url,
-            "salary_aud_per_day": float(self.salary_aud_per_day)
-            if self.salary_aud_per_day
-            else None,
+            "salary_aud_per_day": float(self.salary_aud_per_day) if self.salary_aud_per_day else None,
             "location": self.location,
             "posted_date": self.posted_date,
             "job_description": self.job_description,

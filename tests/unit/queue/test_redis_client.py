@@ -8,11 +8,7 @@ from redis import ConnectionError as RedisConnectionError
 from redis import Redis
 
 import app.queue.redis_client as redis_client_module
-from app.queue.redis_client import (
-    check_redis_health,
-    close_redis_connection,
-    get_redis_connection,
-)
+from app.queue.redis_client import check_redis_health, close_redis_connection, get_redis_connection
 
 
 @pytest.fixture(autouse=True)
@@ -39,15 +35,7 @@ class TestRedisClient:
 
     def test_get_redis_connection_uses_environment_variables(self):
         """Test that Redis connection uses environment variables."""
-        with patch.dict(
-            os.environ,
-            {
-                "REDIS_HOST": "testhost",
-                "REDIS_PORT": "7000",
-                "REDIS_DB": "2",
-                "REDIS_PASSWORD": "testpass",
-            },
-        ):
+        with patch.dict(os.environ, {"REDIS_HOST": "testhost", "REDIS_PORT": "7000", "REDIS_DB": "2", "REDIS_PASSWORD": "testpass"}):
             with patch("app.queue.redis_client.Redis") as mock_redis:
                 get_redis_connection()
 

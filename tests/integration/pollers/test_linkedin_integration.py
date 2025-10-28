@@ -47,29 +47,15 @@ def mock_mcp_client():
 def integration_config():
     """Configuration for integration tests."""
     return {
-        "linkedin": {
-            "polling_interval_minutes": 60,
-            "rate_limit_requests_per_minute": 10,
-            "timeout_seconds": 30,
-            "search_filters": {"location": "Australia", "job_type": "Contract", "remote": True},
-        },
-        "search": {
-            "keywords": {"primary": ["Data Engineer"], "secondary": ["Analytics Engineer"]},
-            "locations": {"primary": "Remote (Australia-wide)"},
-            "job_type": "contract",
-        },
+        "linkedin": {"polling_interval_minutes": 60, "rate_limit_requests_per_minute": 10, "timeout_seconds": 30, "search_filters": {"location": "Australia", "job_type": "Contract", "remote": True}},
+        "search": {"keywords": {"primary": ["Data Engineer"], "secondary": ["Analytics Engineer"]}, "locations": {"primary": "Remote (Australia-wide)"}, "job_type": "contract"},
     }
 
 
 @pytest.fixture
 def linkedin_poller(integration_config, jobs_repo, app_repo, mock_mcp_client):
     """Create LinkedIn poller with real repositories and mocked MCP."""
-    return LinkedInPoller(
-        config=integration_config,
-        jobs_repository=jobs_repo,
-        application_repository=app_repo,
-        mcp_client=mock_mcp_client,
-    )
+    return LinkedInPoller(config=integration_config, jobs_repository=jobs_repo, application_repository=app_repo, mcp_client=mock_mcp_client)
 
 
 class TestLinkedInPollerIntegration:
@@ -117,18 +103,10 @@ class TestLinkedInPollerIntegration:
         assert application.status == "discovered"
         assert application.current_stage is None
 
-    def test_duplicate_detection_with_real_database(
-        self, linkedin_poller, jobs_repo, mock_mcp_client
-    ):
+    def test_duplicate_detection_with_real_database(self, linkedin_poller, jobs_repo, mock_mcp_client):
         """Test that duplicate jobs are detected using real database."""
         # Mock MCP response with same job twice
-        mock_job = {
-            "title": "Data Engineer",
-            "company": "Test Company",
-            "job_url": "https://linkedin.com/jobs/view/999",
-            "posted_date": "2025-01-15",
-            "salary": "$1000/day",
-        }
+        mock_job = {"title": "Data Engineer", "company": "Test Company", "job_url": "https://linkedin.com/jobs/view/999", "posted_date": "2025-01-15", "salary": "$1000/day"}
         mock_mcp_client.call_tool.return_value = {"jobs": [mock_job], "total_results": 1}
 
         # First run - should insert job
@@ -146,21 +124,10 @@ class TestLinkedInPollerIntegration:
         jobs = jobs_repo.list_jobs(filters={"job_url": "https://linkedin.com/jobs/view/999"})
         assert len(jobs) == 1
 
-    def test_multiple_jobs_batch_processing(
-        self, linkedin_poller, jobs_repo, app_repo, mock_mcp_client
-    ):
+    def test_multiple_jobs_batch_processing(self, linkedin_poller, jobs_repo, app_repo, mock_mcp_client):
         """Test processing multiple jobs in one poll cycle."""
         # Mock MCP response with multiple jobs
-        mock_jobs = [
-            {
-                "title": f"Data Engineer {i}",
-                "company": f"Company {i}",
-                "job_url": f"https://linkedin.com/jobs/view/{i}",
-                "posted_date": "2025-01-15",
-                "salary": f"${1000 + i * 100}/day",
-            }
-            for i in range(5)
-        ]
+        mock_jobs = [{"title": f"Data Engineer {i}", "company": f"Company {i}", "job_url": f"https://linkedin.com/jobs/view/{i}", "posted_date": "2025-01-15", "salary": f"${1000 + i * 100}/day"} for i in range(5)]
         mock_mcp_client.call_tool.return_value = {"jobs": mock_jobs, "total_results": 5}
 
         # Run poll cycle
@@ -185,24 +152,9 @@ class TestLinkedInPollerIntegration:
         """Test that poller continues when some jobs fail to process."""
         # Mock MCP response
         mock_jobs = [
-            {
-                "title": "Valid Job",
-                "company": "Good Company",
-                "job_url": "https://linkedin.com/jobs/view/valid",
-                "posted_date": "2025-01-15",
-            },
-            {
-                "title": "Job with Invalid Date",
-                "company": "Another Company",
-                "job_url": "https://linkedin.com/jobs/view/invalid",
-                "posted_date": "not-a-date",
-            },
-            {
-                "title": "Another Valid Job",
-                "company": "Third Company",
-                "job_url": "https://linkedin.com/jobs/view/valid2",
-                "posted_date": "2025-01-16",
-            },
+            {"title": "Valid Job", "company": "Good Company", "job_url": "https://linkedin.com/jobs/view/valid", "posted_date": "2025-01-15"},
+            {"title": "Job with Invalid Date", "company": "Another Company", "job_url": "https://linkedin.com/jobs/view/invalid", "posted_date": "not-a-date"},
+            {"title": "Another Valid Job", "company": "Third Company", "job_url": "https://linkedin.com/jobs/view/valid2", "posted_date": "2025-01-16"},
         ]
         mock_mcp_client.call_tool.return_value = {"jobs": mock_jobs, "total_results": 3}
 
@@ -225,12 +177,7 @@ class TestLinkedInPollerIntegration:
     def test_database_constraint_handling(self, linkedin_poller, jobs_repo, mock_mcp_client):
         """Test handling of database constraint violations."""
         # Manually insert a job first
-        existing_job = Job(
-            company_name="Existing Company",
-            job_title="Existing Job",
-            job_url="https://linkedin.com/jobs/view/existing",
-            platform_source="linkedin",
-        )
+        existing_job = Job(company_name="Existing Company", job_title="Existing Job", job_url="https://linkedin.com/jobs/view/existing", platform_source="linkedin")
         jobs_repo.insert_job(existing_job)
 
         # Mock MCP response with same URL
@@ -271,34 +218,14 @@ class TestLinkedInPollerIntegration:
     def test_metrics_accuracy(self, linkedin_poller, jobs_repo, mock_mcp_client):
         """Test that metrics accurately reflect processing results."""
         # Insert one existing job
-        existing_job = Job(
-            company_name="Existing",
-            job_title="Job",
-            job_url="https://linkedin.com/jobs/view/existing",
-            platform_source="linkedin",
-        )
+        existing_job = Job(company_name="Existing", job_title="Job", job_url="https://linkedin.com/jobs/view/existing", platform_source="linkedin")
         jobs_repo.insert_job(existing_job)
 
         # Mock MCP response with 3 jobs (1 duplicate, 2 new)
         mock_jobs = [
-            {
-                "title": "Job 1",
-                "company": "Co1",
-                "job_url": "https://linkedin.com/jobs/view/existing",
-                "posted_date": "2025-01-15",
-            },
-            {
-                "title": "Job 2",
-                "company": "Co2",
-                "job_url": "https://linkedin.com/jobs/view/new1",
-                "posted_date": "2025-01-15",
-            },
-            {
-                "title": "Job 3",
-                "company": "Co3",
-                "job_url": "https://linkedin.com/jobs/view/new2",
-                "posted_date": "2025-01-15",
-            },
+            {"title": "Job 1", "company": "Co1", "job_url": "https://linkedin.com/jobs/view/existing", "posted_date": "2025-01-15"},
+            {"title": "Job 2", "company": "Co2", "job_url": "https://linkedin.com/jobs/view/new1", "posted_date": "2025-01-15"},
+            {"title": "Job 3", "company": "Co3", "job_url": "https://linkedin.com/jobs/view/new2", "posted_date": "2025-01-15"},
         ]
         mock_mcp_client.call_tool.return_value = {"jobs": mock_jobs, "total_results": 3}
 

@@ -121,9 +121,7 @@ class ApplicationRepository:
             logger.error(f"Failed to update application status: {e}")
             raise
 
-    def update_application_stage(
-        self, application_id: str, stage_name: str, stage_output: dict
-    ) -> None:
+    def update_application_stage(self, application_id: str, stage_name: str, stage_output: dict) -> None:
         """
         Update application stage information.
 
@@ -153,12 +151,7 @@ class ApplicationRepository:
 
         import json
 
-        params = (
-            stage_name,
-            json.dumps(app.completed_stages),
-            json.dumps(app.stage_outputs),
-            application_id,
-        )
+        params = (stage_name, json.dumps(app.completed_stages), json.dumps(app.stage_outputs), application_id)
 
         try:
             self.conn.execute(query, params)
@@ -167,9 +160,7 @@ class ApplicationRepository:
             logger.error(f"Failed to update application stage: {e}")
             raise
 
-    def update_application_error(
-        self, application_id: str, stage: str, error_type: str, error_message: str
-    ) -> None:
+    def update_application_error(self, application_id: str, stage: str, error_type: str, error_message: str) -> None:
         """
         Record error information for a failed application.
 
@@ -208,9 +199,7 @@ class ApplicationRepository:
             logger.error(f"Failed to update application error: {e}")
             raise
 
-    def update_document_paths(
-        self, application_id: str, cv_path: str | None = None, cl_path: str | None = None
-    ) -> None:
+    def update_document_paths(self, application_id: str, cv_path: str | None = None, cl_path: str | None = None) -> None:
         """
         Update document file paths for an application.
 
@@ -245,12 +234,7 @@ class ApplicationRepository:
             logger.error(f"Failed to update document paths: {e}")
             raise
 
-    def list_applications(
-        self,
-        filters: dict | None = None,
-        limit: int = 100,
-        offset: int = 0,
-    ) -> list[Application]:
+    def list_applications(self, filters: dict | None = None, limit: int = 100, offset: int = 0) -> list[Application]:
         """
         List applications with optional filtering and pagination.
 

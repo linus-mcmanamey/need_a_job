@@ -104,10 +104,7 @@ class TestFilenameHandling:
         assert agent._sanitize_filename("Acme Corp") == "acme-corp"
         assert agent._sanitize_filename("Senior Data Engineer") == "senior-data-engineer"
         assert agent._sanitize_filename("Test/Invalid\\Chars") == "testinvalidchars"
-        assert (
-            agent._sanitize_filename("Very Long Company Name That Exceeds Fifty Characters Limit")
-            == "very-long-company-name-that-exceeds-fifty-characte"
-        )
+        assert agent._sanitize_filename("Very Long Company Name That Exceeds Fifty Characters Limit") == "very-long-company-name-that-exceeds-fifty-characte"
 
     @patch("pathlib.Path.mkdir")
     async def test_create_output_directory(self, mock_mkdir):
@@ -131,18 +128,9 @@ class TestJobRequirementsAnalysis:
         config = {"model": "claude-sonnet-4"}
         agent = CVTailorAgent(config, Mock(), Mock())
 
-        job_data = {
-            "title": "Senior Data Engineer",
-            "company_name": "Acme Corp",
-            "description": "Looking for Python and PySpark expert",
-        }
+        job_data = {"title": "Senior Data Engineer", "company_name": "Acme Corp", "description": "Looking for Python and PySpark expert"}
 
-        stage_outputs = {
-            "job_matcher": {
-                "must_have_found": ["Python", "SQL"],
-                "strong_pref_found": ["PySpark", "Databricks"],
-            }
-        }
+        stage_outputs = {"job_matcher": {"must_have_found": ["Python", "SQL"], "strong_pref_found": ["PySpark", "Databricks"]}}
 
         context = agent._analyze_job_requirements(job_data, stage_outputs)
 
@@ -179,12 +167,7 @@ class TestClaudeCustomization:
         agent = CVTailorAgent(config, mock_claude, Mock())
 
         cv_content = "Professional Summary\nWork Experience"
-        job_context = {
-            "job_title": "Senior Data Engineer",
-            "company_name": "Acme Corp",
-            "job_description": "Looking for data engineer with cloud experience",
-            "matched_technologies": ["Azure", "PySpark"],
-        }
+        job_context = {"job_title": "Senior Data Engineer", "company_name": "Acme Corp", "job_description": "Looking for data engineer with cloud experience", "matched_technologies": ["Azure", "PySpark"]}
 
         result = await agent._customize_cv_with_claude(cv_content, job_context)
 
@@ -201,12 +184,7 @@ class TestClaudeCustomization:
         agent = CVTailorAgent(config, mock_claude, Mock())
 
         cv_content = "Professional Summary"
-        job_context = {
-            "job_title": "Engineer",
-            "company_name": "Test Co",
-            "job_description": "Test description",
-            "matched_technologies": [],
-        }
+        job_context = {"job_title": "Engineer", "company_name": "Test Co", "job_description": "Test description", "matched_technologies": []}
 
         with pytest.raises(Exception):
             await agent._customize_cv_with_claude(cv_content, job_context)
@@ -307,40 +285,16 @@ class TestDatabaseUpdates:
 
         mock_claude = AsyncMock()
         mock_response = Mock()
-        mock_response.content = [
-            Mock(
-                text=json.dumps(
-                    {
-                        "section_order": ["Summary"],
-                        "emphasis_skills": ["Python"],
-                        "keywords_to_add": ["Data"],
-                        "professional_summary": "Summary",
-                        "customization_notes": "Test",
-                    }
-                )
-            )
-        ]
+        mock_response.content = [Mock(text=json.dumps({"section_order": ["Summary"], "emphasis_skills": ["Python"], "keywords_to_add": ["Data"], "professional_summary": "Summary", "customization_notes": "Test"}))]
         mock_claude.messages.create = AsyncMock(return_value=mock_response)
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={
-                "id": "job-123",
-                "title": "Engineer",
-                "company_name": "Acme",
-                "description": "Test job",
-            }
-        )
-        mock_app_repo.get_stage_outputs = AsyncMock(
-            return_value={"job_matcher": {"must_have_found": ["Python"]}}
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-123", "title": "Engineer", "company_name": "Acme", "description": "Test job"})
+        mock_app_repo.get_stage_outputs = AsyncMock(return_value={"job_matcher": {"must_have_found": ["Python"]}})
 
         config = {"model": "claude-sonnet-4"}
 
-        with (
-            patch("pathlib.Path.exists", return_value=True),
-            patch("pathlib.Path.stat", return_value=Mock(st_size=1024)),
-        ):
+        with patch("pathlib.Path.exists", return_value=True), patch("pathlib.Path.stat", return_value=Mock(st_size=1024)):
             agent = CVTailorAgent(config, mock_claude, mock_app_repo)
             await agent.process("job-123")
 
@@ -348,9 +302,7 @@ class TestDatabaseUpdates:
             mock_app_repo.update_current_stage.assert_called_once_with("job-123", "cv_tailor")
 
             # Verify CV file path was updated
-            assert (
-                mock_app_repo.update_cv_file_path.called or mock_app_repo.add_completed_stage.called
-            )
+            assert mock_app_repo.update_cv_file_path.called or mock_app_repo.add_completed_stage.called
 
 
 @pytest.mark.asyncio
@@ -368,40 +320,16 @@ class TestProcessMethod:
 
         mock_claude = AsyncMock()
         mock_response = Mock()
-        mock_response.content = [
-            Mock(
-                text=json.dumps(
-                    {
-                        "section_order": ["Summary"],
-                        "emphasis_skills": ["Python"],
-                        "keywords_to_add": ["Data"],
-                        "professional_summary": "Summary",
-                        "customization_notes": "Test",
-                    }
-                )
-            )
-        ]
+        mock_response.content = [Mock(text=json.dumps({"section_order": ["Summary"], "emphasis_skills": ["Python"], "keywords_to_add": ["Data"], "professional_summary": "Summary", "customization_notes": "Test"}))]
         mock_claude.messages.create = AsyncMock(return_value=mock_response)
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={
-                "id": "job-123",
-                "title": "Engineer",
-                "company_name": "Acme",
-                "description": "Test",
-            }
-        )
-        mock_app_repo.get_stage_outputs = AsyncMock(
-            return_value={"job_matcher": {"must_have_found": ["Python"]}}
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-123", "title": "Engineer", "company_name": "Acme", "description": "Test"})
+        mock_app_repo.get_stage_outputs = AsyncMock(return_value={"job_matcher": {"must_have_found": ["Python"]}})
 
         config = {"model": "claude-sonnet-4"}
 
-        with (
-            patch("pathlib.Path.exists", return_value=True),
-            patch("pathlib.Path.stat", return_value=Mock(st_size=1024)),
-        ):
+        with patch("pathlib.Path.exists", return_value=True), patch("pathlib.Path.stat", return_value=Mock(st_size=1024)):
             agent = CVTailorAgent(config, mock_claude, mock_app_repo)
             result = await agent.process("job-123")
 
@@ -444,14 +372,7 @@ class TestErrorHandling:
         mock_document.side_effect = FileNotFoundError("Template not found")
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={
-                "id": "job-123",
-                "title": "Engineer",
-                "company_name": "Acme",
-                "description": "Test",
-            }
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-123", "title": "Engineer", "company_name": "Acme", "description": "Test"})
 
         config = {"model": "claude-sonnet-4"}
         agent = CVTailorAgent(config, Mock(), mock_app_repo)
@@ -459,7 +380,4 @@ class TestErrorHandling:
         result = await agent.process("job-123")
 
         assert result.success is False
-        assert (
-            "template" in result.error_message.lower()
-            or "not found" in result.error_message.lower()
-        )
+        assert "template" in result.error_message.lower() or "not found" in result.error_message.lower()

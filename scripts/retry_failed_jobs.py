@@ -24,16 +24,8 @@ from app.repositories.jobs_repository import JobsRepository
 def main():
     """Retry failed jobs."""
     parser = argparse.ArgumentParser(description="Retry failed jobs")
-    parser.add_argument(
-        "--all",
-        action="store_true",
-        help="Retry all failed jobs",
-    )
-    parser.add_argument(
-        "--job-id",
-        type=str,
-        help="Retry specific job by UUID",
-    )
+    parser.add_argument("--all", action="store_true", help="Retry all failed jobs")
+    parser.add_argument("--job-id", type=str, help="Retry specific job by UUID")
 
     args = parser.parse_args()
 
@@ -49,11 +41,7 @@ def main():
     app_repo = ApplicationRepository(db_conn)
 
     # Create JobQueue
-    job_queue = JobQueue(
-        redis_connection=redis,
-        jobs_repository=jobs_repo,
-        application_repository=app_repo,
-    )
+    job_queue = JobQueue(redis_connection=redis, jobs_repository=jobs_repo, application_repository=app_repo)
 
     if args.all:
         # Retry all failed jobs

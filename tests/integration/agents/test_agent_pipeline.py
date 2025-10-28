@@ -17,13 +17,7 @@ class MockJobMatcherAgent(BaseAgent):
         return "job_matcher"
 
     async def process(self, job_id: str) -> AgentResult:
-        return AgentResult(
-            success=True,
-            agent_name=self.agent_name,
-            output={"match_score": 0.85, "matched": True},
-            error_message=None,
-            execution_time_ms=100,
-        )
+        return AgentResult(success=True, agent_name=self.agent_name, output={"match_score": 0.85, "matched": True}, error_message=None, execution_time_ms=100)
 
 
 class MockSalaryValidatorAgent(BaseAgent):
@@ -34,13 +28,7 @@ class MockSalaryValidatorAgent(BaseAgent):
         return "salary_validator"
 
     async def process(self, job_id: str) -> AgentResult:
-        return AgentResult(
-            success=True,
-            agent_name=self.agent_name,
-            output={"salary_valid": True, "salary_aud": 850},
-            error_message=None,
-            execution_time_ms=50,
-        )
+        return AgentResult(success=True, agent_name=self.agent_name, output={"salary_valid": True, "salary_aud": 850}, error_message=None, execution_time_ms=50)
 
 
 class TestAgentPipelineIntegration:
@@ -65,9 +53,7 @@ class TestAgentPipelineIntegration:
 
         # Create agent instances with mock dependencies
         job_matcher = MockJobMatcherAgent(config={}, claude_client=None, app_repository=None)
-        salary_validator = MockSalaryValidatorAgent(
-            config={}, claude_client=None, app_repository=None
-        )
+        salary_validator = MockSalaryValidatorAgent(config={}, claude_client=None, app_repository=None)
 
         # Execute agents in sequence
         job_id = "test-job-123"
@@ -100,13 +86,7 @@ class TestAgentPipelineIntegration:
                 return "failing_agent"
 
             async def process(self, job_id: str) -> AgentResult:
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message="Intentional failure for testing",
-                    execution_time_ms=10,
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message="Intentional failure for testing", execution_time_ms=10)
 
         failing_agent = FailingAgent(config={}, claude_client=None, app_repository=None)
 

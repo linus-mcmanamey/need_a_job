@@ -22,23 +22,9 @@ from app.queue.redis_client import check_redis_health, get_redis_connection
 def main():
     """Start RQ worker."""
     parser = argparse.ArgumentParser(description="Start RQ worker for job processing")
-    parser.add_argument(
-        "--name",
-        type=str,
-        default=None,
-        help="Worker name (default: auto-generated)",
-    )
-    parser.add_argument(
-        "--burst",
-        action="store_true",
-        help="Exit after processing all jobs (for testing)",
-    )
-    parser.add_argument(
-        "--queue",
-        type=str,
-        default="job_processing_queue",
-        help="Queue name to process (default: job_processing_queue)",
-    )
+    parser.add_argument("--name", type=str, default=None, help="Worker name (default: auto-generated)")
+    parser.add_argument("--burst", action="store_true", help="Exit after processing all jobs (for testing)")
+    parser.add_argument("--queue", type=str, default="job_processing_queue", help="Queue name to process (default: job_processing_queue)")
 
     args = parser.parse_args()
 
@@ -54,11 +40,7 @@ def main():
     redis = get_redis_connection()
 
     # Create worker
-    worker = Worker(
-        queues=[args.queue],
-        connection=redis,
-        name=args.name,
-    )
+    worker = Worker(queues=[args.queue], connection=redis, name=args.name)
 
     logger.info(f"Starting worker: {worker.name}")
     logger.info(f"Listening to queue: {args.queue}")

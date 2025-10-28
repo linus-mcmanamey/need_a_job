@@ -58,20 +58,8 @@ class TestRateLimiter:
 def mock_config():
     """Create mock configuration."""
     return {
-        "linkedin": {
-            "polling_interval_minutes": 60,
-            "rate_limit_requests_per_minute": 10,
-            "timeout_seconds": 30,
-            "search_filters": {"location": "Australia", "job_type": "Contract", "remote": True},
-        },
-        "search": {
-            "keywords": {
-                "primary": ["Data Engineer", "Senior Data Engineer"],
-                "secondary": ["Analytics Engineer"],
-            },
-            "locations": {"primary": "Remote (Australia-wide)"},
-            "job_type": "contract",
-        },
+        "linkedin": {"polling_interval_minutes": 60, "rate_limit_requests_per_minute": 10, "timeout_seconds": 30, "search_filters": {"location": "Australia", "job_type": "Contract", "remote": True}},
+        "search": {"keywords": {"primary": ["Data Engineer", "Senior Data Engineer"], "secondary": ["Analytics Engineer"]}, "locations": {"primary": "Remote (Australia-wide)"}, "job_type": "contract"},
     }
 
 
@@ -102,12 +90,7 @@ def mock_mcp_client():
 @pytest.fixture
 def linkedin_poller(mock_config, mock_jobs_repo, mock_app_repo, mock_mcp_client):
     """Create LinkedInPoller instance with mocked dependencies."""
-    return LinkedInPoller(
-        config=mock_config,
-        jobs_repository=mock_jobs_repo,
-        application_repository=mock_app_repo,
-        mcp_client=mock_mcp_client,
-    )
+    return LinkedInPoller(config=mock_config, jobs_repository=mock_jobs_repo, application_repository=mock_app_repo, mcp_client=mock_mcp_client)
 
 
 @pytest.fixture
@@ -130,28 +113,16 @@ def sample_linkedin_job():
 class TestLinkedInPollerInit:
     """Test LinkedInPoller initialization."""
 
-    def test_init_with_valid_config(
-        self, mock_config, mock_jobs_repo, mock_app_repo, mock_mcp_client
-    ):
+    def test_init_with_valid_config(self, mock_config, mock_jobs_repo, mock_app_repo, mock_mcp_client):
         """Test initialization with valid configuration."""
-        poller = LinkedInPoller(
-            config=mock_config,
-            jobs_repository=mock_jobs_repo,
-            application_repository=mock_app_repo,
-            mcp_client=mock_mcp_client,
-        )
+        poller = LinkedInPoller(config=mock_config, jobs_repository=mock_jobs_repo, application_repository=mock_app_repo, mcp_client=mock_mcp_client)
 
         assert poller.config == mock_config
         assert poller.jobs_repo == mock_jobs_repo
         assert poller.app_repo == mock_app_repo
         assert poller.mcp_client == mock_mcp_client
         assert isinstance(poller.rate_limiter, RateLimiter)
-        assert poller.metrics == {
-            "jobs_found": 0,
-            "jobs_inserted": 0,
-            "duplicates_skipped": 0,
-            "errors": 0,
-        }
+        assert poller.metrics == {"jobs_found": 0, "jobs_inserted": 0, "duplicates_skipped": 0, "errors": 0}
 
 
 class TestLinkedInPollerJobExtraction:
@@ -175,13 +146,7 @@ class TestLinkedInPollerJobExtraction:
     def test_extract_job_metadata_parses_salary(self, linkedin_poller):
         """Test salary parsing from various formats."""
         # Test daily rate range
-        job_data = {
-            "title": "Engineer",
-            "company": "Test Co",
-            "job_url": "https://test.com/job",
-            "salary": "$1000-$1200/day",
-            "posted_date": "2025-01-15",
-        }
+        job_data = {"title": "Engineer", "company": "Test Co", "job_url": "https://test.com/job", "salary": "$1000-$1200/day", "posted_date": "2025-01-15"}
         job = linkedin_poller.extract_job_metadata(job_data)
         assert job.salary_aud_per_day == Decimal("1100.00")  # Average
 
@@ -197,12 +162,7 @@ class TestLinkedInPollerJobExtraction:
 
     def test_extract_job_metadata_with_missing_optional_fields(self, linkedin_poller):
         """Test extraction with only required fields."""
-        minimal_job = {
-            "title": "Data Engineer",
-            "company": "Test Company",
-            "job_url": "https://linkedin.com/jobs/view/999",
-            "posted_date": "2025-01-15",
-        }
+        minimal_job = {"title": "Data Engineer", "company": "Test Company", "job_url": "https://linkedin.com/jobs/view/999", "posted_date": "2025-01-15"}
 
         job = linkedin_poller.extract_job_metadata(minimal_job)
 
@@ -215,12 +175,7 @@ class TestLinkedInPollerJobExtraction:
 
     def test_extract_job_metadata_handles_invalid_date(self, linkedin_poller):
         """Test handling of invalid posted_date."""
-        job_data = {
-            "title": "Engineer",
-            "company": "Test Co",
-            "job_url": "https://test.com/job",
-            "posted_date": "invalid-date",
-        }
+        job_data = {"title": "Engineer", "company": "Test Co", "job_url": "https://test.com/job", "posted_date": "invalid-date"}
 
         job = linkedin_poller.extract_job_metadata(job_data)
         assert job.posted_date is None
@@ -231,18 +186,11 @@ class TestLinkedInPollerDuplicateDetection:
 
     def test_is_duplicate_returns_true_for_existing_url(self, linkedin_poller, mock_jobs_repo):
         """Test that is_duplicate returns True when job URL exists."""
-        existing_job = Job(
-            company_name="Test",
-            job_title="Engineer",
-            job_url="https://linkedin.com/jobs/view/12345",
-            platform_source="linkedin",
-        )
+        existing_job = Job(company_name="Test", job_title="Engineer", job_url="https://linkedin.com/jobs/view/12345", platform_source="linkedin")
         mock_jobs_repo.get_job_by_url.return_value = existing_job
 
         assert linkedin_poller.is_duplicate("https://linkedin.com/jobs/view/12345") is True
-        mock_jobs_repo.get_job_by_url.assert_called_once_with(
-            "https://linkedin.com/jobs/view/12345"
-        )
+        mock_jobs_repo.get_job_by_url.assert_called_once_with("https://linkedin.com/jobs/view/12345")
 
     def test_is_duplicate_returns_false_for_new_url(self, linkedin_poller, mock_jobs_repo):
         """Test that is_duplicate returns False for new job URL."""
@@ -261,16 +209,9 @@ class TestLinkedInPollerDuplicateDetection:
 class TestLinkedInPollerStoreJob:
     """Test job storage operations."""
 
-    def test_store_job_inserts_job_and_creates_application(
-        self, linkedin_poller, mock_jobs_repo, mock_app_repo
-    ):
+    def test_store_job_inserts_job_and_creates_application(self, linkedin_poller, mock_jobs_repo, mock_app_repo):
         """Test that store_job inserts job and creates application record."""
-        job = Job(
-            company_name="Test Company",
-            job_title="Data Engineer",
-            job_url="https://linkedin.com/jobs/view/123",
-            platform_source="linkedin",
-        )
+        job = Job(company_name="Test Company", job_title="Data Engineer", job_url="https://linkedin.com/jobs/view/123", platform_source="linkedin")
 
         job_id = linkedin_poller.store_job(job)
 
@@ -285,16 +226,9 @@ class TestLinkedInPollerStoreJob:
         assert app_call_args.job_id == "test-job-id"
         assert app_call_args.status == "discovered"
 
-    def test_store_job_handles_duplicate_constraint_error(
-        self, linkedin_poller, mock_jobs_repo, mock_app_repo
-    ):
+    def test_store_job_handles_duplicate_constraint_error(self, linkedin_poller, mock_jobs_repo, mock_app_repo):
         """Test handling of duplicate constraint violations."""
-        job = Job(
-            company_name="Test",
-            job_title="Engineer",
-            job_url="https://test.com/job",
-            platform_source="linkedin",
-        )
+        job = Job(company_name="Test", job_title="Engineer", job_url="https://test.com/job", platform_source="linkedin")
 
         mock_jobs_repo.insert_job.side_effect = Exception("Constraint violation: job_url")
 
@@ -304,16 +238,9 @@ class TestLinkedInPollerStoreJob:
         assert job_id is None
         mock_app_repo.insert_application.assert_not_called()
 
-    def test_store_job_handles_application_creation_error(
-        self, linkedin_poller, mock_jobs_repo, mock_app_repo
-    ):
+    def test_store_job_handles_application_creation_error(self, linkedin_poller, mock_jobs_repo, mock_app_repo):
         """Test handling of application creation errors."""
-        job = Job(
-            company_name="Test",
-            job_title="Engineer",
-            job_url="https://test.com/job",
-            platform_source="linkedin",
-        )
+        job = Job(company_name="Test", job_title="Engineer", job_url="https://test.com/job", platform_source="linkedin")
 
         mock_app_repo.insert_application.side_effect = Exception("Database error")
 
@@ -325,15 +252,11 @@ class TestLinkedInPollerStoreJob:
 class TestLinkedInPollerSearchJobs:
     """Test LinkedIn job search via MCP server."""
 
-    def test_search_jobs_calls_mcp_with_correct_params(
-        self, linkedin_poller, mock_mcp_client, sample_linkedin_job
-    ):
+    def test_search_jobs_calls_mcp_with_correct_params(self, linkedin_poller, mock_mcp_client, sample_linkedin_job):
         """Test that search_jobs calls MCP server with correct parameters."""
         mock_mcp_client.call_tool.return_value = {"jobs": [sample_linkedin_job], "total_results": 1}
 
-        results = linkedin_poller.search_jobs(
-            keywords=["Data Engineer"], location="Australia", job_type="contract"
-        )
+        results = linkedin_poller.search_jobs(keywords=["Data Engineer"], location="Australia", job_type="contract")
 
         # Verify MCP call
         mock_mcp_client.call_tool.assert_called_once()
@@ -377,9 +300,7 @@ class TestLinkedInPollerSearchJobs:
 class TestLinkedInPollerRunOnce:
     """Test single poll cycle execution."""
 
-    def test_run_once_processes_jobs_successfully(
-        self, linkedin_poller, mock_mcp_client, mock_jobs_repo, mock_app_repo, sample_linkedin_job
-    ):
+    def test_run_once_processes_jobs_successfully(self, linkedin_poller, mock_mcp_client, mock_jobs_repo, mock_app_repo, sample_linkedin_job):
         """Test successful execution of one poll cycle."""
         mock_mcp_client.call_tool.return_value = {"jobs": [sample_linkedin_job], "total_results": 1}
         mock_jobs_repo.get_job_by_url.return_value = None  # No duplicates
@@ -399,19 +320,12 @@ class TestLinkedInPollerRunOnce:
         assert metrics["duplicates_skipped"] == 0
         assert metrics["errors"] == 0
 
-    def test_run_once_skips_duplicates(
-        self, linkedin_poller, mock_mcp_client, mock_jobs_repo, sample_linkedin_job
-    ):
+    def test_run_once_skips_duplicates(self, linkedin_poller, mock_mcp_client, mock_jobs_repo, sample_linkedin_job):
         """Test that run_once skips duplicate jobs."""
         mock_mcp_client.call_tool.return_value = {"jobs": [sample_linkedin_job], "total_results": 1}
 
         # Mock job as existing (duplicate)
-        existing_job = Job(
-            company_name="Test",
-            job_title="Engineer",
-            job_url=sample_linkedin_job["job_url"],
-            platform_source="linkedin",
-        )
+        existing_job = Job(company_name="Test", job_title="Engineer", job_url=sample_linkedin_job["job_url"], platform_source="linkedin")
         mock_jobs_repo.get_job_by_url.return_value = existing_job
 
         metrics = linkedin_poller.run_once()
@@ -424,19 +338,9 @@ class TestLinkedInPollerRunOnce:
         assert metrics["jobs_inserted"] == 0
         assert metrics["duplicates_skipped"] == 1
 
-    def test_run_once_processes_multiple_jobs(
-        self, linkedin_poller, mock_mcp_client, mock_jobs_repo, mock_app_repo
-    ):
+    def test_run_once_processes_multiple_jobs(self, linkedin_poller, mock_mcp_client, mock_jobs_repo, mock_app_repo):
         """Test processing multiple jobs in one cycle."""
-        jobs = [
-            {
-                "title": f"Engineer {i}",
-                "company": f"Company {i}",
-                "job_url": f"https://linkedin.com/jobs/view/{i}",
-                "posted_date": "2025-01-15",
-            }
-            for i in range(5)
-        ]
+        jobs = [{"title": f"Engineer {i}", "company": f"Company {i}", "job_url": f"https://linkedin.com/jobs/view/{i}", "posted_date": "2025-01-15"} for i in range(5)]
 
         mock_mcp_client.call_tool.return_value = {"jobs": jobs, "total_results": 5}
         mock_jobs_repo.get_job_by_url.return_value = None
@@ -447,24 +351,9 @@ class TestLinkedInPollerRunOnce:
         assert metrics["jobs_inserted"] == 5
         assert mock_jobs_repo.insert_job.call_count == 5
 
-    def test_run_once_continues_after_individual_job_error(
-        self, linkedin_poller, mock_mcp_client, mock_jobs_repo, mock_app_repo
-    ):
+    def test_run_once_continues_after_individual_job_error(self, linkedin_poller, mock_mcp_client, mock_jobs_repo, mock_app_repo):
         """Test that run_once continues processing after individual job errors."""
-        jobs = [
-            {
-                "title": "Job 1",
-                "company": "Co 1",
-                "job_url": "https://test.com/1",
-                "posted_date": "2025-01-15",
-            },
-            {
-                "title": "Job 2",
-                "company": "Co 2",
-                "job_url": "https://test.com/2",
-                "posted_date": "2025-01-15",
-            },
-        ]
+        jobs = [{"title": "Job 1", "company": "Co 1", "job_url": "https://test.com/1", "posted_date": "2025-01-15"}, {"title": "Job 2", "company": "Co 2", "job_url": "https://test.com/2", "posted_date": "2025-01-15"}]
 
         mock_mcp_client.call_tool.return_value = {"jobs": jobs, "total_results": 2}
 
@@ -486,16 +375,10 @@ class TestLinkedInPollerRetryLogic:
     """Test retry logic with exponential backoff."""
 
     @patch("time.sleep")
-    def test_search_retries_on_connection_error(
-        self, mock_sleep, linkedin_poller, mock_mcp_client, sample_linkedin_job
-    ):
+    def test_search_retries_on_connection_error(self, mock_sleep, linkedin_poller, mock_mcp_client, sample_linkedin_job):
         """Test that search retries on connection errors."""
         # Fail twice, then succeed
-        mock_mcp_client.call_tool.side_effect = [
-            ConnectionError("Connection failed"),
-            ConnectionError("Connection failed"),
-            {"jobs": [sample_linkedin_job], "total_results": 1},
-        ]
+        mock_mcp_client.call_tool.side_effect = [ConnectionError("Connection failed"), ConnectionError("Connection failed"), {"jobs": [sample_linkedin_job], "total_results": 1}]
 
         results = linkedin_poller.search_jobs_with_retry(keywords=["Data Engineer"])
 

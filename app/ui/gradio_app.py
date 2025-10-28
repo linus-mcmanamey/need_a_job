@@ -29,20 +29,10 @@ def create_dashboard_tab() -> gr.Blocks:
             gr.Number(label="Success Rate (%)", value=0.0, interactive=False)
 
         gr.Markdown("### Status Breakdown")
-        gr.BarPlot(
-            value={"status": ["discovered", "matched", "completed"], "count": [0, 0, 0]},
-            x="status",
-            y="count",
-            title="Jobs by Status",
-            height=300,
-        )
+        gr.BarPlot(value={"status": ["discovered", "matched", "completed"], "count": [0, 0, 0]}, x="status", y="count", title="Jobs by Status", height=300)
 
         gr.Markdown("### Recent Activity")
-        gr.Dataframe(
-            value=[],
-            headers=["Time", "Job Title", "Company", "Status"],
-            label="Last 10 Jobs",
-        )
+        gr.Dataframe(value=[], headers=["Time", "Job Title", "Company", "Status"], label="Last 10 Jobs")
 
     return dashboard
 
@@ -58,26 +48,11 @@ def create_pipeline_tab() -> gr.Blocks:
         gr.Markdown("# 🔄 Job Pipeline")
         gr.Markdown("Watch jobs flow through the agent pipeline in real-time")
 
-        gr.Dataframe(
-            value=[],
-            headers=["Job ID", "Title", "Company", "Current Stage", "Status", "Time in Stage"],
-            label="Active Jobs in Pipeline",
-        )
+        gr.Dataframe(value=[], headers=["Job ID", "Title", "Company", "Current Stage", "Status", "Time in Stage"], label="Active Jobs in Pipeline")
 
         gr.Markdown("### Agent Performance")
         gr.BarPlot(
-            value={
-                "agent": [
-                    "Job Matcher",
-                    "Salary Validator",
-                    "CV Tailor",
-                    "CL Writer",
-                    "QA",
-                    "Orchestrator",
-                    "Form Handler",
-                ],
-                "avg_time_sec": [0, 0, 0, 0, 0, 0, 0],
-            },
+            value={"agent": ["Job Matcher", "Salary Validator", "CV Tailor", "CL Writer", "QA", "Orchestrator", "Form Handler"], "avg_time_sec": [0, 0, 0, 0, 0, 0, 0]},
             x="agent",
             y="avg_time_sec",
             title="Average Execution Time per Agent",
@@ -98,11 +73,7 @@ def create_pending_tab() -> gr.Blocks:
         gr.Markdown("# ⏸️ Pending Jobs")
         gr.Markdown("Manage jobs requiring manual intervention")
 
-        gr.Dataframe(
-            value=[],
-            headers=["Job ID", "Title", "Company", "Error Type", "Error Message", "Actions"],
-            label="Pending Jobs",
-        )
+        gr.Dataframe(value=[], headers=["Job ID", "Title", "Company", "Error Type", "Error Message", "Actions"], label="Pending Jobs")
 
         with gr.Row():
             gr.Button("Retry Selected", variant="primary")
@@ -110,13 +81,7 @@ def create_pending_tab() -> gr.Blocks:
             gr.Button("Mark as Manual Complete")
 
         gr.Markdown("### Error Summary")
-        gr.BarPlot(
-            value={"error_type": [], "count": []},
-            x="error_type",
-            y="count",
-            title="Errors by Type",
-            height=250,
-        )
+        gr.BarPlot(value={"error_type": [], "count": []}, x="error_type", y="count", title="Errors by Type", height=250)
 
     return pending
 
@@ -143,20 +108,8 @@ def create_settings_tab() -> gr.Blocks:
 
         gr.Markdown("### Matching Thresholds")
         with gr.Row():
-            gr.Slider(
-                minimum=0.0,
-                maximum=1.0,
-                value=0.70,
-                step=0.05,
-                label="Job match threshold",
-            )
-            gr.Slider(
-                minimum=0.0,
-                maximum=1.0,
-                value=0.90,
-                step=0.05,
-                label="Duplicate detection threshold",
-            )
+            gr.Slider(minimum=0.0, maximum=1.0, value=0.70, step=0.05, label="Job match threshold")
+            gr.Slider(minimum=0.0, maximum=1.0, value=0.90, step=0.05, label="Duplicate detection threshold")
 
         gr.Button("Save Settings", variant="primary")
         gr.Textbox(label="Status", value="", interactive=False)
@@ -171,10 +124,7 @@ def create_ui() -> gr.Blocks:
     Returns:
         Gradio Blocks interface
     """
-    with gr.Blocks(
-        title="Job Application Automation System",
-        theme=gr.themes.Soft(),
-    ) as app:
+    with gr.Blocks(title="Job Application Automation System", theme=gr.themes.Soft()) as app:
         gr.Markdown(
             """
             # 🤖 Job Application Automation System
@@ -219,12 +169,7 @@ def start(server_name: str = "0.0.0.0", server_port: int = 7860, share: bool = F
     try:
         logger.info(f"Starting Gradio UI on {server_name}:{server_port}")
         app = create_ui()
-        app.launch(
-            server_name=server_name,
-            server_port=server_port,
-            share=share,
-            show_api=False,
-        )
+        app.launch(server_name=server_name, server_port=server_port, share=share, show_api=False)
     except Exception as e:
         logger.error(f"Failed to start Gradio UI: {e}")
         raise
@@ -237,12 +182,7 @@ if __name__ == "__main__":
     load_dotenv()
 
     # Configure logging
-    logger.add(
-        "logs/gradio_app.log",
-        rotation="1 day",
-        retention="30 days",
-        level="INFO",
-    )
+    logger.add("logs/gradio_app.log", rotation="1 day", retention="30 days", level="INFO")
 
     # Start the UI
     port = int(os.getenv("GRADIO_PORT", "7860"))

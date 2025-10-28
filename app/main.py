@@ -16,13 +16,7 @@ from loguru import logger
 
 # Configure logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
-logger.add(
-    "logs/app.log",
-    rotation="1 day",
-    retention="30 days",
-    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {message}",
-    level=log_level,
-)
+logger.add("logs/app.log", rotation="1 day", retention="30 days", format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {message}", level=log_level)
 
 
 @asynccontextmanager
@@ -69,13 +63,7 @@ app = FastAPI(
 
 # Configure CORS middleware for Gradio integration
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:7860,http://localhost:8000")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=allowed_origins.split(","),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.add_middleware(CORSMiddleware, allow_origins=allowed_origins.split(","), allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 
 @app.get("/health", tags=["System"])
@@ -97,13 +85,7 @@ async def health_check() -> JSONResponse:
         db_status = "error"
         table_count = 0
 
-    health_data = {
-        "status": "healthy",
-        "service": "job-automation-api",
-        "version": "1.0.0-mvp",
-        "environment": os.getenv("APP_ENV", "development"),
-        "database": {"status": db_status, "tables": table_count},
-    }
+    health_data = {"status": "healthy", "service": "job-automation-api", "version": "1.0.0-mvp", "environment": os.getenv("APP_ENV", "development"), "database": {"status": db_status, "tables": table_count}}
 
     logger.debug(f"Health check: {health_data}")
     return JSONResponse(content=health_data, status_code=200)
@@ -117,14 +99,7 @@ async def root() -> dict:
     Returns:
         Welcome message and links
     """
-    return {
-        "message": "Job Application Automation System API",
-        "version": "1.0.0-mvp",
-        "docs": "/api/docs",
-        "health": "/health",
-        "config": "/api/config",
-        "gradio_ui": "http://localhost:7860",
-    }
+    return {"message": "Job Application Automation System API", "version": "1.0.0-mvp", "docs": "/api/docs", "health": "/health", "config": "/api/config", "gradio_ui": "http://localhost:7860"}
 
 
 @app.get("/api/config", tags=["Configuration"])
@@ -140,23 +115,11 @@ async def get_configuration() -> dict:
 
     config = get_config()
 
-    return {
-        "search": {
-            "job_type": config.search.get("job_type"),
-            "duration": config.search.get("duration"),
-        },
-        "agents": list(config.agents.keys()),
-        "platforms": list(config.platforms.keys()),
-        "database": get_database_info(),
-    }
+    return {"search": {"job_type": config.search.get("job_type"), "duration": config.search.get("duration")}, "agents": list(config.agents.keys()), "platforms": list(config.platforms.keys()), "database": get_database_info()}
 
 
 @app.get("/api/jobs", tags=["Jobs"])
-async def list_jobs(
-    platform: str | None = None,
-    limit: int = 20,
-    offset: int = 0,
-) -> dict:
+async def list_jobs(platform: str | None = None, limit: int = 20, offset: int = 0) -> dict:
     """
     List jobs with optional filtering.
 
@@ -181,15 +144,7 @@ async def list_jobs(
     jobs = repo.list_jobs(filters=filters, limit=limit, offset=offset)
     total = repo.count_jobs(filters=filters)
 
-    return {
-        "jobs": [job.to_dict() for job in jobs],
-        "pagination": {
-            "limit": limit,
-            "offset": offset,
-            "total": total,
-            "has_more": (offset + len(jobs)) < total,
-        },
-    }
+    return {"jobs": [job.to_dict() for job in jobs], "pagination": {"limit": limit, "offset": offset, "total": total, "has_more": (offset + len(jobs)) < total}}
 
 
 @app.get("/api/jobs/{job_id}", tags=["Jobs"])
@@ -217,11 +172,7 @@ async def get_job(job_id: str) -> dict:
 
 
 @app.get("/api/applications", tags=["Applications"])
-async def list_applications(
-    status: str | None = None,
-    limit: int = 20,
-    offset: int = 0,
-) -> dict:
+async def list_applications(status: str | None = None, limit: int = 20, offset: int = 0) -> dict:
     """
     List applications with optional filtering.
 
@@ -246,15 +197,7 @@ async def list_applications(
     applications = repo.list_applications(filters=filters, limit=limit, offset=offset)
     total = repo.count_applications(filters=filters)
 
-    return {
-        "applications": [app.to_dict() for app in applications],
-        "pagination": {
-            "limit": limit,
-            "offset": offset,
-            "total": total,
-            "has_more": (offset + len(applications)) < total,
-        },
-    }
+    return {"applications": [app.to_dict() for app in applications], "pagination": {"limit": limit, "offset": offset, "total": total, "has_more": (offset + len(applications)) < total}}
 
 
 @app.get("/api/applications/{application_id}", tags=["Applications"])
@@ -304,13 +247,7 @@ def start() -> None:
 
     logger.info(f"Starting FastAPI server on {host}:{port}")
 
-    uvicorn.run(
-        "app.main:app",
-        host=host,
-        port=port,
-        reload=reload,
-        log_level=log_level.lower(),
-    )
+    uvicorn.run("app.main:app", host=host, port=port, reload=reload, log_level=log_level.lower())
 
 
 if __name__ == "__main__":

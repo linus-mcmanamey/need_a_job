@@ -36,19 +36,7 @@ class Application:
     """
 
     job_id: str
-    status: Literal[
-        "discovered",
-        "queued",
-        "matched",
-        "documents_generated",
-        "ready_to_send",
-        "sending",
-        "completed",
-        "pending",
-        "failed",
-        "rejected",
-        "duplicate",
-    ] = "discovered"
+    status: Literal["discovered", "queued", "matched", "documents_generated", "ready_to_send", "sending", "completed", "pending", "failed", "rejected", "duplicate"] = "discovered"
     application_id: str = field(default_factory=lambda: str(uuid4()))
     current_stage: str | None = None
     completed_stages: list[str] = field(default_factory=list)
@@ -139,11 +127,6 @@ class Application:
             error_type: Type of error
             error_message: Error message
         """
-        self.error_info = {
-            "stage": stage,
-            "error_type": error_type,
-            "error_message": error_message,
-            "timestamp": datetime.now().isoformat(),
-        }
+        self.error_info = {"stage": stage, "error_type": error_type, "error_message": error_message, "timestamp": datetime.now().isoformat()}
         self.status = "failed"
         self.updated_at = datetime.now()

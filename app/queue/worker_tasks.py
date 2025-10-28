@@ -63,10 +63,7 @@ def process_job(job_id: str) -> dict[str, Any]:
 
     try:
         # Create JobProcessorService and process job
-        processor = JobProcessorService(
-            jobs_repository=jobs_repo,
-            application_repository=app_repo,
-        )
+        processor = JobProcessorService(jobs_repository=jobs_repo, application_repository=app_repo)
 
         result = processor.process_job(job_uuid)
 

@@ -11,12 +11,4 @@ from app.agents.job_matcher_agent import JobMatcherAgent
 from app.agents.registry import AgentRegistry
 from app.agents.salary_validator_agent import SalaryValidatorAgent
 
-__all__ = [
-    "AgentResult",
-    "BaseAgent",
-    "JobMatcherAgent",
-    "SalaryValidatorAgent",
-    "CVTailorAgent",
-    "CoverLetterWriterAgent",
-    "AgentRegistry",
-]
+__all__ = ["AgentResult", "BaseAgent", "JobMatcherAgent", "SalaryValidatorAgent", "CVTailorAgent", "CoverLetterWriterAgent", "AgentRegistry"]

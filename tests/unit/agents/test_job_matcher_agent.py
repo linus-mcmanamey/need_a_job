@@ -58,15 +58,8 @@ class TestConfigurationLoading:
     async def test_load_search_criteria(self, mock_yaml_load, mock_open):
         """Test loading search criteria from search.yaml."""
         mock_yaml_load.return_value = {
-            "technologies": {
-                "must_have": ["Python", "SQL", "Azure"],
-                "strong_preference": ["PySpark", "Databricks"],
-                "nice_to_have": ["Docker", "Kafka"],
-            },
-            "locations": {
-                "primary": "Remote (Australia-wide)",
-                "acceptable": "Hybrid with >70% remote",
-            },
+            "technologies": {"must_have": ["Python", "SQL", "Azure"], "strong_preference": ["PySpark", "Databricks"], "nice_to_have": ["Docker", "Kafka"]},
+            "locations": {"primary": "Remote (Australia-wide)", "acceptable": "Hybrid with >70% remote"},
         }
 
         config = {"model": "claude-sonnet-4", "match_threshold": 0.70}
@@ -81,16 +74,7 @@ class TestConfigurationLoading:
 
     async def test_load_agent_config(self):
         """Test loading agent configuration from agents.yaml."""
-        config = {
-            "model": "claude-sonnet-4",
-            "match_threshold": 0.70,
-            "scoring_weights": {
-                "must_have_present": 0.50,
-                "strong_preference_present": 0.30,
-                "nice_to_have_present": 0.10,
-                "location_match": 0.10,
-            },
-        }
+        config = {"model": "claude-sonnet-4", "match_threshold": 0.70, "scoring_weights": {"must_have_present": 0.50, "strong_preference_present": 0.30, "nice_to_have_present": 0.10, "location_match": 0.10}}
         agent = JobMatcherAgent(config, Mock(), Mock())
 
         scoring_weights = agent._scoring_weights
@@ -144,9 +128,7 @@ class TestScoreCalculation:
         config = {"model": "claude-sonnet-4"}
         agent = JobMatcherAgent(config, Mock(), Mock())
 
-        score = agent._calculate_location_score(
-            location_assessment="primary", primary_location="Remote", acceptable_location="Hybrid"
-        )
+        score = agent._calculate_location_score(location_assessment="primary", primary_location="Remote", acceptable_location="Hybrid")
 
         assert score == 1.0
 
@@ -155,11 +137,7 @@ class TestScoreCalculation:
         config = {"model": "claude-sonnet-4"}
         agent = JobMatcherAgent(config, Mock(), Mock())
 
-        score = agent._calculate_location_score(
-            location_assessment="acceptable",
-            primary_location="Remote",
-            acceptable_location="Hybrid",
-        )
+        score = agent._calculate_location_score(location_assessment="acceptable", primary_location="Remote", acceptable_location="Hybrid")
 
         assert score == 0.5
 
@@ -168,48 +146,26 @@ class TestScoreCalculation:
         config = {"model": "claude-sonnet-4"}
         agent = JobMatcherAgent(config, Mock(), Mock())
 
-        score = agent._calculate_location_score(
-            location_assessment="no_match", primary_location="Remote", acceptable_location="Hybrid"
-        )
+        score = agent._calculate_location_score(location_assessment="no_match", primary_location="Remote", acceptable_location="Hybrid")
 
         assert score == 0.0
 
     async def test_calculate_final_score_perfect_match(self):
         """Test final weighted score calculation for perfect match."""
-        config = {
-            "model": "claude-sonnet-4",
-            "scoring_weights": {
-                "must_have_present": 0.50,
-                "strong_preference_present": 0.30,
-                "nice_to_have_present": 0.10,
-                "location_match": 0.10,
-            },
-        }
+        config = {"model": "claude-sonnet-4", "scoring_weights": {"must_have_present": 0.50, "strong_preference_present": 0.30, "nice_to_have_present": 0.10, "location_match": 0.10}}
         agent = JobMatcherAgent(config, Mock(), Mock())
 
-        final_score = agent._calculate_final_score(
-            must_have_score=1.0, strong_pref_score=1.0, nice_to_have_score=1.0, location_score=1.0
-        )
+        final_score = agent._calculate_final_score(must_have_score=1.0, strong_pref_score=1.0, nice_to_have_score=1.0, location_score=1.0)
 
         assert final_score == 1.0
 
     async def test_calculate_final_score_partial_match(self):
         """Test final weighted score for partial match."""
-        config = {
-            "model": "claude-sonnet-4",
-            "scoring_weights": {
-                "must_have_present": 0.50,
-                "strong_preference_present": 0.30,
-                "nice_to_have_present": 0.10,
-                "location_match": 0.10,
-            },
-        }
+        config = {"model": "claude-sonnet-4", "scoring_weights": {"must_have_present": 0.50, "strong_preference_present": 0.30, "nice_to_have_present": 0.10, "location_match": 0.10}}
         agent = JobMatcherAgent(config, Mock(), Mock())
 
         # All must-have (0.5), no strong-pref (0), no nice-to-have (0), primary location (0.1)
-        final_score = agent._calculate_final_score(
-            must_have_score=1.0, strong_pref_score=0.0, nice_to_have_score=0.0, location_score=1.0
-        )
+        final_score = agent._calculate_final_score(must_have_score=1.0, strong_pref_score=0.0, nice_to_have_score=0.0, location_score=1.0)
 
         assert final_score == 0.60  # 0.5*1.0 + 0.3*0 + 0.1*0 + 0.1*1.0
 
@@ -262,19 +218,9 @@ class TestClaudeIntegration:
         config = {"model": "claude-sonnet-4"}
         agent = JobMatcherAgent(config, Mock(), Mock())
 
-        job_data = {
-            "title": "Senior Data Engineer",
-            "company_name": "Acme Corp",
-            "description": "We need a Python expert with SQL and Azure experience",
-            "location": "Remote Australia",
-        }
+        job_data = {"title": "Senior Data Engineer", "company_name": "Acme Corp", "description": "We need a Python expert with SQL and Azure experience", "location": "Remote Australia"}
 
-        criteria = {
-            "must_have": ["Python", "SQL", "Azure"],
-            "strong_preference": ["PySpark"],
-            "nice_to_have": ["Docker"],
-            "primary_location": "Remote (Australia-wide)",
-        }
+        criteria = {"must_have": ["Python", "SQL", "Azure"], "strong_preference": ["PySpark"], "nice_to_have": ["Docker"], "primary_location": "Remote (Australia-wide)"}
 
         prompt = agent._build_matching_prompt(job_data, criteria)
 
@@ -343,34 +289,12 @@ class TestProcessMethod:
         mock_claude.messages.create = AsyncMock(return_value=mock_response)
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={
-                "id": "job-123",
-                "title": "Senior Data Engineer",
-                "company_name": "Acme Corp",
-                "description": "Python, SQL, Azure, PySpark, Docker",
-                "location": "Remote Australia",
-            }
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-123", "title": "Senior Data Engineer", "company_name": "Acme Corp", "description": "Python, SQL, Azure, PySpark, Docker", "location": "Remote Australia"})
 
-        config = {
-            "model": "claude-sonnet-4",
-            "match_threshold": 0.70,
-            "scoring_weights": {
-                "must_have_present": 0.50,
-                "strong_preference_present": 0.30,
-                "nice_to_have_present": 0.10,
-                "location_match": 0.10,
-            },
-        }
+        config = {"model": "claude-sonnet-4", "match_threshold": 0.70, "scoring_weights": {"must_have_present": 0.50, "strong_preference_present": 0.30, "nice_to_have_present": 0.10, "location_match": 0.10}}
 
         with patch.object(JobMatcherAgent, "_load_search_criteria") as mock_load:
-            mock_load.return_value = {
-                "must_have": ["Python", "SQL", "Azure"],
-                "strong_preference": ["PySpark", "Databricks"],
-                "nice_to_have": ["Docker", "Kafka"],
-                "primary_location": "Remote (Australia-wide)",
-            }
+            mock_load.return_value = {"must_have": ["Python", "SQL", "Azure"], "strong_preference": ["PySpark", "Databricks"], "nice_to_have": ["Docker", "Kafka"], "primary_location": "Remote (Australia-wide)"}
 
             agent = JobMatcherAgent(config, mock_claude, mock_app_repo)
             result = await agent.process("job-123")
@@ -400,34 +324,12 @@ class TestProcessMethod:
         mock_claude.messages.create = AsyncMock(return_value=mock_response)
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={
-                "id": "job-456",
-                "title": "Junior Developer",
-                "company_name": "Small Co",
-                "description": "Python only",
-                "location": "Office-based",
-            }
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-456", "title": "Junior Developer", "company_name": "Small Co", "description": "Python only", "location": "Office-based"})
 
-        config = {
-            "model": "claude-sonnet-4",
-            "match_threshold": 0.70,
-            "scoring_weights": {
-                "must_have_present": 0.50,
-                "strong_preference_present": 0.30,
-                "nice_to_have_present": 0.10,
-                "location_match": 0.10,
-            },
-        }
+        config = {"model": "claude-sonnet-4", "match_threshold": 0.70, "scoring_weights": {"must_have_present": 0.50, "strong_preference_present": 0.30, "nice_to_have_present": 0.10, "location_match": 0.10}}
 
         with patch.object(JobMatcherAgent, "_load_search_criteria") as mock_load:
-            mock_load.return_value = {
-                "must_have": ["Python", "SQL", "Azure"],
-                "strong_preference": ["PySpark"],
-                "nice_to_have": ["Docker"],
-                "primary_location": "Remote",
-            }
+            mock_load.return_value = {"must_have": ["Python", "SQL", "Azure"], "strong_preference": ["PySpark"], "nice_to_have": ["Docker"], "primary_location": "Remote"}
 
             agent = JobMatcherAgent(config, mock_claude, mock_app_repo)
             result = await agent.process("job-456")
@@ -472,19 +374,12 @@ class TestErrorHandling:
         mock_claude.messages.create = AsyncMock(side_effect=Exception("API rate limit exceeded"))
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={"id": "job-789", "title": "Test Job", "description": "Test"}
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-789", "title": "Test Job", "description": "Test"})
 
         config = {"model": "claude-sonnet-4"}
 
         with patch.object(JobMatcherAgent, "_load_search_criteria") as mock_load:
-            mock_load.return_value = {
-                "must_have": ["Python"],
-                "strong_preference": [],
-                "nice_to_have": [],
-                "primary_location": "Remote",
-            }
+            mock_load.return_value = {"must_have": ["Python"], "strong_preference": [], "nice_to_have": [], "primary_location": "Remote"}
 
             agent = JobMatcherAgent(config, mock_claude, mock_app_repo)
             result = await agent.process("job-789")

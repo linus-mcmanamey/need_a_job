@@ -18,9 +18,7 @@ class TestProcessJob:
         with patch("app.queue.worker_tasks.get_redis_connection"):
             with patch("app.queue.worker_tasks.JobsRepository"):
                 with patch("app.queue.worker_tasks.ApplicationRepository"):
-                    with patch(
-                        "app.queue.worker_tasks.JobProcessorService"
-                    ) as mock_processor_class:
+                    with patch("app.queue.worker_tasks.JobProcessorService") as mock_processor_class:
                         mock_processor = Mock()
                         mock_processor.process_job.return_value = {"status": "success"}
                         mock_processor_class.return_value = mock_processor
@@ -48,9 +46,7 @@ class TestProcessJob:
                     mock_app_repo = Mock()
                     mock_app_repo_class.return_value = mock_app_repo
 
-                    with patch(
-                        "app.queue.worker_tasks.JobProcessorService"
-                    ) as mock_processor_class:
+                    with patch("app.queue.worker_tasks.JobProcessorService") as mock_processor_class:
                         mock_processor = Mock()
                         mock_processor.process_job.return_value = {"status": "success"}
                         mock_processor_class.return_value = mock_processor
@@ -70,9 +66,7 @@ class TestProcessJob:
                     mock_app_repo = Mock()
                     mock_app_repo_class.return_value = mock_app_repo
 
-                    with patch(
-                        "app.queue.worker_tasks.JobProcessorService"
-                    ) as mock_processor_class:
+                    with patch("app.queue.worker_tasks.JobProcessorService") as mock_processor_class:
                         mock_processor = Mock()
                         mock_processor.process_job.side_effect = Exception("Processing failed")
                         mock_processor_class.return_value = mock_processor
@@ -90,9 +84,7 @@ class TestProcessJob:
         with patch("app.queue.worker_tasks.get_redis_connection"):
             with patch("app.queue.worker_tasks.JobsRepository"):
                 with patch("app.queue.worker_tasks.ApplicationRepository"):
-                    with patch(
-                        "app.queue.worker_tasks.JobProcessorService"
-                    ) as mock_processor_class:
+                    with patch("app.queue.worker_tasks.JobProcessorService") as mock_processor_class:
                         mock_processor = Mock()
                         mock_processor.process_job.return_value = {"status": "success"}
                         mock_processor_class.return_value = mock_processor
@@ -112,15 +104,9 @@ class TestProcessJob:
         with patch("app.queue.worker_tasks.get_redis_connection"):
             with patch("app.queue.worker_tasks.JobsRepository"):
                 with patch("app.queue.worker_tasks.ApplicationRepository"):
-                    with patch(
-                        "app.queue.worker_tasks.JobProcessorService"
-                    ) as mock_processor_class:
+                    with patch("app.queue.worker_tasks.JobProcessorService") as mock_processor_class:
                         mock_processor = Mock()
-                        mock_processor.process_job.return_value = {
-                            "status": "success",
-                            "job_id": job_id,
-                            "stages_completed": ["matcher", "validator"],
-                        }
+                        mock_processor.process_job.return_value = {"status": "success", "job_id": job_id, "stages_completed": ["matcher", "validator"]}
                         mock_processor_class.return_value = mock_processor
 
                         result = process_job(job_id)

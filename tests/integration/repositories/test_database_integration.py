@@ -43,10 +43,7 @@ class TestDatabaseIntegration:
         assert job_id is not None
 
         # Step 2: Create an application for the job
-        application = Application(
-            job_id=job_id,
-            status="discovered",
-        )
+        application = Application(job_id=job_id, status="discovered")
         app_id = self.app_repo.insert_application(application)
         assert app_id is not None
 
@@ -54,10 +51,7 @@ class TestDatabaseIntegration:
         self.app_repo.update_application_status(app_id, "matched")
 
         # Step 4: Add stage completion
-        matcher_output = {
-            "match_score": 0.85,
-            "match_reasons": ["Python", "SQL", "Cloud"],
-        }
+        matcher_output = {"match_score": 0.85, "match_reasons": ["Python", "SQL", "Cloud"]}
         self.app_repo.update_application_stage(app_id, "job_matcher_agent", matcher_output)
 
         # Step 5: Verify final state
@@ -70,12 +64,7 @@ class TestDatabaseIntegration:
     def test_cascade_delete_removes_applications(self):
         """Test that deleting a job cascades to delete applications."""
         # Create job and application
-        job = Job(
-            company_name="Test Co",
-            job_title="Engineer",
-            job_url="https://test.com/job",
-            platform_source="linkedin",
-        )
+        job = Job(company_name="Test Co", job_title="Engineer", job_url="https://test.com/job", platform_source="linkedin")
         job_id = self.jobs_repo.insert_job(job)
 
         application = Application(job_id=job_id, status="discovered")
@@ -123,12 +112,7 @@ class TestDatabaseIntegration:
 
     def test_duplicate_url_detection(self):
         """Test that duplicate job URLs are detected via unique constraint."""
-        job1 = Job(
-            company_name="Company A",
-            job_title="Engineer",
-            job_url="https://duplicate-test.com/job",
-            platform_source="linkedin",
-        )
+        job1 = Job(company_name="Company A", job_title="Engineer", job_url="https://duplicate-test.com/job", platform_source="linkedin")
         self.jobs_repo.insert_job(job1)
 
         # Attempt to insert job with same URL
@@ -144,24 +128,14 @@ class TestDatabaseIntegration:
 
     def test_error_recording_in_application(self):
         """Test recording errors during application processing."""
-        job = Job(
-            company_name="Test Co",
-            job_title="Engineer",
-            job_url="https://test.com/error-test",
-            platform_source="linkedin",
-        )
+        job = Job(company_name="Test Co", job_title="Engineer", job_url="https://test.com/error-test", platform_source="linkedin")
         job_id = self.jobs_repo.insert_job(job)
 
         application = Application(job_id=job_id, status="matched")
         app_id = self.app_repo.insert_application(application)
 
         # Simulate an error during CV generation
-        self.app_repo.update_application_error(
-            app_id,
-            "cv_tailor_agent",
-            "APIError",
-            "Claude API timeout after 30 seconds",
-        )
+        self.app_repo.update_application_error(app_id, "cv_tailor_agent", "APIError", "Claude API timeout after 30 seconds")
 
         # Verify error was recorded
         failed_app = self.app_repo.get_application_by_id(app_id)
@@ -185,12 +159,7 @@ class TestDatabaseIntegration:
         """Test that pagination returns consistent results."""
         # Create multiple jobs
         for i in range(10):
-            job = Job(
-                company_name=f"Company {i}",
-                job_title=f"Engineer {i}",
-                job_url=f"https://test.com/job-{i}",
-                platform_source="linkedin",
-            )
+            job = Job(company_name=f"Company {i}", job_title=f"Engineer {i}", job_url=f"https://test.com/job-{i}", platform_source="linkedin")
             self.jobs_repo.insert_job(job)
 
         # Get first page

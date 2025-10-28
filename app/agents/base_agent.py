@@ -42,13 +42,7 @@ class AgentResult:
         Returns:
             Dictionary representation suitable for JSON serialization
         """
-        return {
-            "success": self.success,
-            "agent_name": self.agent_name,
-            "output": self.output,
-            "error_message": self.error_message,
-            "execution_time_ms": self.execution_time_ms,
-        }
+        return {"success": self.success, "agent_name": self.agent_name, "output": self.output, "error_message": self.error_message, "execution_time_ms": self.execution_time_ms}
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "AgentResult":
@@ -61,13 +55,7 @@ class AgentResult:
         Returns:
             AgentResult instance
         """
-        return cls(
-            success=data["success"],
-            agent_name=data["agent_name"],
-            output=data["output"],
-            error_message=data.get("error_message"),
-            execution_time_ms=data.get("execution_time_ms", 0),
-        )
+        return cls(success=data["success"], agent_name=data["agent_name"], output=data["output"], error_message=data.get("error_message"), execution_time_ms=data.get("execution_time_ms", 0))
 
 
 class BaseAgent(ABC):
@@ -91,12 +79,7 @@ class BaseAgent(ABC):
         _app_repo: Application repository for database operations
     """
 
-    def __init__(
-        self,
-        config: dict[str, Any],
-        claude_client: Any,
-        app_repository: Any,
-    ):
+    def __init__(self, config: dict[str, Any], claude_client: Any, app_repository: Any):
         """
         Initialize base agent with dependencies.
 
@@ -152,12 +135,7 @@ class BaseAgent(ABC):
         """
         pass
 
-    async def _call_claude(
-        self,
-        prompt: str,
-        system: str,
-        model: str | None = None,
-    ) -> str:
+    async def _call_claude(self, prompt: str, system: str, model: str | None = None) -> str:
         """
         Call Claude API with error handling.
 
@@ -180,12 +158,7 @@ class BaseAgent(ABC):
         try:
             logger.debug(f"[{agent_name}] Calling Claude API with model: {model}")
 
-            response = await self._claude.messages.create(
-                model=model,
-                system=system,
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=4096,
-            )
+            response = await self._claude.messages.create(model=model, system=system, messages=[{"role": "user", "content": prompt}], max_tokens=4096)
 
             text_response = response.content[0].text
             logger.debug(f"[{agent_name}] Claude API call successful")
@@ -211,9 +184,7 @@ class BaseAgent(ABC):
             logger.error(f"Failed to update current_stage: {e}")
             # Don't block agent execution on database failures
 
-    async def _add_completed_stage(
-        self, application_id: str, stage: str, output: dict[str, Any]
-    ) -> None:
+    async def _add_completed_stage(self, application_id: str, stage: str, output: dict[str, Any]) -> None:
         """
         Mark stage as completed and store output.
 
@@ -228,9 +199,7 @@ class BaseAgent(ABC):
         except Exception as e:
             logger.error(f"Failed to add completed stage: {e}")
 
-    async def _store_stage_output(
-        self, application_id: str, agent_name: str, output: dict[str, Any]
-    ) -> None:
+    async def _store_stage_output(self, application_id: str, agent_name: str, output: dict[str, Any]) -> None:
         """
         Store agent output in stage_outputs.
 

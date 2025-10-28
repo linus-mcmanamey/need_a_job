@@ -38,17 +38,8 @@ def display_metrics(job_queue: JobQueue):
 def main():
     """Monitor queue."""
     parser = argparse.ArgumentParser(description="Monitor job queue status")
-    parser.add_argument(
-        "--watch",
-        action="store_true",
-        help="Continuously monitor (refresh every 5 seconds)",
-    )
-    parser.add_argument(
-        "--interval",
-        type=int,
-        default=5,
-        help="Refresh interval in seconds (default: 5)",
-    )
+    parser.add_argument("--watch", action="store_true", help="Continuously monitor (refresh every 5 seconds)")
+    parser.add_argument("--interval", type=int, default=5, help="Refresh interval in seconds (default: 5)")
 
     args = parser.parse_args()
 
@@ -61,11 +52,7 @@ def main():
     app_repo = ApplicationRepository(db_conn)
 
     # Create JobQueue
-    job_queue = JobQueue(
-        redis_connection=redis,
-        jobs_repository=jobs_repo,
-        application_repository=app_repo,
-    )
+    job_queue = JobQueue(redis_connection=redis, jobs_repository=jobs_repo, application_repository=app_repo)
 
     if args.watch:
         logger.info(f"Starting continuous monitoring (refresh every {args.interval}s)")

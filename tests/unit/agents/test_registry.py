@@ -32,13 +32,7 @@ class TestAgentRegistry:
                 return "test_agent"
 
             async def process(self, job_id: str) -> AgentResult:
-                return AgentResult(
-                    success=True,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=None,
-                    execution_time_ms=0,
-                )
+                return AgentResult(success=True, agent_name=self.agent_name, output={}, error_message=None, execution_time_ms=0)
 
         registry = AgentRegistry.get_instance()
         registry.register("test_agent", TestAgent)

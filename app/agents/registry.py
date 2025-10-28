@@ -44,15 +44,7 @@ class AgentRegistry:
         Note: Use get_instance() instead of calling this directly.
         """
         self._agents: dict[str, type[BaseAgent]] = {}
-        self._pipeline_order: list[str] = [
-            "job_matcher",
-            "salary_validator",
-            "cv_tailor",
-            "cover_letter_writer",
-            "qa",
-            "orchestrator",
-            "form_handler",
-        ]
+        self._pipeline_order: list[str] = ["job_matcher", "salary_validator", "cv_tailor", "cover_letter_writer", "qa", "orchestrator", "form_handler"]
 
     @classmethod
     def get_instance(cls) -> "AgentRegistry":

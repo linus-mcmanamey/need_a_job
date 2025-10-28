@@ -108,10 +108,7 @@ class TestJobsRepositoryUpdate:
         """Test that update_job modifies job fields."""
         job_id = jobs_repo.insert_job(sample_job)
 
-        updates = {
-            "salary_aud_per_day": 1500.00,
-            "location": "Hybrid - Melbourne",
-        }
+        updates = {"salary_aud_per_day": 1500.00, "location": "Hybrid - Melbourne"}
         jobs_repo.update_job(job_id, updates)
 
         updated_job = jobs_repo.get_job_by_id(job_id)
@@ -148,12 +145,7 @@ class TestJobsRepositoryList:
     def test_list_jobs_returns_all_jobs(self, jobs_repo, sample_job):
         """Test listing all jobs."""
         job1 = sample_job
-        job2 = Job(
-            company_name="Company 2",
-            job_title="Data Analyst",
-            job_url="https://linkedin.com/jobs/test-job-456",
-            platform_source="linkedin",
-        )
+        job2 = Job(company_name="Company 2", job_title="Data Analyst", job_url="https://linkedin.com/jobs/test-job-456", platform_source="linkedin")
 
         jobs_repo.insert_job(job1)
         jobs_repo.insert_job(job2)
@@ -166,12 +158,7 @@ class TestJobsRepositoryList:
     def test_list_jobs_with_limit(self, jobs_repo, sample_job):
         """Test listing jobs with limit."""
         for i in range(5):
-            job = Job(
-                company_name=f"Company {i}",
-                job_title=f"Engineer {i}",
-                job_url=f"https://linkedin.com/jobs/test-{i}",
-                platform_source="linkedin",
-            )
+            job = Job(company_name=f"Company {i}", job_title=f"Engineer {i}", job_url=f"https://linkedin.com/jobs/test-{i}", platform_source="linkedin")
             jobs_repo.insert_job(job)
 
         jobs = jobs_repo.list_jobs(limit=3)
@@ -180,12 +167,7 @@ class TestJobsRepositoryList:
     def test_list_jobs_with_offset(self, jobs_repo, sample_job):
         """Test listing jobs with offset for pagination."""
         for i in range(5):
-            job = Job(
-                company_name=f"Company {i}",
-                job_title=f"Engineer {i}",
-                job_url=f"https://linkedin.com/jobs/test-{i}",
-                platform_source="linkedin",
-            )
+            job = Job(company_name=f"Company {i}", job_title=f"Engineer {i}", job_url=f"https://linkedin.com/jobs/test-{i}", platform_source="linkedin")
             jobs_repo.insert_job(job)
 
         first_page = jobs_repo.list_jobs(limit=2, offset=0)
@@ -198,18 +180,8 @@ class TestJobsRepositoryList:
 
     def test_list_jobs_with_platform_filter(self, jobs_repo):
         """Test filtering jobs by platform."""
-        linkedin_job = Job(
-            company_name="LinkedIn Company",
-            job_title="Engineer",
-            job_url="https://linkedin.com/jobs/test-1",
-            platform_source="linkedin",
-        )
-        seek_job = Job(
-            company_name="SEEK Company",
-            job_title="Engineer",
-            job_url="https://seek.com/jobs/test-2",
-            platform_source="seek",
-        )
+        linkedin_job = Job(company_name="LinkedIn Company", job_title="Engineer", job_url="https://linkedin.com/jobs/test-1", platform_source="linkedin")
+        seek_job = Job(company_name="SEEK Company", job_title="Engineer", job_url="https://seek.com/jobs/test-2", platform_source="seek")
 
         jobs_repo.insert_job(linkedin_job)
         jobs_repo.insert_job(seek_job)

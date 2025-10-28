@@ -64,14 +64,8 @@ def init_database(reset: bool = False) -> None:
 
 def main():
     """Main CLI interface for database initialization."""
-    parser = argparse.ArgumentParser(
-        description="Initialize DuckDB database for job application system"
-    )
-    parser.add_argument(
-        "--reset",
-        action="store_true",
-        help="Drop existing tables and recreate (WARNING: destroys all data)",
-    )
+    parser = argparse.ArgumentParser(description="Initialize DuckDB database for job application system")
+    parser.add_argument("--reset", action="store_true", help="Drop existing tables and recreate (WARNING: destroys all data)")
 
     args = parser.parse_args()
 

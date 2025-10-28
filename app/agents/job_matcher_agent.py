@@ -36,12 +36,7 @@ class JobMatcherAgent(BaseAgent):
         _match_threshold: Minimum score to approve job (default: 0.70)
     """
 
-    def __init__(
-        self,
-        config: dict[str, Any],
-        claude_client: Any,
-        app_repository: Any,
-    ):
+    def __init__(self, config: dict[str, Any], claude_client: Any, app_repository: Any):
         """
         Initialize Job Matcher Agent.
 
@@ -52,15 +47,7 @@ class JobMatcherAgent(BaseAgent):
         """
         super().__init__(config, claude_client, app_repository)
         self._search_criteria: dict[str, Any] | None = None
-        self._scoring_weights = config.get(
-            "scoring_weights",
-            {
-                "must_have_present": 0.50,
-                "strong_preference_present": 0.30,
-                "nice_to_have_present": 0.10,
-                "location_match": 0.10,
-            },
-        )
+        self._scoring_weights = config.get("scoring_weights", {"must_have_present": 0.50, "strong_preference_present": 0.30, "nice_to_have_present": 0.10, "location_match": 0.10})
         self._match_threshold = config.get("match_threshold", 0.70)
 
     @property
@@ -87,13 +74,7 @@ class JobMatcherAgent(BaseAgent):
             # Validate job_id
             if not job_id:
                 logger.error("[job_matcher] Missing job_id parameter")
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message="Missing job_id parameter",
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message="Missing job_id parameter", execution_time_ms=int((time.time() - start_time) * 1000))
 
             # Load job data from database
             logger.info(f"[job_matcher] Processing job: {job_id}")
@@ -101,13 +82,7 @@ class JobMatcherAgent(BaseAgent):
 
             if not job_data:
                 logger.error(f"[job_matcher] Job not found: {job_id}")
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=f"Job not found: {job_id}",
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message=f"Job not found: {job_id}", execution_time_ms=int((time.time() - start_time) * 1000))
 
             # Load search criteria
             criteria = self._load_search_criteria()
@@ -122,28 +97,16 @@ class JobMatcherAgent(BaseAgent):
             parsed_response = self._parse_claude_response(claude_response)
 
             # Calculate scores
-            must_have_score = self._calculate_must_have_score(
-                criteria["must_have"], parsed_response["must_have_found"]
-            )
+            must_have_score = self._calculate_must_have_score(criteria["must_have"], parsed_response["must_have_found"])
 
-            strong_pref_score = self._calculate_component_score(
-                criteria["strong_preference"], parsed_response["strong_pref_found"]
-            )
+            strong_pref_score = self._calculate_component_score(criteria["strong_preference"], parsed_response["strong_pref_found"])
 
-            nice_to_have_score = self._calculate_component_score(
-                criteria["nice_to_have"], parsed_response["nice_to_have_found"]
-            )
+            nice_to_have_score = self._calculate_component_score(criteria["nice_to_have"], parsed_response["nice_to_have_found"])
 
-            location_score = self._calculate_location_score(
-                parsed_response["location_assessment"],
-                criteria["primary_location"],
-                criteria.get("acceptable_location", ""),
-            )
+            location_score = self._calculate_location_score(parsed_response["location_assessment"], criteria["primary_location"], criteria.get("acceptable_location", ""))
 
             # Calculate weighted final score
-            final_score = self._calculate_final_score(
-                must_have_score, strong_pref_score, nice_to_have_score, location_score
-            )
+            final_score = self._calculate_final_score(must_have_score, strong_pref_score, nice_to_have_score, location_score)
 
             # Make approval decision
             approved = final_score >= self._match_threshold
@@ -157,12 +120,7 @@ class JobMatcherAgent(BaseAgent):
                 "strong_pref_found": parsed_response["strong_pref_found"],
                 "nice_to_have_found": parsed_response["nice_to_have_found"],
                 "location_matched": parsed_response["location_assessment"],
-                "scoring_breakdown": {
-                    "must_have_score": round(must_have_score, 3),
-                    "strong_pref_score": round(strong_pref_score, 3),
-                    "nice_to_have_score": round(nice_to_have_score, 3),
-                    "location_score": round(location_score, 3),
-                },
+                "scoring_breakdown": {"must_have_score": round(must_have_score, 3), "strong_pref_score": round(strong_pref_score, 3), "nice_to_have_score": round(nice_to_have_score, 3), "location_score": round(location_score, 3)},
                 "reasoning": parsed_response.get("reasoning", ""),
             }
 
@@ -172,32 +130,17 @@ class JobMatcherAgent(BaseAgent):
             await self._add_completed_stage(job_id, self.agent_name, output)
 
             # Log decision
-            logger.info(
-                f"[job_matcher] Job {job_id}: score={final_score:.3f}, "
-                f"approved={approved}, status={new_status}"
-            )
+            logger.info(f"[job_matcher] Job {job_id}: score={final_score:.3f}, approved={approved}, status={new_status}")
 
             execution_time_ms = int((time.time() - start_time) * 1000)
 
-            return AgentResult(
-                success=True,
-                agent_name=self.agent_name,
-                output=output,
-                error_message=None,
-                execution_time_ms=execution_time_ms,
-            )
+            return AgentResult(success=True, agent_name=self.agent_name, output=output, error_message=None, execution_time_ms=execution_time_ms)
 
         except Exception as e:
             logger.error(f"[job_matcher] Error processing job {job_id}: {e}")
             execution_time_ms = int((time.time() - start_time) * 1000)
 
-            return AgentResult(
-                success=False,
-                agent_name=self.agent_name,
-                output={},
-                error_message=str(e),
-                execution_time_ms=execution_time_ms,
-            )
+            return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message=str(e), execution_time_ms=execution_time_ms)
 
     def _load_search_criteria(self) -> dict[str, Any]:
         """
@@ -234,9 +177,7 @@ class JobMatcherAgent(BaseAgent):
             logger.error(f"[job_matcher] Failed to load search.yaml: {e}")
             raise
 
-    async def _analyze_job_with_claude(
-        self, job_data: dict[str, Any], criteria: dict[str, Any]
-    ) -> str:
+    async def _analyze_job_with_claude(self, job_data: dict[str, Any], criteria: dict[str, Any]) -> str:
         """
         Call Claude to analyze job against criteria.
 
@@ -333,14 +274,7 @@ OUTPUT FORMAT (JSON only):
         except json.JSONDecodeError as e:
             logger.error(f"[job_matcher] Failed to parse Claude response: {e}")
             # Return empty match if parsing fails
-            return {
-                "must_have_found": [],
-                "must_have_missing": [],
-                "strong_pref_found": [],
-                "nice_to_have_found": [],
-                "location_assessment": "no_match",
-                "reasoning": "Failed to parse matching results",
-            }
+            return {"must_have_found": [], "must_have_missing": [], "strong_pref_found": [], "nice_to_have_found": [], "location_assessment": "no_match", "reasoning": "Failed to parse matching results"}
 
     def _calculate_must_have_score(self, must_have_list: list[str], found: list[str]) -> float:
         """
@@ -391,9 +325,7 @@ OUTPUT FORMAT (JSON only):
         score = matched_count / len(tech_list)
         return score
 
-    def _calculate_location_score(
-        self, location_assessment: str, primary_location: str, acceptable_location: str
-    ) -> float:
+    def _calculate_location_score(self, location_assessment: str, primary_location: str, acceptable_location: str) -> float:
         """
         Calculate location match score.
 
@@ -412,13 +344,7 @@ OUTPUT FORMAT (JSON only):
         else:
             return 0.0
 
-    def _calculate_final_score(
-        self,
-        must_have_score: float,
-        strong_pref_score: float,
-        nice_to_have_score: float,
-        location_score: float,
-    ) -> float:
+    def _calculate_final_score(self, must_have_score: float, strong_pref_score: float, nice_to_have_score: float, location_score: float) -> float:
         """
         Calculate weighted final score.
 

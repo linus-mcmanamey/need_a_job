@@ -82,12 +82,7 @@ class TestCoverLetterGeneration:
         mock_claude.messages.create = AsyncMock(return_value=mock_response)
 
         agent = CoverLetterWriterAgent({"model": "claude-sonnet-4"}, mock_claude, Mock())
-        job_context = {
-            "company_name": "Acme Corp",
-            "job_title": "Engineer",
-            "job_description": "Test job",
-            "matched_technologies": ["Python"],
-        }
+        job_context = {"company_name": "Acme Corp", "job_title": "Engineer", "job_description": "Test job", "matched_technologies": ["Python"]}
         contact_person = "Jane Smith"
 
         result = await agent._generate_cover_letter_with_claude(job_context, contact_person)
@@ -152,23 +147,8 @@ class TestProcessMethod:
         mock_claude.messages.create = AsyncMock(return_value=mock_response)
 
         mock_app_repo = AsyncMock()
-        mock_app_repo.get_job_by_id = AsyncMock(
-            return_value={
-                "id": "job-123",
-                "title": "Engineer",
-                "company_name": "Acme",
-                "description": "Test",
-                "contact_email": "jane@acme.com",
-            }
-        )
-        mock_app_repo.get_stage_outputs = AsyncMock(
-            return_value={
-                "cv_tailor": {
-                    "cv_file_path": "export_cv_cover_letter/2025-10-28_acme_engineer/Linus_McManamey_CV.docx"
-                },
-                "job_matcher": {"must_have_found": ["Python"]},
-            }
-        )
+        mock_app_repo.get_job_by_id = AsyncMock(return_value={"id": "job-123", "title": "Engineer", "company_name": "Acme", "description": "Test", "contact_email": "jane@acme.com"})
+        mock_app_repo.get_stage_outputs = AsyncMock(return_value={"cv_tailor": {"cv_file_path": "export_cv_cover_letter/2025-10-28_acme_engineer/Linus_McManamey_CV.docx"}, "job_matcher": {"must_have_found": ["Python"]}})
 
         agent = CoverLetterWriterAgent({"model": "claude-sonnet-4"}, mock_claude, mock_app_repo)
         result = await agent.process("job-123")

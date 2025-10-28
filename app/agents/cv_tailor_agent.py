@@ -36,12 +36,7 @@ class CVTailorAgent(BaseAgent):
         _cv_template_path: Path to CV template file
     """
 
-    def __init__(
-        self,
-        config: dict[str, Any],
-        claude_client: Any,
-        app_repository: Any,
-    ):
+    def __init__(self, config: dict[str, Any], claude_client: Any, app_repository: Any):
         """
         Initialize CV Tailor Agent.
 
@@ -77,13 +72,7 @@ class CVTailorAgent(BaseAgent):
             # Validate job_id
             if not job_id:
                 logger.error("[cv_tailor] Missing job_id parameter")
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message="Missing job_id parameter",
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message="Missing job_id parameter", execution_time_ms=int((time.time() - start_time) * 1000))
 
             # Load job data from database
             logger.info(f"[cv_tailor] Processing job: {job_id}")
@@ -91,13 +80,7 @@ class CVTailorAgent(BaseAgent):
 
             if not job_data:
                 logger.error(f"[cv_tailor] Job not found: {job_id}")
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=f"Job not found: {job_id}",
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message=f"Job not found: {job_id}", execution_time_ms=int((time.time() - start_time) * 1000))
 
             # Update current stage
             await self._update_current_stage(job_id, self.agent_name)
@@ -107,22 +90,10 @@ class CVTailorAgent(BaseAgent):
                 cv_doc = self._load_cv_template(self._cv_template_path)
             except FileNotFoundError:
                 logger.error(f"[cv_tailor] CV template not found: {self._cv_template_path}")
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=f"CV template not found: {self._cv_template_path}",
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message=f"CV template not found: {self._cv_template_path}", execution_time_ms=int((time.time() - start_time) * 1000))
             except Exception as e:
                 logger.error(f"[cv_tailor] Failed to load CV template: {e}")
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message=f"Failed to load CV template: {str(e)}",
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message=f"Failed to load CV template: {str(e)}", execution_time_ms=int((time.time() - start_time) * 1000))
 
             # Load stage outputs for matched criteria
             stage_outputs = await self._app_repo.get_stage_outputs(job_id)
@@ -148,13 +119,7 @@ class CVTailorAgent(BaseAgent):
             # Validate output file
             if not self._validate_output_file(output_path):
                 logger.error(f"[cv_tailor] Output file validation failed: {output_path}")
-                return AgentResult(
-                    success=False,
-                    agent_name=self.agent_name,
-                    output={},
-                    error_message="Output file validation failed",
-                    execution_time_ms=int((time.time() - start_time) * 1000),
-                )
+                return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message="Output file validation failed", execution_time_ms=int((time.time() - start_time) * 1000))
 
             # Get file size
             file_size = output_path.stat().st_size
@@ -176,31 +141,17 @@ class CVTailorAgent(BaseAgent):
             await self._add_completed_stage(job_id, self.agent_name, output)
 
             # Log success
-            logger.info(
-                f"[cv_tailor] Job {job_id}: CV generated at {output_path}, size={file_size} bytes"
-            )
+            logger.info(f"[cv_tailor] Job {job_id}: CV generated at {output_path}, size={file_size} bytes")
 
             execution_time_ms = int((time.time() - start_time) * 1000)
 
-            return AgentResult(
-                success=True,
-                agent_name=self.agent_name,
-                output=output,
-                error_message=None,
-                execution_time_ms=execution_time_ms,
-            )
+            return AgentResult(success=True, agent_name=self.agent_name, output=output, error_message=None, execution_time_ms=execution_time_ms)
 
         except Exception as e:
             logger.error(f"[cv_tailor] Error processing job {job_id}: {e}")
             execution_time_ms = int((time.time() - start_time) * 1000)
 
-            return AgentResult(
-                success=False,
-                agent_name=self.agent_name,
-                output={},
-                error_message=str(e),
-                execution_time_ms=execution_time_ms,
-            )
+            return AgentResult(success=False, agent_name=self.agent_name, output={}, error_message=str(e), execution_time_ms=execution_time_ms)
 
     def _load_cv_template(self, template_path: Path) -> Document:
         """
@@ -246,9 +197,7 @@ class CVTailorAgent(BaseAgent):
         logger.debug(f"[cv_tailor] Extracted {len(paragraphs)} paragraphs from CV")
         return content
 
-    def _analyze_job_requirements(
-        self, job_data: dict[str, Any], stage_outputs: dict[str, Any]
-    ) -> dict[str, Any]:
+    def _analyze_job_requirements(self, job_data: dict[str, Any], stage_outputs: dict[str, Any]) -> dict[str, Any]:
         """
         Analyze job requirements and extract relevant context.
 
@@ -271,19 +220,12 @@ class CVTailorAgent(BaseAgent):
             matched_technologies.extend(matcher_output.get("strong_pref_found", []))
             matched_technologies.extend(matcher_output.get("nice_to_have_found", []))
 
-        context = {
-            "job_title": job_title,
-            "company_name": company_name,
-            "job_description": description,
-            "matched_technologies": matched_technologies,
-        }
+        context = {"job_title": job_title, "company_name": company_name, "job_description": description, "matched_technologies": matched_technologies}
 
         logger.debug(f"[cv_tailor] Job context: {len(matched_technologies)} matched technologies")
         return context
 
-    async def _customize_cv_with_claude(
-        self, cv_content: str, job_context: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def _customize_cv_with_claude(self, cv_content: str, job_context: dict[str, Any]) -> dict[str, Any]:
         """
         Use Claude to generate CV customization instructions.
 
@@ -369,13 +311,7 @@ OUTPUT FORMAT (JSON only):
         except json.JSONDecodeError as e:
             logger.error(f"[cv_tailor] Failed to parse Claude response: {e}")
             # Return minimal customization on parse failure
-            return {
-                "section_order": [],
-                "emphasis_skills": [],
-                "keywords_to_add": [],
-                "professional_summary": "",
-                "customization_notes": "Failed to parse customization instructions",
-            }
+            return {"section_order": [], "emphasis_skills": [], "keywords_to_add": [], "professional_summary": "", "customization_notes": "Failed to parse customization instructions"}
 
     def _create_output_directory(self, company: str, job_title: str) -> Path:
         """
@@ -427,9 +363,7 @@ OUTPUT FORMAT (JSON only):
 
         return sanitized
 
-    def _generate_customized_cv(
-        self, cv_doc: Document, customizations: dict[str, Any], output_path: Path
-    ) -> None:
+    def _generate_customized_cv(self, cv_doc: Document, customizations: dict[str, Any], output_path: Path) -> None:
         """
         Generate customized CV by applying customizations to template.
 
