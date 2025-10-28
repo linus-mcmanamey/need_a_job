@@ -64,7 +64,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY --chown=appuser:appuser ./app /app/app
-COPY --chown=appuser:appuser ./config /app/config
+# Ensure /app/config exists in the image; do not require host ./config at build time
+RUN mkdir -p /app/config && chown -R appuser:appuser /app/config
 # Note: .mcp.json contains secrets and should not be in the image
 # Mount it at runtime via volume or use environment variables:
 # docker run -v $(pwd)/.mcp.json:/app/.mcp.json ...
@@ -95,7 +96,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY --chown=appuser:appuser ./app /app/app
-COPY --chown=appuser:appuser ./config /app/config
+# Ensure /app/config exists in the image; do not require host ./config at build time
+RUN mkdir -p /app/config && chown -R appuser:appuser /app/config
 # Note: .mcp.json contains secrets and should not be in the image
 # Mount it at runtime via volume or use environment variables
 
