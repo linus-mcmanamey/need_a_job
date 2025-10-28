@@ -121,7 +121,30 @@ async def root() -> dict:
         "version": "1.0.0-mvp",
         "docs": "/api/docs",
         "health": "/health",
+        "config": "/api/config",
         "gradio_ui": "http://localhost:7860",
+    }
+
+
+@app.get("/api/config", tags=["Configuration"])
+async def get_configuration() -> dict:
+    """
+    Get current configuration (sanitized).
+
+    Returns:
+        Sanitized configuration data
+    """
+    from app.config import get_config
+
+    config = get_config()
+
+    return {
+        "search": {
+            "job_type": config.search.get("job_type"),
+            "duration": config.search.get("duration"),
+        },
+        "agents": list(config.agents.keys()),
+        "platforms": list(config.platforms.keys()),
     }
 
 

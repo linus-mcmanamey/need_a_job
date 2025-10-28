@@ -1,0 +1,61 @@
+# Job Search Configuration
+# Configuration for automated job discovery and matching criteria
+# This file defines what types of jobs the system will discover and evaluate
+
+# Job type and duration preferences
+job_type: contract  # Options: contract, permanent, casual
+duration: 3-12+ months  # Preferred contract duration
+
+# Location preferences
+locations:
+  primary: Remote (Australia-wide)  # Preferred work arrangement
+  acceptable: Hybrid with >70% remote  # Acceptable alternative
+  exclude:
+    - Full office-based  # Exclude fully on-site positions
+
+# Job title keywords for discovery
+keywords:
+  # Primary keywords (highest priority match)
+  primary:
+    - Data Engineer
+    - Senior Data Engineer
+    - Data Engineering
+
+  # Secondary keywords (acceptable alternatives)
+  secondary:
+    - Analytics Engineer
+    - Data Platform Engineer
+
+  # Exclude keywords (automatically reject)
+  exclude:
+    - Junior
+    - Graduate
+
+# Technology and skill requirements
+technologies:
+  # Must-have skills (required for job matching)
+  must_have:
+    - Python
+    - SQL
+    - Cloud Platform (Azure/AWS/GCP)
+
+  # Strong preference (significantly increases match score)
+  strong_preference:
+    - PySpark
+    - Azure Synapse
+    - Databricks
+    - Azure Data Factory
+    - dbt
+
+  # Nice to have (minor match score increase)
+  nice_to_have:
+    - Airflow
+    - Kafka
+    - Docker/Kubernetes
+    - CI/CD
+
+# Salary expectations (AUD per day for contract roles)
+salary_expectations:
+  minimum: 800   # Minimum acceptable daily rate
+  target: 1000   # Target daily rate
+  maximum: 1500  # Maximum expected daily rate
