@@ -1,0 +1,202 @@
+version: '3.8'
+
+# Job Application Automation System - Phase 1
+# Docker Compose configuration for local development and deployment
+# Follows Architecture Document Section 9.1
+
+services:
+  # Redis service for RQ job queue and caching
+  redis:
+    image: redis:7-alpine
+    container_name: job_automation_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - job_automation_network
+
+  # FastAPI application (main API server)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: app
+    container_name: job_automation_app
+    ports:
+      - "8000:8000"  # FastAPI
+      - "7860:7860"  # Gradio UI
+    environment:
+      # Application settings
+      - APP_ENV=${APP_ENV:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      # Database
+      - DUCKDB_PATH=/app/data/job_applications.duckdb
+
+      # Redis connection
+      - REDIS_URL=redis://redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+      # Claude API
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+
+      # LinkedIn MCP
+      - LINKEDIN_LI_AT_COOKIE=${LINKEDIN_LI_AT_COOKIE}
+
+      # Email settings (for application submission)
+      - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-true}
+      - SENDER_EMAIL=${SENDER_EMAIL}
+      - SENDER_PASSWORD=${SENDER_PASSWORD}
+
+      # MCP settings
+      - MCP_CONFIG_PATH=/app/.mcp.json
+
+      # Phase 1 specific settings
+      - ENABLE_AUTO_DISCOVERY=${ENABLE_AUTO_DISCOVERY:-false}
+      - DISCOVERY_INTERVAL_HOURS=${DISCOVERY_INTERVAL_HOURS:-1}
+    volumes:
+      # Database and data persistence
+      - ./data:/app/data
+
+      # Configuration files
+      - ./config:/app/config:ro
+      - ./.mcp.json:/app/.mcp.json:ro
+      - ./.env:/app/.env:ro
+
+      # CV/CL templates (read-only for security)
+      - ./current_cv_coverletter:/app/current_cv_coverletter:ro
+
+      # Generated documents (read-write)
+      - ./export_cv_cover_letter:/app/export_cv_cover_letter
+      - ./second_folder:/app/second_folder
+
+      # Logs
+      - ./logs:/app/logs
+
+      # Application code (for development with hot reload)
+      - ./app:/app/app
+
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - job_automation_network
+
+  # RQ Worker for background job processing (discovery, pipeline, submission)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    container_name: job_automation_worker
+    environment:
+      # Application settings
+      - APP_ENV=${APP_ENV:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      # Database
+      - DUCKDB_PATH=/app/data/job_applications.duckdb
+
+      # Redis connection
+      - REDIS_URL=redis://redis:6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+
+      # Claude API
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+
+      # LinkedIn MCP
+      - LINKEDIN_LI_AT_COOKIE=${LINKEDIN_LI_AT_COOKIE}
+
+      # Email settings
+      - SMTP_SERVER=${SMTP_SERVER:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USE_TLS=${SMTP_USE_TLS:-true}
+      - SENDER_EMAIL=${SENDER_EMAIL}
+      - SENDER_PASSWORD=${SENDER_PASSWORD}
+
+      # Worker settings
+      - RQ_QUEUE_NAMES=${RQ_QUEUE_NAMES:-discovery_queue,pipeline_queue,submission_queue}
+      - WORKER_NAME=${HOSTNAME:-worker}
+    volumes:
+      # Database and data persistence
+      - ./data:/app/data
+
+      # Configuration files
+      - ./config:/app/config:ro
+      - ./.mcp.json:/app/.mcp.json:ro
+      - ./.env:/app/.env:ro
+
+      # CV/CL templates
+      - ./current_cv_coverletter:/app/current_cv_coverletter:ro
+
+      # Generated documents
+      - ./export_cv_cover_letter:/app/export_cv_cover_letter
+      - ./second_folder:/app/second_folder
+
+      # Logs
+      - ./logs:/app/logs
+
+      # Application code
+      - ./app:/app/app
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - job_automation_network
+    # Run multiple workers for parallel processing
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # RQ Dashboard (optional - for monitoring queues)
+  rq-dashboard:
+    image: eoranged/rq-dashboard:latest
+    container_name: job_automation_rq_dashboard
+    ports:
+      - "9181:9181"
+    environment:
+      - RQ_DASHBOARD_REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - job_automation_network
+    profiles:
+      - monitoring
+
+volumes:
+  redis_data:
+    driver: local
+    name: job_automation_redis_data
+
+networks:
+  job_automation_network:
+    driver: bridge
+    name: job_automation_network

@@ -1,184 +1,435 @@
-# LinkedIn MCP Server Setup
+# 🤖 Job Application Automation System
 
-This repository contains a LinkedIn MCP (Model Context Protocol) server setup that allows Claude Code to interact with your LinkedIn account.
+> Automated job search and application system for Data Engineering roles in Australia
 
-## Prerequisites
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
+[![Gradio](https://img.shields.io/badge/Gradio-4.0+-orange.svg)](https://gradio.app/)
+[![DuckDB](https://img.shields.io/badge/DuckDB-0.9+-yellow.svg)](https://duckdb.org/)
 
-- Python 3.12+
-- uv package manager
-- Chrome browser (for local development)
-- LinkedIn account with valid cookie
+## 📋 Overview
 
-## Quick Start
+This system automates the entire job application workflow:
+- **Discovers** jobs from LinkedIn, SEEK, and Indeed
+- **Matches** jobs against your criteria using Claude AI
+- **Tailors** CV and cover letters for each application
+- **Submits** applications via email or web forms
+- **Tracks** all applications in a DuckDB database
 
-### 1. Environment Setup
+Built with Python, FastAPI, Gradio, DuckDB, and Claude AI.
 
-Create a `.env` file in the project root with your LinkedIn cookie:
+---
 
-```bash
-LINKEDIN_COOKIE=li_at=YOUR_LINKEDIN_COOKIE_VALUE
-```
+## 🚀 Quick Start (5 Steps)
 
-**How to get your LinkedIn cookie:**
-1. Open LinkedIn in Chrome and log in
-2. Open Chrome DevTools (F12 or right-click → Inspect)
-3. Go to **Application** tab → **Storage** → **Cookies** → **https://www.linkedin.com**
-4. Find the cookie named `li_at`
-5. Copy the **Value** field
-
-### 2. Installation
-
-Run the installation script:
+### Option A: Docker Compose (Recommended)
 
 ```bash
-bash linkedin_mcp.sh
+# 1. Clone and navigate to the project
+cd job-automation
+
+# 2. Copy environment template and configure
+cp .env.example .env
+# Edit .env with your API keys and settings
+
+# 3. Start all services
+docker-compose up -d
+
+# 4. Access the UI
+open http://localhost:7860
+
+# 5. View API docs
+open http://localhost:8000/api/docs
 ```
 
-This will:
-- Clone the linkedin-mcp-server repository
-- Install uv package manager
-- Install Python dependencies
-- Set up pre-commit hooks
-- Start the MCP server using your `.env` cookie
-
-### 3. Start the Server
-
-#### Option A: Using the startup script (Recommended)
+### Option B: Local Development (No Docker)
 
 ```bash
-./start_linkedin_mcp.sh
+# 1. Install dependencies
+pip install -r requirements.txt
+# OR with Poetry
+poetry install
+
+# 2. Set up environment variables
+cp .env.example .env
+# Edit .env with your configuration
+
+# 3. Start Redis (Terminal 1)
+redis-server
+
+# 4. Start FastAPI (Terminal 2)
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 5. Start Gradio UI (Terminal 3)
+python app/ui/gradio_app.py
+
+# 6. Start RQ Worker (Terminal 4)
+rq worker discovery_queue pipeline_queue --url redis://localhost:6379
 ```
 
-This script:
-- Loads the LinkedIn cookie from `.env` file
-- Starts the MCP server in HTTP mode
-- Makes it available at `http://0.0.0.0:8080/mcp`
+---
 
-#### Option B: Manual start
+## 📁 Project Structure
+
+```
+job-automation/
+├── app/                     # Application code
+│   ├── main.py              # FastAPI application entry
+│   ├── agents/              # 7 specialized AI agents
+│   ├── pollers/             # Platform job pollers
+│   ├── services/            # Business logic
+│   ├── repositories/        # Database access
+│   ├── models/              # Data models
+│   └── ui/                  # Gradio web interface
+│       └── gradio_app.py
+├── config/                  # YAML configuration files
+│   ├── search.yaml          # Job search criteria
+│   ├── agents.yaml          # Agent settings
+│   ├── platforms.yaml       # Platform configs
+│   └── similarity.yaml      # Duplicate detection
+├── data/                    # DuckDB database
+│   └── job_applications.duckdb
+├── current_cv_coverletter/  # CV/CL templates
+│   ├── Linus_McManamey_CV.docx
+│   └── Linus_McManamey_CL.docx
+├── export_cv_cover_letter/  # Generated documents
+├── tests/                   # Unit and integration tests
+├── docker-compose.yml       # Docker services
+├── Dockerfile               # Container image
+├── pyproject.toml           # Python dependencies
+├── .env.example             # Environment variables template
+└── README.md                # This file
+```
+
+---
+
+## ⚙️ Configuration
+
+### Required Environment Variables
+
+Create a `.env` file from `.env.example`:
 
 ```bash
-cd linkedin-mcp-server
-source .venv/bin/activate
-export $(grep -v '^#' ../.env | grep LINKEDIN_COOKIE | xargs)
-python -m linkedin_mcp_server --cookie "$LINKEDIN_COOKIE" --transport streamable-http --host 0.0.0.0 --port 8080 --path /mcp
+# Core Settings
+ANTHROPIC_API_KEY=sk-ant-xxxxx    # Get from https://console.anthropic.com/
+REDIS_URL=redis://localhost:6379
+
+# LinkedIn MCP (Optional for Phase 1)
+LINKEDIN_LI_AT_COOKIE=your-cookie-here
+
+# Email Settings (for application submission)
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SENDER_EMAIL=your.email@gmail.com
+SENDER_PASSWORD=your-app-password  # Use Gmail App Password
+
+# Database
+DUCKDB_PATH=data/job_applications.duckdb
+
+# Application
+APP_ENV=development
+LOG_LEVEL=INFO
 ```
 
-## Claude Code Integration
+### Configuration Files
 
-### Method 1: Using MCP Configuration File
+Edit YAML files in `config/` directory:
 
-The `mcp_config.json` file contains the configuration for Claude Code:
+- **`search.yaml`**: Job search criteria (keywords, technologies, salary range)
+- **`agents.yaml`**: Agent behavior and thresholds
+- **`platforms.yaml`**: Platform-specific settings
+- **`similarity.yaml`**: Duplicate detection thresholds
 
-```json
-{
-  "mcpServers": {
-    "linkedin": {
-      "command": "bash",
-      "args": [
-        "-c",
-        "export $(grep -v '^#' /workspaces/Dev/need_a_new_job/.env | grep LINKEDIN_COOKIE | xargs) && /workspaces/Dev/need_a_new_job/linkedin-mcp-server/.venv/bin/python -m linkedin_mcp_server --cookie \"$LINKEDIN_COOKIE\""
-      ]
-    }
-  }
-}
+---
+
+## 🏗️ Architecture
+
+### System Components
+
+1. **Discovery Layer**: Polls job platforms (LinkedIn, SEEK, Indeed)
+2. **Agent Pipeline**: 7 specialized agents process each job:
+   - Job Matcher: Scores jobs against criteria
+   - Salary Validator: Checks salary requirements
+   - CV Tailor: Customizes CV per job
+   - Cover Letter Writer: Writes personalized CL
+   - QA Agent: Validates quality
+   - Orchestrator: Makes final decision
+   - Application Handler: Submits applications
+3. **Storage Layer**: DuckDB database tracks all jobs and applications
+4. **UI Layer**: Gradio web interface for monitoring and control
+5. **API Layer**: FastAPI REST API for integrations
+
+### Technology Stack
+
+- **Python 3.11+**: Modern async/await support
+- **FastAPI**: High-performance async web framework
+- **Gradio 4.0+**: Interactive web UI
+- **DuckDB**: Embedded analytics database
+- **Redis + RQ**: Background job processing
+- **Claude AI**: LLM-powered agents
+- **Docker**: Containerized deployment
+
+---
+
+## 🔧 Development
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=app --cov-report=html
+
+# Run specific test file
+pytest tests/unit/test_database.py
+
+# Run integration tests only
+pytest tests/integration/
 ```
 
-To add to Claude Code, you can manually merge this into your Claude Code MCP configuration.
+### Code Quality
 
-### Method 2: Manual Configuration
+```bash
+# Format code
+black app/ tests/
 
-Add this to your Claude Code MCP settings:
+# Lint code
+ruff check app/ tests/
 
-```json
-{
-  "mcpServers": {
-    "linkedin": {
-      "command": "/workspaces/Dev/need_a_new_job/linkedin-mcp-server/.venv/bin/python",
-      "args": [
-        "-m",
-        "linkedin_mcp_server",
-        "--cookie",
-        "YOUR_LINKEDIN_COOKIE_HERE"
-      ]
-    }
-  }
-}
+# Type check
+mypy app/
 ```
 
-**Note:** Replace `YOUR_LINKEDIN_COOKIE_HERE` with the actual cookie value from your `.env` file.
+### Database Access
 
-## Available Tools
+```bash
+# Connect to DuckDB
+duckdb data/job_applications.duckdb
 
-Once connected, Claude can use these LinkedIn tools:
-
-- **get_person_profile**: Get detailed profile information from a LinkedIn profile URL
-- **get_company_profile**: Extract company information from a LinkedIn company page
-- **get_job_details**: Retrieve job posting details using LinkedIn job IDs
-- **search_jobs**: Search for jobs with filters like keywords and location
-- **get_recommended_jobs**: Get personalized job recommendations
-- **close_session**: Close browser session and clean up resources
-
-## Usage Examples
-
-Ask Claude:
-```
-What are my recommended jobs I can apply to?
+# Run queries
+SELECT * FROM jobs LIMIT 10;
+SELECT status, COUNT(*) FROM application_tracking GROUP BY status;
 ```
 
+---
+
+## 📊 Usage
+
+### Web UI (Gradio)
+
+Access at `http://localhost:7860`:
+
+- **Dashboard**: View metrics and status
+- **Pipeline**: Watch jobs flow through agents
+- **Pending Jobs**: Manage jobs needing intervention
+- **Settings**: Configure thresholds and modes
+
+### API Endpoints
+
+Access API docs at `http://localhost:8000/api/docs`:
+
+- `GET /health` - Health check
+- `GET /api/jobs` - List discovered jobs
+- `GET /api/pipeline` - Current pipeline status
+- `GET /api/pending` - Pending jobs
+- `POST /api/jobs/{id}/retry` - Retry failed job
+
+### Control Modes
+
+**Dry-Run Mode**: Generate CVs/CLs without sending applications
+```bash
+# Set in .env or UI
+DRY_RUN=true
 ```
-Research the background of this candidate https://www.linkedin.com/in/username/
+
+**Approval Mode**: Review applications before submission
+```bash
+# Set in .env or UI
+APPROVAL_MODE=true
 ```
 
+---
+
+## 🐳 Docker Deployment
+
+### Services
+
+The `docker-compose.yml` defines:
+
+- **redis**: Job queue and caching
+- **app**: FastAPI + Gradio
+- **worker**: RQ background workers (3 replicas)
+- **rq-dashboard** (optional): Monitor queues at `http://localhost:9181`
+
+### Commands
+
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f worker
+docker-compose logs -f app
+
+# Scale workers
+docker-compose up -d --scale worker=5
+
+# Stop services
+docker-compose down
+
+# Rebuild after code changes
+docker-compose up -d --build
 ```
-Get this company profile https://www.linkedin.com/company/company-name/
+
+---
+
+## 📝 Configuration Examples
+
+### Job Search Criteria (`config/search.yaml`)
+
+```yaml
+job_type: contract
+duration: 3-12+ months
+
+locations:
+  primary: Remote (Australia-wide)
+  acceptable: Hybrid with >70% remote
+
+technologies:
+  must_have:
+    - Python
+    - SQL
+    - Cloud Platform (Azure/AWS/GCP)
+
+  strong_preference:
+    - PySpark
+    - Azure Synapse
+    - Databricks
+
+salary_expectations:
+  minimum: 800  # AUD per day
+  target: 1000
+  maximum: 1500
 ```
 
-```
-Suggest improvements for my CV to target this job posting https://www.linkedin.com/jobs/view/1234567890
-```
+### Agent Configuration (`config/agents.yaml`)
 
-## File Structure
-
-```
-.
-├── .env                        # LinkedIn cookie (gitignored)
-├── linkedin_mcp.sh            # Installation and setup script
-├── start_linkedin_mcp.sh      # Server startup script
-├── mcp_config.json            # MCP configuration for Claude Code
-├── README.md                  # This file
-└── linkedin-mcp-server/       # MCP server repository (cloned)
-    ├── .venv/                 # Python virtual environment
-    └── linkedin_mcp_server/   # Server source code
+```yaml
+job_matcher_agent:
+  model: claude-sonnet-4
+  match_threshold: 0.70
+  scoring_weights:
+    must_have_present: 0.50
+    strong_preference_present: 0.30
+    nice_to_have_present: 0.10
+    location_match: 0.10
 ```
 
-## Troubleshooting
+---
 
-### Server won't start
-- Check that your `.env` file exists and contains a valid `LINKEDIN_COOKIE`
-- Verify the cookie hasn't expired (LinkedIn cookies expire after ~30 days)
-- Make sure no other process is using port 8080
+## 🔍 Troubleshooting
 
-### Cookie expired
-1. Get a new cookie from LinkedIn (see step 1 above)
-2. Update your `.env` file
-3. Restart the server
+### Common Issues
 
-### Keyring errors
-These are warnings and can be ignored. The server will use the cookie from the `.env` file instead of the system keychain.
+**Redis connection refused**
+```bash
+# Check Redis is running
+redis-cli ping
+# Should return: PONG
 
-### Connection issues
-- Ensure the server is running: `ps aux | grep linkedin_mcp_server`
-- Check the server logs in the terminal where you started it
-- Verify port 8080 is accessible: `curl http://localhost:8080/mcp`
+# Start Redis if not running
+redis-server
+```
 
-## Security Notes
+**Import errors**
+```bash
+# Ensure dependencies are installed
+pip install -r requirements.txt
+# OR
+poetry install
+```
 
-- **Never commit your `.env` file** - it contains your LinkedIn session cookie
-- The `.env` file is already in `.gitignore`
-- LinkedIn cookies expire after ~30 days
-- Only use this for personal, non-commercial purposes
-- Be aware that web scraping may violate LinkedIn's Terms of Service
+**DuckDB file locked**
+```bash
+# Stop all workers and API
+docker-compose down
+# OR kill Python processes
+pkill -f "python app"
+```
 
-## License
+**Claude API errors**
+```bash
+# Check API key is set
+echo $ANTHROPIC_API_KEY
+# Verify key is valid at https://console.anthropic.com/
+```
 
-This project uses the [LinkedIn MCP Server](https://github.com/stickerdaniel/linkedin-mcp-server) which is licensed under Apache 2.0.
+### Logs
+
+View logs in:
+- `logs/app.log` - FastAPI application logs
+- `logs/gradio_app.log` - Gradio UI logs
+- Docker logs: `docker-compose logs -f`
+
+---
+
+## 📚 Documentation
+
+- **PRD**: `docs/prd.md` - Product requirements
+- **Architecture**: `docs/architecture.md` - System architecture
+- **Stories**: `docs/stories/` - Development stories
+- **API Docs**: `http://localhost:8000/api/docs` - Interactive API documentation
+
+---
+
+## 🛣️ Roadmap
+
+### Phase 1: Foundation (Current)
+- ✅ Project setup and dependencies
+- 🔄 LinkedIn job discovery
+- 🔄 Agent pipeline implementation
+- 🔄 CV/CL tailoring
+- 🔄 Email submission
+
+### Phase 2: Multi-Platform (Weeks 3-4)
+- SEEK and Indeed pollers
+- Duplicate detection (Tier 1 + Tier 2)
+- Web form submission
+
+### Phase 3: UI & Control (Weeks 5-6)
+- Gradio dashboard
+- Job pipeline view
+- Pending jobs management
+- Approval mode
+
+### Phase 4: Testing & Production (Weeks 6-7)
+- Integration testing
+- Performance optimization
+- Production deployment
+- Documentation
+
+---
+
+## 📄 License
+
+This project is for personal use only.
+
+---
+
+## 🙏 Acknowledgments
+
+Built with:
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [Gradio](https://gradio.app/)
+- [DuckDB](https://duckdb.org/)
+- [Anthropic Claude](https://www.anthropic.com/)
+- [Redis](https://redis.io/)
+- [RQ](https://python-rq.org/)
+
+---
+
+**Status**: MVP Phase 1 - Foundation ✅
+**Version**: 1.0.0-mvp
+**Last Updated**: October 2025

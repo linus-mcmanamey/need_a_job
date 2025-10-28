@@ -1,0 +1,1318 @@
+# <!-- Powered by BMAD™ Core -->
+# Job Application Automation System - Iterative Story Development
+# Project: need_a_job
+# Tech Stack: Python 3.11+, FastAPI, Redis+RQ, DuckDB, Gradio, Claude LLM
+
+workflow:
+  id: iterative-story-development
+  name: Job Application Automation - Iterative Story Development
+  description: >-
+    Agent workflow for iterative development of the automated job application system.
+    Each story from the PRD epics is fully developed, tested with pytest achieving 90% code coverage,
+    and merged before the next story begins. The system includes 7 AI agents (Job Matcher, Salary Validator,
+    CV Tailor, Cover Letter Writer, QA, Orchestrator, Application Handler) that process jobs through a pipeline.
+    Each story needs BMad SM approval and PR management. Stories are developed by the BMad dev agent,
+    validated by the BMad QA agent, and reviewed by the BMad architect before merge.
+  type: iterative
+  project_types:
+    - python-development
+    - fastapi-backend
+    - llm-integration
+    - agile-development
+    - story-driven-development
+    - multi-agent-system
+
+  sequence:
+    - step: prerequisites_check
+      agent: sm
+      action: verify prerequisites and environment
+      notes: |
+        Scrum Master verifies before starting:
+        - Python 3.11+ environment configured
+        - Redis server running for job queue (docker or local)
+        - DuckDB database initialized (data/jobs.duckdb)
+        - All dependencies from requirements.txt installed
+        - Configuration files present (search.yaml, agents.yaml, platforms.yaml)
+        - PRD at docs/prd/ directory with all epic files
+        - Architecture docs at docs/architecture/
+        - LinkedIn MCP server configured in .mcp.json
+        - All unit tests from previous story passed with 90% coverage
+
+        Ask user: "Ready to continue story development? Current epic and story?"
+
+    - step: story_selection
+      agent: sm
+      action: select next story from PRD epics
+      reviews:
+        - docs/prd/epic-*.md
+        - docs/prd/7-implementation-roadmap.md
+      notes: |
+        SM selects the next story from PRD epic sequence:
+        - Epic 1: Foundation (Stories 1.1-1.5)
+        - Epic 2: Core Agents (Stories 2.1-2.8)
+        - Epic 3: Duplicate Detection (Stories 3.1-3.3)
+        - Epic 4: Application Submission (Stories 4.1-4.3)
+        - Epic 5: Gradio UI (Stories 5.1-5.5)
+        - Epic 6: Testing & Refinement (Stories 6.1-6.4)
+
+        Create feature branch: feature/story-{epic}-{story}
+
+    - step: story_planning
+      agent: sm
+      action: review story acceptance criteria and create implementation plan
+      reviews:
+        - docs/prd/epic-{epic}.md
+        - docs/architecture/7-agent-architecture.md
+        - docs/architecture/12-technology-stack.md
+      notes: |
+        SM reviews story from PRD epic file:
+        - Read story definition, acceptance criteria, technical notes
+        - Verify dependencies from previous stories are met
+        - Identify technical tasks for implementation
+        - Review relevant architecture patterns
+        - Create detailed user story at docs/stories/{epic}.{story}.{title}.md
+        - Create implementation checklist with tasks/subtasks
+        - Include test coverage requirements (90% minimum)
+        - Define integration points with existing agents/services
+
+        Story document should include:
+        - Story description and context
+        - Acceptance criteria (from PRD)
+        - Implementation tasks breakdown
+        - Testing strategy
+        - API endpoints to create/modify (if applicable)
+        - Database schema changes (if applicable)
+        - Agent modifications (if applicable)
+        - Dependencies and prerequisites
+
+    - step: requirements_clarification
+      agent: analyst
+      action: clarify requirements and edge cases
+      reviews:
+        - docs/stories/{epic}.{story}.{title}.md
+        - docs/prd/epic-{epic}.md
+      condition: complex_story_needs_analysis
+      notes: |
+        Business Analyst clarifies:
+        - Edge cases and error scenarios
+        - Integration points with LinkedIn MCP
+        - Data validation requirements
+        - User experience considerations (for UI stories)
+        - Business logic for agent decision-making
+        - Duplicate detection thresholds (for Epic 3)
+        - Form submission strategies (for Epic 4)
+
+        Output:
+        - Updated story document with clarifications
+        - Additional acceptance criteria if needed
+        - Risk analysis for complex features
+
+    - step: architecture_review
+      agent: architect
+      action: review technical design and patterns
+      reviews:
+        - docs/stories/{epic}.{story}.{title}.md
+        - docs/architecture/
+      condition: architectural_changes_needed
+      notes: |
+        Technical Architect reviews:
+        - System design and component architecture
+        - Database schema changes (DuckDB)
+        - Agent pipeline modifications
+        - API design (FastAPI endpoints)
+        - Integration patterns (MCP servers, Redis queue)
+        - Performance considerations
+        - Security requirements
+
+        For agent stories (Epic 2):
+        - Agent class structure (BaseAgent inheritance)
+        - Claude model selection rationale
+        - AgentResult output schema
+        - Checkpoint/resume implementation
+
+        Output:
+        - Architecture notes added to story document
+        - Component diagrams if needed
+        - Technical debt considerations
+        - Approval to proceed or request clarifications
+
+    - step: story_implementation
+      agent: dev
+      action: implement story using Test-Driven Development (TDD)
+      creates: implementation_files
+      requires: docs/stories/{epic}.{story}.{title}.md
+      branch: feature/story-{epic}-{story}
+      notes: |
+        Developer implements story using TDD methodology:
+
+        **SETUP:**
+        - Read story requirements in docs/stories/{epic}.{story}.{title}.md
+        - Review relevant architecture docs
+        - Understand existing codebase structure
+
+        **FOR EACH ACCEPTANCE CRITERION - Follow TDD Cycle:**
+
+        1. RED PHASE - Write failing tests first:
+           * Write unit tests using pytest
+           * Tests should fail initially (no implementation yet)
+           * Include edge cases, error scenarios, input validation
+           * Create test files in tests/ directory
+           * Use appropriate fixtures and mocks
+
+        2. GREEN PHASE - Write minimal code to pass:
+           * Implement just enough code to make tests pass
+           * For Epic 1 stories: Database operations, configuration loading, job polling
+           * For Epic 2 stories: Agent classes, Claude API integration, checkpoint system
+           * For Epic 3 stories: Duplicate detection algorithms, similarity scoring
+           * For Epic 4 stories: Form submission, email sending, Playwright automation
+           * For Epic 5 stories: Gradio UI components, real-time dashboards
+           * Run tests: pytest tests/ -v
+
+        3. REFACTOR PHASE - Improve code quality:
+           * Refactor while keeping tests green
+           * Follow Python best practices and type hints
+           * Ensure clean architecture and maintainability
+           * Use proper error handling and logging (loguru)
+
+        4. VERIFY & DOCUMENT:
+           * Run full test suite: pytest tests/ --cov=app --cov-report=term
+           * Check coverage: Must achieve minimum 90% code coverage
+           * Update docs/stories/{epic}.{story}.{title}.md with:
+             - Test files created
+             - Coverage percentage achieved
+             - Mark acceptance criterion as complete [x]
+
+        **INTEGRATION TESTING:**
+        - FastAPI endpoints: Test with FastAPI TestClient
+        - Database operations: Test DuckDB queries and schema
+        - Redis queue: Test job enqueue/dequeue operations
+        - Agent pipeline: Test agent execution and checkpointing
+        - LinkedIn MCP: Test job discovery integration
+        - Claude API: Test prompt/response handling
+
+        **MANDATORY BEFORE HANDOFF TO QA:**
+        * All unit tests must pass (100% pass rate)
+        * Code coverage must be ≥90%
+        * All acceptance criteria have corresponding tests
+        * Test results documented in story file
+        * Code follows project structure (app/, tests/, config/)
+        * Type hints added (run mypy for validation)
+        * Logging added for debugging
+
+        Commit all code and tests with descriptive messages
+
+    - step: code_quality_validation
+      agent: dev
+      action: validate code quality and test coverage
+      validates: code_quality_gates
+      required_before: qa_testing_cycle
+      notes: |
+        Developer validates before QA handoff:
+
+        **CODE QUALITY CHECKS:**
+        - Run linter: ruff check app/ tests/
+        - Run formatter: black --check app/ tests/
+        - Run type checker: mypy app/
+        - Fix any issues found
+
+        **TEST VALIDATION:**
+        - Run full test suite: pytest tests/ -v
+        - Generate coverage report: pytest --cov=app --cov-report=html
+        - Verify metrics:
+          * All unit tests passing (100% pass rate)
+          * Code coverage ≥90% overall
+          * Each acceptance criterion has corresponding tests
+          * No untested public methods or classes
+
+        **DOCUMENTATION:**
+        - Update docs/stories/{epic}.{story}.{title}.md:
+          * Test execution results
+          * Coverage percentage achieved
+          * List of test files created
+          * Any known limitations or edge cases
+
+        **MANUAL TESTING:**
+        - Test FastAPI endpoints manually (if applicable)
+        - Test agent execution with sample jobs (if applicable)
+        - Verify Redis queue operations (if applicable)
+        - Check DuckDB database state (if applicable)
+
+        If validation fails:
+        - Return to TDD cycle
+        - Write missing tests
+        - Fix code quality issues
+        - Achieve required coverage
+
+        Only proceed to QA when all gates pass
+
+    - step: qa_testing_cycle
+      agent: qa
+      action: verify all acceptance criteria and quality standards
+      updates: docs/stories/{epic}.{story}.{title}.md
+      requires:
+        - docs/prd/epic-{epic}.md
+        - code_quality_validation
+      iterates: until_all_criteria_pass
+      notes: |
+        QA Agent tests each acceptance criterion from PRD:
+
+        **FIRST - Verify test coverage from Dev:**
+        - Confirm code quality validation gate passed
+        - Review coverage report in docs/stories/{epic}.{story}.{title}.md
+        - Verify ≥90% code coverage achieved
+        - Check all acceptance criteria have unit tests
+        - If unit tests insufficient:
+          * REJECT handoff back to Dev
+          * List missing test scenarios
+          * Require completion of TDD cycle
+
+        **THEN - Perform integration and acceptance testing:**
+
+        **For Foundation Stories (Epic 1):**
+        - Test configuration loading (search.yaml, agents.yaml, platforms.yaml)
+        - Test DuckDB database operations (CRUD, indexes, queries)
+        - Test LinkedIn job polling and data extraction
+        - Test Redis queue enqueue/dequeue operations
+        - Test RQ worker job processing
+        - Verify job flow: poller → database → queue
+
+        **For Agent Stories (Epic 2):**
+        - Test each agent individually with sample jobs
+        - Test agent pipeline execution (sequential processing)
+        - Test JobMatcherAgent scoring logic
+        - Test CVTailorAgent document generation
+        - Test CoverLetterWriterAgent personalization
+        - Test QAAgent validation checks
+        - Test OrchestratorAgent decision-making
+        - Test checkpoint/resume functionality
+        - Verify generated CV/CL files in export directory
+        - Test error handling and retry logic
+
+        **For Duplicate Detection Stories (Epic 3):**
+        - Test Tier 1 exact duplicate detection
+        - Test Tier 2 fuzzy matching algorithms
+        - Test similarity scoring and thresholds
+        - Test duplicate group assignment
+        - Verify database duplicate_group_id updates
+
+        **For Submission Stories (Epic 4):**
+        - Test email submission with test accounts
+        - Test web form detection and automation
+        - Test Playwright/Chrome MCP integration
+        - Test submission status tracking
+
+        **For UI Stories (Epic 5):**
+        - Test Gradio dashboard launch
+        - Test real-time job display and filters
+        - Test manual approval/rejection controls
+        - Test document preview functionality
+        - Test UI responsiveness and usability
+
+        **DOCUMENT RESULTS:**
+        - Update docs/stories/{epic}.{story}.{title}.md with testing notes
+        - For each acceptance criterion:
+          * ✅ PASS: Criterion met with evidence
+          * ❌ FAIL: Issue description with logs/screenshots
+          * ⚠️ BLOCKED: External dependency issue
+        - Include test execution logs
+        - Include screenshots (for UI stories)
+        - Include performance metrics (if applicable)
+
+        **REGRESSION TESTING:**
+        - Run full test suite to ensure no breakage
+        - Test previously completed stories still work
+        - Verify integration with existing components
+
+        Return to Dev if any criterion fails or unit tests inadequate
+
+    - step: dev_fixes
+      agent: dev
+      action: fix failing tests and issues
+      updates: docs/stories/{epic}.{story}.{title}.md
+      condition: qa_tests_failed
+      notes: |
+        Developer fixes issues found by QA:
+
+        **REVIEW QA FEEDBACK:**
+        - Read QA test results in docs/stories/{epic}.{story}.{title}.md
+        - Prioritize failing acceptance criteria
+        - Understand root causes of failures
+
+        **FIX IMPLEMENTATION:**
+        - Fix code to address failing tests
+        - Add missing functionality
+        - Improve error handling
+        - Update unit tests if needed
+
+        **RE-TEST LOCALLY:**
+        - Run unit tests: pytest tests/ -v
+        - Run integration tests for fixed areas
+        - Verify fixes don't break existing functionality
+        - Test specific failing scenarios from QA report
+        - Achieve ≥90% coverage
+
+        **UPDATE DOCUMENTATION:**
+        - Update docs/stories/{epic}.{story}.{title}.md:
+          * Mark reopened tasks
+          * Add fix notes and explanations
+          * Document any technical debt created
+
+        **NOTIFY QA:**
+        - Commit fixes with descriptive messages
+        - Mark ready for QA re-test
+        - Provide summary of changes made
+
+    - step: qa_retest
+      agent: qa
+      action: retest fixes and verify resolution
+      updates: docs/stories/{epic}.{story}.{title}.md
+      condition: after_dev_fixes
+      notes: |
+        QA Agent retests after Dev fixes:
+
+        **FOCUSED RE-TESTING:**
+        - Focus on previously failing tests
+        - Test specific fixes and edge cases
+        - Verify fix quality and completeness
+
+        **REGRESSION TESTING:**
+        - Run full test suite to check for side effects
+        - Test integration with other components
+        - Verify no new issues introduced
+
+        **EVIDENCE COLLECTION:**
+        - Capture test logs for fixed scenarios
+        - Take screenshots (for UI changes)
+        - Document performance improvements (if applicable)
+
+        **UPDATE RESULTS:**
+        - Update docs/stories/{epic}.{story}.{title}.md
+        - If still failing: Return to dev_fixes step with detailed feedback
+        - If all pass: Proceed to architect review
+
+    - step: architect_final_review
+      agent: architect
+      action: review implementation for architecture compliance
+      reviews:
+        - docs/stories/{epic}.{story}.{title}.md
+        - Changed code files
+        - docs/architecture/
+      notes: |
+        Technical Architect final review:
+
+        **CODE REVIEW:**
+        - Review implementation code for quality
+        - Verify architecture patterns followed
+        - Check component boundaries respected
+        - Validate API design (FastAPI endpoints)
+        - Review database schema changes
+
+        **TECHNICAL DEBT ASSESSMENT:**
+        - Identify any technical debt introduced
+        - Assess impact on future stories
+        - Document refactoring opportunities
+
+        **PERFORMANCE REVIEW:**
+        - Review performance implications
+        - Check resource usage (memory, database connections)
+        - Validate async/await patterns (if applicable)
+
+        **SECURITY REVIEW:**
+        - Check for security vulnerabilities
+        - Validate input validation and sanitization
+        - Review API key and credential handling
+        - Check for SQL injection risks (DuckDB queries)
+
+        **DECISION:**
+        - Approve for PR creation
+        - Request changes (return to dev with feedback)
+        - Approve with notes for future improvement
+
+    - step: sm_story_approval
+      agent: sm
+      action: verify story completion and alignment with PRD
+      reviews:
+        - docs/prd/epic-{epic}.md
+        - docs/stories/{epic}.{story}.{title}.md
+      notes: |
+        Scrum Master verifies story completion:
+
+        **ACCEPTANCE CRITERIA VERIFICATION:**
+        - Confirm all acceptance criteria from PRD met
+        - Review test results showing criterion coverage
+        - Verify alignment between PRD and implementation
+
+        **QUALITY VERIFICATION:**
+        - Code follows project standards
+        - Test coverage ≥90% maintained
+        - Integration with existing features works
+        - Documentation is up-to-date
+
+        **COMPLETENESS CHECK:**
+        - All tasks in story document marked complete [x]
+        - No open issues or blockers
+        - Technical debt documented
+        - Story ready for production
+
+        **PREPARE FOR PR:**
+        - Conduct final review of story
+        - Mark story as complete in tracking
+        - Commit all changes to feature branch
+        - Push feature branch to remote
+        - Prepare PR description with story summary
+
+    - step: create_pull_request
+      agent: sm
+      action: create pull request for review
+      creates: pull_request
+      requires: story_approved
+      notes: |
+        Scrum Master creates Pull Request:
+
+        **PR PREPARATION:**
+        - Ensure feature branch is up-to-date with main
+        - Resolve any merge conflicts
+        - Verify all commits are clean and descriptive
+
+        **CREATE PR:**
+        - Create PR from feature/story-{epic}-{story} to main
+        - PR title: "Story {epic}.{story}: {story title}"
+        - PR description includes:
+          * Story summary from docs/stories/{epic}.{story}.{title}.md
+          * Acceptance criteria checklist
+          * Implementation highlights
+          * Test results summary (coverage percentage)
+          * Changed files list
+          * Database schema changes (if applicable)
+          * Breaking changes (if any)
+          * Dependencies added (if any)
+
+        **ASSIGN REVIEWERS:**
+        - Assign BMad Master as primary reviewer
+        - Set PR labels (epic-1, epic-2, etc.)
+        - Set milestone (if applicable)
+        - Link to story document in PR description
+
+    - step: bmad_pr_review
+      agent: bmad-master
+      action: comprehensive PR review
+      reviews: pull_request
+      notes: |
+        BMad Master conducts comprehensive PR review:
+
+        **CODE QUALITY REVIEW:**
+        - Review all code changes for quality
+        - Check for code smells and anti-patterns
+        - Verify proper error handling
+        - Validate type hints and documentation
+
+        **ARCHITECTURE COMPLIANCE:**
+        - Verify architecture principles followed
+        - Check component boundaries
+        - Validate separation of concerns
+        - Review dependency injection patterns
+
+        **TESTING REVIEW:**
+        - Review test coverage report
+        - Check test quality and completeness
+        - Verify integration tests cover key flows
+        - Validate mocking strategies
+
+        **SECURITY REVIEW:**
+        - Check for security vulnerabilities
+        - Review API key handling
+        - Validate input sanitization
+        - Check for injection risks
+
+        **DOCUMENTATION REVIEW:**
+        - Verify code is well-documented
+        - Check story document completeness
+        - Validate README updates (if needed)
+
+        **DECISION:**
+        - Approve: Merge PR and proceed
+        - Request Changes: Provide detailed feedback
+        - Block: Critical issues must be resolved
+
+    - step: pr_changes_requested
+      agent: dev
+      action: address PR feedback
+      updates: docs/stories/{epic}.{story}.{title}.md
+      condition: bmad_requested_changes
+      notes: |
+        Developer addresses PR feedback:
+
+        **REVIEW FEEDBACK:**
+        - Read BMad Master's comments carefully
+        - Understand requested changes
+        - Prioritize changes by criticality
+
+        **MAKE CHANGES:**
+        - Address all requested changes
+        - Update code as requested
+        - Add missing tests if requested
+        - Improve documentation if requested
+        - Fix any security or quality issues
+
+        **RESPOND TO COMMENTS:**
+        - Reply to each comment
+        - Explain changes made
+        - Ask clarifying questions if needed
+
+        **UPDATE PR:**
+        - Commit changes to feature branch
+        - Push updates to update PR automatically
+        - Run tests locally before pushing
+        - Request re-review from BMad Master
+
+    - step: qa_verify_pr_changes
+      agent: qa
+      action: verify PR changes don't break functionality
+      updates: docs/stories/{epic}.{story}.{title}.md
+      condition: pr_changes_made
+      notes: |
+        QA verifies PR changes:
+
+        **TARGETED TESTING:**
+        - Test specific areas affected by PR changes
+        - Focus on modified acceptance criteria
+        - Test edge cases related to changes
+
+        **REGRESSION TESTING:**
+        - Run full test suite to ensure no breakage
+        - Test integration with other components
+        - Verify previously passing tests still pass
+
+        **EVIDENCE COLLECTION:**
+        - Capture test logs and results
+        - Take screenshots (for UI changes)
+        - Document any new issues found
+
+        **UPDATE STATUS:**
+        - Update test results in story document
+        - Confirm to SM that changes are tested
+        - Flag any new issues found (return to dev if needed)
+
+    - step: bmad_pr_approval
+      agent: bmad-master
+      action: approve and merge PR
+      merges: pull_request
+      requires:
+        - pr_approved
+        - all_tests_passing
+      notes: |
+        BMad Master final approval and merge:
+
+        **FINAL VERIFICATION:**
+        - Verify all requested changes addressed
+        - Confirm all tests passing
+        - Check CI/CD pipeline (if configured)
+        - Review final diff
+
+        **APPROVE PR:**
+        - Approve PR with commendation
+        - Note any outstanding items for future stories
+
+        **MERGE PR:**
+        - Merge to main branch (squash or merge commit)
+        - Delete feature branch after merge
+        - Tag commit with story ID (optional)
+
+        **NOTIFY TEAM:**
+        - Announce successful merge
+        - Update story tracking
+        - Celebrate completion
+
+    - step: story_retrospective
+      agent: sm
+      action: document story completion and learnings
+      updates: docs/stories/{epic}.{story}.{title}.md
+      condition: story_merged
+      notes: |
+        Scrum Master documents story completion:
+
+        **UPDATE STORY STATUS:**
+        - Mark story as "Completed" in story document
+        - Update story status in workflow tracking (this file)
+        - Record completion timestamp
+
+        **RETROSPECTIVE NOTES:**
+        - Record actual vs estimated time
+        - Document lessons learned:
+          * What went well
+          * What could be improved
+          * Blockers encountered
+          * Knowledge gaps identified
+        - Note any technical debt created
+        - Document reusable patterns discovered
+
+        **METRICS UPDATE:**
+        - Update team velocity metrics
+        - Track story cycle time
+        - Record test pass rates
+        - Note bug escape rate
+
+        **PREPARE FOR NEXT:**
+        - Archive story document (keep in docs/stories/)
+        - Update epic progress tracking
+        - Check remaining stories in epic
+        - Prepare team for next story
+
+    - step: next_story_decision
+      agent: sm
+      action: check backlog and select next story
+      notes: |
+        Scrum Master checks backlog:
+
+        **BACKLOG REVIEW:**
+        - Are there more stories in current epic?
+        - Are dependencies met for next story?
+        - Is team capacity available?
+
+        **DECISION:**
+        - If more stories in epic: Return to story_selection step
+        - If epic complete, more epics remaining: Return to story_selection step
+        - If all epics complete: Proceed to project completion
+
+    - step: epic_completion
+      agent: pm
+      action: review and document epic completion
+      creates: epic_summary.md
+      condition: epic_complete
+      notes: |
+        Product Manager reviews epic completion:
+
+        **EPIC REVIEW:**
+        - Verify all stories in epic completed
+        - Review epic deliverable achieved
+        - Assess epic value delivered
+
+        **EPIC SUMMARY:**
+        - Create epic summary document
+        - Document key achievements
+        - Note technical innovations
+        - Record challenges overcome
+
+        **DEMO PREPARATION:**
+        - Prepare epic demo for stakeholders
+        - Document user-facing features
+        - Prepare metrics and analytics
+
+        **NEXT EPIC:**
+        - Review next epic in roadmap
+        - Assess readiness to start
+        - Plan epic kickoff
+
+    - step: project_completion
+      agent: bmad-master
+      action: final project review and documentation
+      creates: project_summary.md
+      condition: all_stories_complete
+      notes: |
+        BMad Master project completion:
+
+        **PROJECT REVIEW:**
+        - Review all completed stories across all epics
+        - Verify all PRD requirements implemented
+        - Create comprehensive project summary report
+
+        **FINAL DELIVERABLES:**
+        - Working job application automation system
+        - LinkedIn job discovery operational
+        - 7-agent pipeline fully functional
+        - DuckDB database with job tracking
+        - Gradio UI for monitoring and control
+        - Automated application submission
+        - Comprehensive test suite (≥90% coverage)
+        - Full documentation
+
+        **METRICS SUMMARY:**
+        - Total stories completed
+        - Total development time
+        - Team velocity trends
+        - Test coverage achieved
+        - Bug escape rate
+
+        **DEPLOYMENT PREPARATION:**
+        - Prepare production deployment checklist
+        - Document deployment procedures
+        - Create user manual
+        - Plan ongoing maintenance
+
+        **HANDOFF:**
+        - Transfer to operations
+        - Schedule training sessions
+        - Establish support procedures
+
+  flow_diagram: |
+    ```mermaid
+    graph TD
+        A[Start: Prerequisites Check] --> B[sm: Select Next Story]
+        B --> C[sm: Plan Story Implementation]
+        C --> D{Complex Story?}
+        D -->|Yes| E[analyst: Clarify Requirements]
+        D -->|No| F{Architectural Changes?}
+        E --> F
+        F -->|Yes| G[architect: Review Design]
+        F -->|No| H[dev: TDD - Write Tests First]
+        G --> H
+
+        H --> I[dev: Implement Code to Pass Tests]
+        I --> J[dev: Refactor & Achieve 90% Coverage]
+        J --> K[dev: Code Quality Validation]
+        K --> K1{Quality Gates Pass?}
+        K1 -->|No| H
+        K1 -->|Yes| L[qa: Verify Coverage & Test Implementation]
+
+        L --> M{Unit Tests Adequate?}
+        M -->|No| H
+        M -->|Yes| N{All Tests Pass?}
+        N -->|No| O[dev: Fix Failing Tests]
+        O --> P[qa: Retest Fixes]
+        P --> N
+
+        N -->|Yes| Q[architect: Final Review]
+        Q --> R{Architect Approves?}
+        R -->|No| O
+        R -->|Yes| S[sm: Story Approval]
+        S --> T[sm: Create Pull Request]
+        T --> U[bmad-master: Review PR]
+
+        U --> V{PR Approved?}
+        V -->|Changes Requested| W[dev: Address PR Feedback]
+        W --> X[qa: Verify PR Changes]
+        X --> U
+
+        V -->|Approved| Y[bmad-master: Merge to Main]
+        Y --> Z[sm: Story Retrospective]
+        Z --> AA{More Stories?}
+
+        AA -->|Yes, Same Epic| B
+        AA -->|Yes, Next Epic| AB[pm: Epic Completion]
+        AB --> B
+        AA -->|No| AC[bmad-master: Project Completion]
+
+        style A fill:#FFE4B5
+        style B fill:#87CEEB
+        style C fill:#87CEEB
+        style E fill:#DDA0DD
+        style G fill:#98FB98
+        style H fill:#FF6B6B
+        style I fill:#51CF66
+        style J fill:#4C6EF5
+        style K fill:#FFA94D
+        style L fill:#F0E68C
+        style O fill:#ADD8E6
+        style P fill:#F0E68C
+        style Q fill:#98FB98
+        style S fill:#87CEEB
+        style T fill:#87CEEB
+        style U fill:#FFB6C1
+        style W fill:#ADD8E6
+        style X fill:#F0E68C
+        style Y fill:#FFB6C1
+        style Z fill:#87CEEB
+        style AB fill:#DDA0DD
+        style AC fill:#90EE90
+    ```
+
+  agent_responsibilities:
+    scrum_master:
+      - Select next story from PRD epics
+      - Review story acceptance criteria from PRD
+      - Create feature branches for stories
+      - Create detailed user stories in docs/stories/
+      - Create pull requests to main branch
+      - Story completion tracking and retrospectives
+      - Velocity monitoring across all epics
+      - Team coordination and blocker removal
+
+    product_manager:
+      - Epic completion reviews and summaries
+      - Stakeholder demo preparation
+      - Epic kickoff planning
+      - Value delivery assessment
+
+    business_analyst:
+      - Requirements clarification for complex stories
+      - Edge case identification
+      - Business logic validation
+      - Integration point analysis
+      - Risk analysis for complex features
+
+    developer:
+      - Follow Test-Driven Development (TDD) methodology
+      - Achieve minimum 90% code coverage
+      - Implement all acceptance criteria from PRD
+      - Python 3.11+ development (FastAPI, pytest)
+      - Database operations (DuckDB)
+      - Redis queue integration (RQ workers)
+      - Agent implementation (BaseAgent, 7 agents)
+      - Claude API integration
+      - LinkedIn MCP server integration
+      - Document generation (python-docx)
+      - Code quality validation (ruff, black, mypy)
+      - Unit and integration testing
+      - Fix issues from QA feedback
+      - Address PR review comments
+
+    technical_architect:
+      - Review technical design and architecture
+      - System design and component architecture
+      - Database schema validation
+      - API design review (FastAPI patterns)
+      - Integration patterns (MCP, Redis, Claude)
+      - Performance considerations
+      - Security review
+      - Final implementation review
+      - Technical debt assessment
+
+    qa_tester:
+      - Verify unit test coverage from Dev (≥90%)
+      - Validate all acceptance criteria from PRD
+      - Integration testing:
+        * FastAPI endpoint testing
+        * Database operations (DuckDB)
+        * Redis queue operations
+        * Agent pipeline execution
+        * LinkedIn job discovery
+        * CV/CL document generation
+        * Duplicate detection algorithms
+        * Form submission automation
+        * Gradio UI functionality
+      - Document criterion-by-criterion results
+      - Regression testing for existing features
+      - Performance validation
+      - Retest fixes after dev changes
+      - Verify PR changes don't break functionality
+
+    bmad_master:
+      - Comprehensive PR review
+      - Code quality and architecture compliance
+      - Security review
+      - Testing review (coverage, quality)
+      - Documentation review
+      - Approve and merge PRs
+      - Project completion review
+      - Final quality gate
+
+  quality_gates:
+    before_qa_handoff:
+      - All unit tests written using TDD approach
+      - Unit test coverage ≥90% verified
+      - Coverage report generated and documented
+      - All acceptance criteria have corresponding tests
+      - Code quality validation passed (ruff, black, mypy)
+      - Code committed with descriptive messages
+
+    before_pr_creation:
+      - All acceptance criteria met and tested
+      - All unit tests passing (100% pass rate)
+      - Code coverage ≥90% maintained
+      - Integration tests passing
+      - Code follows Python best practices
+      - Architect final review approved
+      - Story marked as Done by SM
+      - All tasks marked complete [x] in docs/stories/{epic}.{story}.{title}.md
+
+    before_pr_merge:
+      - BMad Master approval received
+      - All CI/CD checks pass (if configured)
+      - No merge conflicts with main
+      - All requested changes addressed
+      - QA verification complete for PR changes
+      - Documentation updated
+
+    before_next_story:
+      - Previous story fully merged to main
+      - Retrospective documented
+      - No blocking issues
+      - Team capacity available
+      - Dependencies for next story met
+
+  handoff_prompts:
+    sm_to_analyst: |
+      Story {{epic}}.{{story}} selected for implementation.
+      Story appears complex and needs requirements clarification.
+      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
+      PRD reference: docs/prd/epic-{{epic}}.md
+      Please review and clarify requirements, edge cases, and business logic.
+
+    analyst_to_architect: |
+      Story {{epic}}.{{story}} requirements clarified.
+      Architectural changes needed for this story.
+      Please review technical design and provide architecture guidance.
+      Updated story: docs/stories/{{epic}}.{{story}}.{{title}}.md
+
+    sm_to_dev: |
+      Story {{epic}}.{{story}} ready for implementation.
+      PRD: docs/prd/epic-{{epic}}.md
+      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
+      Acceptance criteria: {{criteria_count}} items
+      Feature branch: feature/story-{{epic}}-{{story}}
+
+      Please implement using Test-Driven Development (TDD):
+      1. Write tests first (RED phase)
+      2. Implement code to pass tests (GREEN phase)
+      3. Refactor for quality (REFACTOR phase)
+      4. Achieve ≥90% code coverage
+
+      Technology focus:
+      {{#if foundation_epic}}
+      - FastAPI application structure
+      - DuckDB database setup
+      - Redis + RQ queue system
+      - Configuration loading (YAML)
+      - LinkedIn MCP integration
+      {{/if}}
+      {{#if agent_epic}}
+      - BaseAgent abstract class
+      - Agent-specific implementations
+      - Claude API integration
+      - Checkpoint/resume system
+      - Document generation (CV/CL)
+      {{/if}}
+      {{#if duplicate_epic}}
+      - Similarity algorithms
+      - Duplicate detection logic
+      - Database duplicate tracking
+      {{/if}}
+      {{#if submission_epic}}
+      - Email submission
+      - Playwright form automation
+      - Application tracking
+      {{/if}}
+      {{#if ui_epic}}
+      - Gradio dashboard components
+      - Real-time data display
+      - User controls and filters
+      {{/if}}
+
+    dev_to_qa: |
+      Story {{epic}}.{{story}} implementation complete with TDD.
+
+      **Test Coverage:**
+      - Unit test coverage: {{coverage_percentage}}%
+      - Test files created: {{test_file_count}}
+      - All unit tests passing: {{unit_test_status}}
+
+      **Implementation:**
+      - Changed files: {{file_list}}
+      - Acceptance criteria implemented: {{criteria_count}}
+      - Database schema changes: {{schema_changes}}
+      - API endpoints added/modified: {{api_endpoints}}
+
+      **Ready for Testing:**
+      Please verify unit test coverage first, then perform integration and acceptance testing.
+      Test each acceptance criterion from PRD.
+      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
+
+    qa_to_dev_fixes: |
+      Testing found {{failure_count}} failing tests for story {{epic}}.{{story}}.
+
+      **Failed Acceptance Criteria:**
+      {{failure_summary}}
+
+      **Details:**
+      See full test results in docs/stories/{{epic}}.{{story}}.{{title}}.md
+
+      **Action Required:**
+      - Fix failing tests and issues
+      - Re-run unit tests locally
+      - Update story document with fix notes
+      - Notify QA when ready for retest
+
+    qa_to_architect: |
+      All tests passing for story {{epic}}.{{story}}.
+
+      **Test Summary:**
+      - Unit tests: {{unit_test_count}} passing
+      - Integration tests: {{integration_test_count}} passing
+      - Coverage: {{coverage_percentage}}%
+      - All acceptance criteria validated
+
+      Ready for architecture final review.
+      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
+
+    architect_to_sm: |
+      Architecture review complete for story {{epic}}.{{story}}.
+
+      **Review Status:** {{approval_status}}
+
+      {{#if approved}}
+      - Code quality: Excellent
+      - Architecture compliance: Verified
+      - Performance: Acceptable
+      - Security: No issues found
+      - Technical debt: {{technical_debt_notes}}
+
+      Ready for SM approval and PR creation.
+      {{/if}}
+
+      {{#if changes_requested}}
+      - Changes required: {{change_summary}}
+      - Return to Dev for modifications
+      {{/if}}
+
+    sm_to_bmad_pr: |
+      Pull Request created for story {{epic}}.{{story}}.
+
+      **PR Details:**
+      - PR #: {{pr_number}}
+      - Branch: feature/story-{{epic}}.{{story}} → main
+      - Title: Story {{epic}}.{{story}}: {{story_title}}
+
+      **Summary:**
+      - Acceptance criteria: {{criteria_count}} completed
+      - Test status: All passing
+      - Coverage: {{coverage_percentage}}%
+      - Files changed: {{files_changed_count}}
+
+      Please review for:
+      - Code quality and architecture compliance
+      - Security considerations
+      - Documentation completeness
+      - Test coverage adequacy
+
+      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
+
+    bmad_to_dev_changes: |
+      PR #{{pr_number}} requires changes for story {{epic}}.{{story}}.
+
+      **Change Requests:**
+      {{change_requests}}
+
+      **Priority:** {{priority}}
+
+      **Action Required:**
+      - Address all requested changes
+      - Reply to each review comment
+      - Push updates to feature branch
+      - Request re-review when complete
+
+      Branch: feature/story-{{epic}}.{{story}}
+
+    bmad_to_team_merged: |
+      ✅ PR #{{pr_number}} merged to main!
+
+      **Story Complete:** {{epic}}.{{story}} - {{story_title}}
+
+      **Highlights:**
+      - Coverage achieved: {{coverage_percentage}}%
+      - Test pass rate: 100%
+      - Feature branch deleted
+
+      **Next Steps:**
+      - Story retrospective by SM
+      - Prepare for next story
+
+      Great work team! 🎉
+
+    sm_to_team_next: |
+      Story {{epic}}.{{story}} retrospective complete.
+
+      **Lessons Learned:**
+      - What went well: {{went_well}}
+      - What to improve: {{to_improve}}
+      - Velocity: {{velocity_metrics}}
+
+      **Next Story:** {{next_epic}}.{{next_story}} - {{next_story_title}}
+
+      Returning to story selection phase.
+      Ready to continue?
+
+    pm_epic_complete: |
+      🎯 Epic {{epic}} Complete!
+
+      **Epic:** {{epic_title}}
+      **Stories Completed:** {{story_count}}
+      **Epic Value:** {{epic_value_delivered}}
+
+      **Key Achievements:**
+      {{achievements_summary}}
+
+      **Next Epic:** {{next_epic}} - {{next_epic_title}}
+      Ready to start next epic?
+
+    project_complete: |
+      🎊 PROJECT COMPLETE! 🎊
+
+      **Job Application Automation System - Fully Implemented**
+
+      **All Epics Completed:**
+      - Epic 1: Foundation ✅
+      - Epic 2: Core Agents (7 agents) ✅
+      - Epic 3: Duplicate Detection ✅
+      - Epic 4: Application Submission ✅
+      - Epic 5: Gradio UI ✅
+      - Epic 6: Testing & Refinement ✅
+
+      **Final Metrics:**
+      - Total stories completed: {{story_count}}
+      - Average coverage: {{avg_coverage}}%
+      - Project velocity: {{velocity_metrics}}
+      - Development time: {{total_time}}
+
+      **Deliverables Ready:**
+      - ✅ LinkedIn job discovery operational
+      - ✅ 7-agent pipeline fully functional
+      - ✅ DuckDB database with job tracking
+      - ✅ Automated CV/CL generation
+      - ✅ Duplicate detection system
+      - ✅ Application submission automation
+      - ✅ Gradio monitoring UI
+      - ✅ Comprehensive test suite (≥90%)
+      - ✅ Full documentation
+
+      **Ready for Production Deployment! 🚀**
+
+  decision_guidance:
+    when_to_use:
+      - Multiple stories across 6 epics need sequential development
+      - Python/FastAPI backend development with LLM integration
+      - Multi-agent system requiring careful testing
+      - Quality gates are critical for production readiness
+      - Team requires clear handoffs between specialists
+      - PR review process is mandatory
+      - Story-by-story tracking needed for complex system
+
+    benefits:
+      - Clear accountability at each step
+      - No story left incomplete
+      - Continuous quality validation with 90% coverage
+      - Clean git history with feature branches
+      - Predictable velocity across epics
+      - Reduced merge conflicts
+      - Specialist expertise applied at right time
+      - Architecture compliance enforced
+      - High-quality automated job application system
+
+    prerequisites:
+      - Python 3.11+ development environment
+      - Git repository with main branch
+      - All BMad agents available (sm, dev, qa, architect, analyst, pm)
+      - PRD epics in docs/prd/ directory
+      - Architecture docs in docs/architecture/
+      - Clear acceptance criteria per story
+      - Testing framework: pytest with coverage
+      - Code quality tools: ruff, black, mypy
+      - Redis server for job queue
+      - DuckDB for database
+      - LinkedIn MCP server configured
+      - Anthropic Claude API access
+
+  automation_opportunities:
+    ci_cd_integration:
+      - Automated pytest runs on PR creation
+      - Coverage report generation and validation
+      - Code quality checks (ruff, black, mypy)
+      - Security scanning for dependencies
+      - Automated deployment to staging
+      - Integration testing with test jobs
+      - Performance testing for agent pipeline
+      - Database migration testing
+
+    notification_system:
+      - PR status updates
+      - Test result summaries
+      - Coverage threshold alerts
+      - Merge notifications
+      - Blocker alerts
+      - Story completion celebrations
+
+    metrics_tracking:
+      - Story cycle time per epic
+      - Test pass rates over time
+      - PR review time
+      - Bug escape rate
+      - Team velocity trends
+      - Agent performance metrics
+      - Test coverage trends
+      - Code quality scores
+
+  story_progress_tracking:
+    epic_1_foundation:
+      total_stories: 5
+      stories:
+        - "1.1: Project Setup and Dependencies"
+        - "1.2: Configuration System"
+        - "1.3: DuckDB Schema Implementation"
+        - "1.4: LinkedIn Job Poller (Basic)"
+        - "1.5: Job Queue System"
+
+    epic_2_core_agents:
+      total_stories: 8
+      stories:
+        - "2.1: Agent Base Class and Infrastructure"
+        - "2.2: Job Matcher Agent"
+        - "2.3: Salary Validator Agent"
+        - "2.4: CV Tailor Agent"
+        - "2.5: Cover Letter Writer Agent"
+        - "2.6: QA Agent"
+        - "2.7: Orchestrator Agent"
+        - "2.8: Checkpoint System"
+
+    epic_3_duplicate_detection:
+      total_stories: 3
+      stories:
+        - "3.1: Tier 1 Exact Duplicate Detection"
+        - "3.2: Tier 2 Fuzzy Duplicate Detection"
+        - "3.3: Duplicate Group Management"
+
+    epic_4_application_submission:
+      total_stories: 3
+      stories:
+        - "4.1: Email Submission Handler"
+        - "4.2: Web Form Submission Handler"
+        - "4.3: Submission Status Tracking"
+
+    epic_5_gradio_ui:
+      total_stories: 5
+      stories:
+        - "5.1: Gradio Dashboard Setup"
+        - "5.2: Job Queue Monitor"
+        - "5.3: Application Review Interface"
+        - "5.4: Document Preview"
+        - "5.5: Manual Controls"
+
+    epic_6_testing_refinement:
+      total_stories: 4
+      stories:
+        - "6.1: End-to-End Testing"
+        - "6.2: Performance Optimization"
+        - "6.3: Error Handling Improvements"
+        - "6.4: Documentation Finalization"
+
+    total_mvp_stories: 28
+    completion_tracking: "Track in this file as stories complete"
+
+  configuration_files:
+    - config/search.yaml
+    - config/agents.yaml
+    - config/platforms.yaml
+    - config/similarity.yaml
+    - .mcp.json
+    - requirements.txt
+    - .env.example
+
+  testing_strategy:
+    unit_testing:
+      - Framework: pytest
+      - Coverage minimum: 90%
+      - Mocking: unittest.mock or pytest-mock
+      - Fixtures: pytest fixtures for common test data
+      - Test structure: Arrange-Act-Assert pattern
+
+    integration_testing:
+      - FastAPI TestClient for endpoint testing
+      - DuckDB in-memory database for testing
+      - Mock Redis for queue testing
+      - Mock Claude API responses
+      - Mock LinkedIn MCP responses
+
+    end_to_end_testing:
+      - Full agent pipeline execution
+      - Real job data processing (test set)
+      - Document generation validation
+      - Gradio UI interaction testing
+      - Submission workflow testing (test mode)

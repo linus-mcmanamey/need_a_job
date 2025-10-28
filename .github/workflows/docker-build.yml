@@ -1,0 +1,223 @@
+name: Docker Build and Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Job 1: Build and test Docker images
+  build-and-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build Docker image (app)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: app
+          push: false
+          load: true
+          tags: job-automation:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Create test environment file
+        run: |
+          cat > .env << EOF
+          APP_ENV=test
+          LOG_LEVEL=DEBUG
+          REDIS_URL=redis://redis:6379
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY_TEST || 'sk-ant-test-key' }}
+          DUCKDB_PATH=data/test.duckdb
+          EOF
+
+      - name: Start test services
+        run: |
+          # Create required directories
+          mkdir -p data logs config current_cv_coverletter export_cv_cover_letter
+
+          # Start Redis and app
+          docker-compose up -d redis app
+
+          # Wait for services to be healthy
+          timeout 60 bash -c 'until docker-compose ps redis | grep -q "healthy"; do sleep 2; done'
+          timeout 60 bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
+
+      - name: Run tests
+        run: |
+          # Run pytest in container
+          docker-compose exec -T app pytest tests/ -v --cov=app --cov-report=xml
+
+      - name: Upload coverage reports
+        if: always()
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+
+      - name: Check logs for errors
+        if: always()
+        run: |
+          echo "=== Application Logs ==="
+          docker-compose logs app | tail -100
+
+          echo "=== Worker Logs ==="
+          docker-compose logs worker | tail -50
+
+          # Fail if critical errors found
+          if docker-compose logs app | grep -i "CRITICAL"; then
+            echo "Critical errors found in logs!"
+            exit 1
+          fi
+
+      - name: Stop test services
+        if: always()
+        run: docker-compose down -v
+
+  # Job 2: Security scanning
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Job 3: Build and push production images
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: [build-and-test, security-scan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push app image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: app
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push worker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: worker
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}-worker
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Job 4: Deploy notification (optional - for production deployments)
+  notify:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Send deployment notification
+        run: |
+          echo "Docker images built and pushed successfully!"
+          echo "Images available at: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          echo "Tags: latest, ${{ github.sha }}"
+
+      # Optional: Send notification to Slack, Discord, etc.
+      # - name: Notify Slack
+      #   uses: slackapi/slack-github-action@v1
+      #   with:
+      #     webhook-url: ${{ secrets.SLACK_WEBHOOK }}
+      #     payload: |
+      #       {
+      #         "text": "Job Automation System deployed successfully!",
+      #         "blocks": [
+      #           {
+      #             "type": "section",
+      #             "text": {
+      #               "type": "mrkdwn",
+      #               "text": "New Docker images pushed:\n• Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}\n• Commit: ${{ github.sha }}"
+      #             }
+      #           }
+      #         ]
+      #       }

@@ -1,0 +1,252 @@
+"""
+Gradio UI application for the Job Application Automation System.
+
+This module provides a web-based user interface for monitoring and controlling
+the automated job application system.
+"""
+
+import os
+from typing import Any
+
+import gradio as gr
+from loguru import logger
+
+
+def create_dashboard_tab() -> gr.Blocks:
+    """
+    Create the dashboard tab with metrics and status overview.
+
+    Returns:
+        Gradio Blocks component
+    """
+    with gr.Column() as dashboard:
+        gr.Markdown("# 📊 Dashboard")
+        gr.Markdown("Real-time metrics and system status")
+
+        with gr.Row():
+            gr.Number(label="Jobs Discovered Today", value=0, interactive=False)
+            gr.Number(label="Applications Sent", value=0, interactive=False)
+            gr.Number(label="Pending Jobs", value=0, interactive=False)
+            gr.Number(label="Success Rate (%)", value=0.0, interactive=False)
+
+        gr.Markdown("### Status Breakdown")
+        gr.BarPlot(
+            value={"status": ["discovered", "matched", "completed"], "count": [0, 0, 0]},
+            x="status",
+            y="count",
+            title="Jobs by Status",
+            height=300,
+        )
+
+        gr.Markdown("### Recent Activity")
+        gr.Dataframe(
+            value=[],
+            headers=["Time", "Job Title", "Company", "Status"],
+            label="Last 10 Jobs",
+        )
+
+    return dashboard
+
+
+def create_pipeline_tab() -> gr.Blocks:
+    """
+    Create the pipeline view tab showing real-time agent flow.
+
+    Returns:
+        Gradio Blocks component
+    """
+    with gr.Column() as pipeline:
+        gr.Markdown("# 🔄 Job Pipeline")
+        gr.Markdown("Watch jobs flow through the agent pipeline in real-time")
+
+        gr.Dataframe(
+            value=[],
+            headers=["Job ID", "Title", "Company", "Current Stage", "Status", "Time in Stage"],
+            label="Active Jobs in Pipeline",
+        )
+
+        gr.Markdown("### Agent Performance")
+        gr.BarPlot(
+            value={
+                "agent": [
+                    "Job Matcher",
+                    "Salary Validator",
+                    "CV Tailor",
+                    "CL Writer",
+                    "QA",
+                    "Orchestrator",
+                    "Form Handler",
+                ],
+                "avg_time_sec": [0, 0, 0, 0, 0, 0, 0],
+            },
+            x="agent",
+            y="avg_time_sec",
+            title="Average Execution Time per Agent",
+            height=300,
+        )
+
+    return pipeline
+
+
+def create_pending_tab() -> gr.Blocks:
+    """
+    Create the pending jobs management tab.
+
+    Returns:
+        Gradio Blocks component
+    """
+    with gr.Column() as pending:
+        gr.Markdown("# ⏸️ Pending Jobs")
+        gr.Markdown("Manage jobs requiring manual intervention")
+
+        gr.Dataframe(
+            value=[],
+            headers=["Job ID", "Title", "Company", "Error Type", "Error Message", "Actions"],
+            label="Pending Jobs",
+        )
+
+        with gr.Row():
+            retry_btn = gr.Button("Retry Selected", variant="primary")
+            skip_btn = gr.Button("Skip Selected", variant="secondary")
+            manual_btn = gr.Button("Mark as Manual Complete")
+
+        gr.Markdown("### Error Summary")
+        gr.BarPlot(
+            value={"error_type": [], "count": []},
+            x="error_type",
+            y="count",
+            title="Errors by Type",
+            height=250,
+        )
+
+    return pending
+
+
+def create_settings_tab() -> gr.Blocks:
+    """
+    Create the settings and control tab.
+
+    Returns:
+        Gradio Blocks component
+    """
+    with gr.Column() as settings:
+        gr.Markdown("# ⚙️ Settings & Controls")
+
+        gr.Markdown("### System Controls")
+        with gr.Row():
+            approval_mode = gr.Checkbox(label="Require approval before sending", value=True)
+            dry_run_mode = gr.Checkbox(label="Dry-run mode (don't send applications)", value=False)
+
+        gr.Markdown("### Discovery Settings")
+        with gr.Row():
+            auto_discovery = gr.Checkbox(label="Enable automatic job discovery", value=False)
+            discovery_interval = gr.Slider(
+                minimum=1, maximum=24, value=1, step=1, label="Discovery interval (hours)"
+            )
+
+        gr.Markdown("### Matching Thresholds")
+        with gr.Row():
+            match_threshold = gr.Slider(
+                minimum=0.0,
+                maximum=1.0,
+                value=0.70,
+                step=0.05,
+                label="Job match threshold",
+            )
+            dup_threshold = gr.Slider(
+                minimum=0.0,
+                maximum=1.0,
+                value=0.90,
+                step=0.05,
+                label="Duplicate detection threshold",
+            )
+
+        save_btn = gr.Button("Save Settings", variant="primary")
+        status_msg = gr.Textbox(label="Status", value="", interactive=False)
+
+    return settings
+
+
+def create_ui() -> gr.Blocks:
+    """
+    Create the main Gradio UI application.
+
+    Returns:
+        Gradio Blocks interface
+    """
+    with gr.Blocks(
+        title="Job Application Automation System",
+        theme=gr.themes.Soft(),
+    ) as app:
+        gr.Markdown(
+            """
+            # 🤖 Job Application Automation System
+            ### Automated Job Search and Application for Data Engineering Roles
+            """
+        )
+
+        with gr.Tabs():
+            with gr.Tab("Dashboard"):
+                create_dashboard_tab()
+
+            with gr.Tab("Pipeline"):
+                create_pipeline_tab()
+
+            with gr.Tab("Pending Jobs"):
+                create_pending_tab()
+
+            with gr.Tab("Settings"):
+                create_settings_tab()
+
+        gr.Markdown(
+            """
+            ---
+            **Status:** MVP Phase 1 - Foundation
+            **Version:** 1.0.0-mvp
+            *Built with FastAPI, Gradio, DuckDB, and Claude AI*
+            """
+        )
+
+    return app
+
+
+def start(server_name: str = "0.0.0.0", server_port: int = 7860, share: bool = False) -> None:
+    """
+    Start the Gradio UI server.
+
+    Args:
+        server_name: Server host address
+        server_port: Server port number
+        share: Whether to create a public share link
+    """
+    try:
+        logger.info(f"Starting Gradio UI on {server_name}:{server_port}")
+        app = create_ui()
+        app.launch(
+            server_name=server_name,
+            server_port=server_port,
+            share=share,
+            show_api=False,
+        )
+    except Exception as e:
+        logger.error(f"Failed to start Gradio UI: {e}")
+        raise
+
+
+if __name__ == "__main__":
+    # Load environment variables
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
+    # Configure logging
+    logger.add(
+        "logs/gradio_app.log",
+        rotation="1 day",
+        retention="30 days",
+        level="INFO",
+    )
+
+    # Start the UI
+    port = int(os.getenv("GRADIO_PORT", "7860"))
+    start(server_port=port)

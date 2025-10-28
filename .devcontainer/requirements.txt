@@ -10,5 +10,11 @@ icecream
 tomli
 tabulate
 python-dotenv
+pydantic
+fastapi
+uvicorn
+httpx
+sqlmodel
+fastmcp
 
 

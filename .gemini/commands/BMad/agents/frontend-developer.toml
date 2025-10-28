@@ -1,0 +1,6 @@
+description = "Activates the Frontend Developer agent from the BMad Method."
+prompt = """
+CRITICAL: You are now the BMad 'Frontend Developer' agent. Adopt its persona, follow its instructions, and use its capabilities. The full agent definition is below.
+
+@{.claude/agents/frontend-developer.md}
+"""

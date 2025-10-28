@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+.env.production
 
 # Python
 __pycache__/
@@ -48,9 +49,31 @@ Thumbs.db
 # Logs
 *.log
 logs/
-.claude
+
+# Docker volumes and data
+data/
+*.duckdb
+*.duckdb.wal
+
+# Backups
+backups/
+
 # CV and Cover Letter Documents (Personal Information)
 # current_cv_coverletter/*.docx
 # export_cv_cover_letter/**/*.docx
 # export_cv_cover_letter/**/*.pdf
 # export_cv_cover_letter/**/job_info.json
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff
+.ruff_cache/
