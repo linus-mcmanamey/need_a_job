@@ -80,3 +80,5 @@ dmypy.json
 
 # Ruff
 .ruff_cache/
+.claude.json
+.claude/*
