@@ -21,8 +21,9 @@
 #
 # EXECUTION FLOW:
 #   Prerequisites Check → Story Selection → Planning → Implementation (TDD) →
-#   QA Testing → Fix Cycles (auto-retry) → Architecture Review → PR Creation →
-#   BMad Review → Merge → Retrospective → Next Story (auto-continue)
+#   Code Review & Security Scan → QA Testing → Fix Cycles (auto-retry) →
+#   Architecture Review → PR Creation → Code-Reviewer PR Review →
+#   BMad Final Oversight → Merge → Retrospective → Next Story (auto-continue)
 #
 # TERMINATION: Workflow completes only when all 6 epics are done.
 # ========================================================================
@@ -73,14 +74,16 @@ workflow:
            c. Architecture Review: Architect reviews if needed (conditional)
            d. TDD Implementation: Dev implements with tests (90% coverage minimum)
            e. Quality Validation: Dev validates code quality gates
-           f. QA Testing: QA validates all acceptance criteria
-           g. Fix Cycle: Dev fixes issues, QA retests (iterate until pass)
-           h. Final Review: Architect approves implementation
-           i. SM Approval: SM verifies story completion
-           j. PR Creation: SM creates pull request
-           k. BMad Review: BMad Master reviews and approves
-           l. PR Merge: BMad Master merges to main
-           m. Retrospective: SM documents completion
+           f. Code Review & Security Scan: Code-reviewer performs security and quality review
+           g. QA Testing: QA validates all acceptance criteria
+           h. Fix Cycle: Dev fixes issues, QA retests (iterate until pass)
+           i. Final Review: Architect approves implementation
+           j. SM Approval: SM verifies story completion
+           k. PR Creation: SM creates pull request
+           l. Code-Reviewer PR Review: Code-reviewer performs comprehensive PR review with approval authority
+           m. PR Changes: Dev addresses feedback if needed (conditional)
+           n. BMad Final Oversight: BMad Master verifies and merges (or validates merge)
+           o. Retrospective: SM documents completion
 
       3. EPIC TRANSITION (Automatic):
          When all stories in current epic complete:
@@ -318,9 +321,9 @@ workflow:
       agent: dev
       action: validate code quality and test coverage
       validates: code_quality_gates
-      required_before: qa_testing_cycle
+      required_before: code_review_security_scan
       notes: |
-        Developer validates before QA handoff:
+        Developer validates before code review:
 
         **CODE QUALITY CHECKS:**
         - Run linter: ruff check app/ tests/
@@ -356,7 +359,62 @@ workflow:
         - Fix code quality issues
         - Achieve required coverage
 
-        Only proceed to QA when all gates pass
+        Only proceed to code review when all gates pass
+
+    - step: code_review_security_scan
+      agent: code-reviewer
+      action: comprehensive code quality and security review
+      orchestrated_by: bmad-orchestrator
+      reviews: implementation_files
+      required_before: qa_testing_cycle
+      notes: |
+        ORCHESTRATOR-CONTROLLED: bmad-orchestrator assigns code review to code-reviewer agent automatically.
+
+        Code Reviewer (Alex) autonomously performs comprehensive review:
+
+        **SECURITY SCAN (Critical Priority):**
+        - 🚨 Search for exposed secrets/API keys/tokens/passwords
+        - 🚨 Check for SQL injection vulnerabilities (DuckDB queries)
+        - 🚨 Check for command injection risks
+        - 🚨 Validate input sanitization and validation
+        - 🚨 Review authentication/authorization logic
+        - 🚨 Check error messages don't leak sensitive info
+
+        **CODE QUALITY REVIEW:**
+        - Functions/variables have clear, descriptive names
+        - No duplicated code (DRY principle)
+        - Proper error handling for external calls
+        - Type hints present and correct
+        - No TODO comments without tickets
+        - Algorithmic complexity reasonable (no O(n²) where avoidable)
+
+        **TESTING VALIDATION:**
+        - Review test coverage adequacy (≥90%)
+        - Validate edge cases covered
+        - Check test quality and maintainability
+        - Verify integration tests appropriate
+
+        **PERFORMANCE REVIEW:**
+        - Database queries optimized (no N+1 problems)
+        - Resource usage appropriate
+        - Async/await patterns used correctly
+        - No memory leaks or resource exhaustion risks
+
+        **DOCUMENTATION CHECK:**
+        - Docstrings present for public APIs
+        - Complex logic explained
+        - Architecture patterns followed
+
+        **REVIEW OUTPUT:**
+        - Document findings by priority:
+          * 🚨 CRITICAL: Must fix before QA (blocks QA handoff)
+          * ⚠️ WARNING: Should fix (advisory, document in story)
+          * 💡 SUGGESTION: Consider improving (optional, document in story)
+
+        **DECISION:**
+        - APPROVE: No critical issues → Proceed to QA
+        - REQUEST CHANGES: Critical issues found → Return to Dev with specific feedback
+        - Update docs/stories/{epic}.{story}.{title}.md with review findings
 
     - step: qa_testing_cycle
       agent: qa
@@ -609,80 +667,109 @@ workflow:
         - Set milestone (if applicable)
         - Link to story document in PR description
 
-    - step: bmad_pr_review
-      agent: bmad-master
-      action: comprehensive PR review
+    - step: code_reviewer_pr_review
+      agent: code-reviewer
+      action: comprehensive PR review with approval authority
       orchestrated_by: bmad-orchestrator
       reviews: pull_request
       notes: |
-        ORCHESTRATOR-CONTROLLED: bmad-orchestrator assigns PR review to BMad Master automatically.
+        ORCHESTRATOR-CONTROLLED: bmad-orchestrator assigns PR review to code-reviewer automatically.
 
-        BMad Master autonomously conducts comprehensive PR review:
+        Code Reviewer (Alex) autonomously conducts comprehensive PR review with authority to approve/merge:
 
-        **CODE QUALITY REVIEW:**
-        - Review all code changes for quality
-        - Check for code smells and anti-patterns
-        - Verify proper error handling
-        - Validate type hints and documentation
+        **UNDERSTAND CONTEXT (Step 1):**
+        - Read PR description and linked story document
+        - Review acceptance criteria from PRD
+        - Understand business logic and use cases
 
-        **ARCHITECTURE COMPLIANCE:**
-        - Verify architecture principles followed
-        - Check component boundaries
-        - Validate separation of concerns
-        - Review dependency injection patterns
+        **ANALYZE CHANGES (Step 2):**
+        - Run git diff main...HEAD to see all changes
+        - Focus on modified files, not entire codebase
+        - Check for unintended changes
 
-        **TESTING REVIEW:**
-        - Review test coverage report
-        - Check test quality and completeness
-        - Verify integration tests cover key flows
-        - Validate mocking strategies
+        **SECURITY SCAN (Step 3 - Critical):**
+        - 🚨 Search for exposed secrets/API keys (BLOCKS MERGE)
+        - 🚨 Check for SQL injection vulnerabilities (BLOCKS MERGE)
+        - 🚨 Validate input sanitization (BLOCKS MERGE)
+        - 🚨 Review authentication/authorization (BLOCKS MERGE)
+        - 🚨 Check for command injection risks (BLOCKS MERGE)
 
-        **SECURITY REVIEW:**
-        - Check for security vulnerabilities
-        - Review API key handling
-        - Validate input sanitization
-        - Check for injection risks
+        **QUALITY CHECK (Step 4):**
+        - Code readability and maintainability
+        - Proper error handling
+        - Naming conventions followed
+        - No code duplication (DRY)
 
-        **DOCUMENTATION REVIEW:**
-        - Verify code is well-documented
-        - Check story document completeness
-        - Validate README updates (if needed)
+        **TESTING VALIDATION (Step 5):**
+        - All tests passing (verify CI/test output)
+        - New tests cover new functionality
+        - Edge cases considered
+        - Integration tests appropriate
+        - Coverage ≥90% maintained
 
-        **DECISION:**
-        - Approve: Merge PR and proceed
-        - Request Changes: Provide detailed feedback
-        - Block: Critical issues must be resolved
+        **PERFORMANCE REVIEW (Step 6):**
+        - Algorithmic complexity reasonable
+        - Database queries optimized
+        - No N+1 query problems
+        - Resource usage appropriate
+
+        **DOCUMENTATION CHECK (Step 7):**
+        - Docstrings present for public APIs
+        - Complex logic explained
+        - README updated if needed
+        - Story document complete
+
+        **APPROVAL DECISION (Step 8):**
+        - APPROVE + MERGE: No critical issues, tests pass, quality standards met
+          * Use MCP GitHub tools to approve PR
+          * Can merge if all checks pass
+        - REQUEST CHANGES: Critical or multiple warning issues present
+          * Provide detailed, actionable feedback with code examples
+          * Block merge until issues resolved
+        - COMMENT: Suggestions only, no blocking issues
+          * Document advisory warnings and suggestions in PR comments
+
+        **REVIEW OUTPUT FORMAT:**
+        Provide constructive feedback with specific examples:
+        - ✅ **Approved**: Ready to merge, excellent work
+        - 🚨 **CRITICAL**: Must fix (with code example showing fix)
+        - ⚠️ **WARNING**: Should fix (with explanation and suggestion)
+        - 💡 **SUGGESTION**: Consider improving (with alternative approach)
 
     - step: pr_changes_requested
       agent: dev
-      action: address PR feedback
+      action: address PR feedback from code reviewer
       updates: docs/stories/{epic}.{story}.{title}.md
-      condition: bmad_requested_changes
+      condition: code_reviewer_requested_changes
       notes: |
-        Developer addresses PR feedback:
+        Developer addresses code reviewer's feedback:
 
         **REVIEW FEEDBACK:**
-        - Read BMad Master's comments carefully
-        - Understand requested changes
-        - Prioritize changes by criticality
+        - Read code reviewer's comments carefully
+        - Understand requested changes by priority (Critical/Warning/Suggestion)
+        - Prioritize CRITICAL issues first
+        - Address WARNING issues
+        - Consider SUGGESTION improvements
 
         **MAKE CHANGES:**
-        - Address all requested changes
-        - Update code as requested
+        - Address all critical security issues
+        - Fix requested code quality issues
         - Add missing tests if requested
         - Improve documentation if requested
-        - Fix any security or quality issues
+        - Optimize performance if requested
+        - Fix any security vulnerabilities
 
         **RESPOND TO COMMENTS:**
         - Reply to each comment
         - Explain changes made
         - Ask clarifying questions if needed
+        - Provide justification for decisions
 
         **UPDATE PR:**
         - Commit changes to feature branch
         - Push updates to update PR automatically
-        - Run tests locally before pushing
-        - Request re-review from BMad Master
+        - Run tests locally before pushing (pytest + coverage)
+        - Request re-review from code-reviewer
 
     - step: qa_verify_pr_changes
       agent: qa
@@ -714,23 +801,27 @@ workflow:
 
     - step: bmad_pr_approval
       agent: bmad-master
-      action: approve and merge PR
+      action: final oversight and merge PR
       merges: pull_request
       requires:
-        - pr_approved
+        - code_reviewer_approved
         - all_tests_passing
+      condition: pr_not_yet_merged
       notes: |
-        BMad Master final approval and merge:
+        BMad Master final oversight and merge:
 
         **FINAL VERIFICATION:**
-        - Verify all requested changes addressed
+        - Verify code-reviewer approval completed
+        - Verify all critical issues resolved
         - Confirm all tests passing
         - Check CI/CD pipeline (if configured)
         - Review final diff
 
-        **APPROVE PR:**
-        - Approve PR with commendation
+        **PROJECT OVERSIGHT:**
+        - Assess alignment with overall project architecture
+        - Verify story contributes to epic goals
         - Note any outstanding items for future stories
+        - Document any cross-story dependencies
 
         **MERGE PR:**
         - Merge to main branch (squash or merge commit)
@@ -741,6 +832,9 @@ workflow:
         - Announce successful merge
         - Update story tracking
         - Celebrate completion
+
+        **NOTE:** If code-reviewer already merged the PR (has merge authority),
+        this step validates the merge was correct and updates tracking.
 
     - step: story_retrospective
       agent: sm
@@ -955,8 +1049,10 @@ workflow:
         2. Business Analyst (Analyst) - Requirements Clarification [CONDITIONAL]
         3. Technical Architect (Architect) - Architecture Review [CONDITIONAL], Final Review
         4. Developer (Dev) - TDD Implementation, Quality Validation, Fixes
-        5. QA Tester (QA) - Testing Cycle, Retesting, PR Verification
-        6. BMad Master - PR Review, Approval, Merge, Project Completion
+        5. Code Reviewer (code-reviewer) - Security Scan, Code Quality Review (after Dev)
+        6. QA Tester (QA) - Testing Cycle, Retesting, PR Verification
+        7. Code Reviewer (code-reviewer) - PR Review, Approval, Potential Merge
+        8. BMad Master - Final Oversight, Merge Validation, Project Completion
 
       AUTOMATIC HANDOFF PROTOCOL:
         - Agents complete their task and signal completion to orchestrator
@@ -969,8 +1065,14 @@ workflow:
       CONDITIONAL AGENT ACTIVATION:
         - Analyst: Triggered if story complexity threshold exceeded
         - Architect: Triggered if architectural changes detected
-        - Dev Fixes: Triggered automatically if QA tests fail
-        - PR Changes: Triggered automatically if BMad requests changes
+        - Dev Fixes: Triggered automatically if code-reviewer or QA finds issues
+        - PR Changes: Triggered automatically if code-reviewer requests changes
+
+      CODE-REVIEWER DUAL ROLE:
+        - First Review: After code quality validation, before QA (security & quality scan)
+        - Second Review: After PR creation (comprehensive PR review with approval authority)
+        - Has authority to approve, request changes, and merge PRs
+        - Enforces security-first principles and quality standards
 
       PARALLEL OPERATIONS (where applicable):
         - None: This workflow is strictly sequential per story
@@ -1045,24 +1147,45 @@ workflow:
       - Retest fixes after dev changes
       - Verify PR changes don't break functionality
 
+    code_reviewer:
+      - Security scan after code implementation (first checkpoint)
+      - Code quality review before QA testing
+      - Comprehensive PR review (second checkpoint)
+      - Vulnerability detection (secrets, injection, XSS)
+      - Performance analysis (algorithmic complexity, N+1 queries)
+      - Test coverage validation
+      - Documentation completeness check
+      - PR approval authority
+      - Request changes with actionable feedback
+      - Merge authority (can merge approved PRs)
+      - Constructive feedback with code examples
+      - Risk-based prioritization (Critical/Warning/Suggestion)
+
     bmad_master:
-      - Comprehensive PR review
-      - Code quality and architecture compliance
-      - Security review
-      - Testing review (coverage, quality)
-      - Documentation review
-      - Approve and merge PRs
+      - Final project oversight
+      - Cross-story architecture alignment
+      - Epic-level quality assurance
+      - PR merge validation (if code-reviewer merged)
+      - Final merge authority (if not yet merged)
       - Project completion review
-      - Final quality gate
+      - Epic completion coordination
+      - Strategic technical direction
 
   quality_gates:
-    before_qa_handoff:
+    before_code_review:
       - All unit tests written using TDD approach
       - Unit test coverage ≥90% verified
       - Coverage report generated and documented
       - All acceptance criteria have corresponding tests
       - Code quality validation passed (ruff, black, mypy)
       - Code committed with descriptive messages
+
+    before_qa_handoff:
+      - Code review security scan passed
+      - No critical security issues (secrets, injection risks)
+      - Code quality review completed
+      - Performance concerns addressed
+      - Code-reviewer approved for QA testing
 
     before_pr_creation:
       - All acceptance criteria met and tested
@@ -1147,13 +1270,18 @@ workflow:
       - User controls and filters
       {{/if}}
 
-    dev_to_qa: |
-      Story {{epic}}.{{story}} implementation complete with TDD.
+    dev_to_code_reviewer: |
+      Story {{epic}}.{{story}} implementation complete with TDD and code quality validation passed.
 
       **Test Coverage:**
       - Unit test coverage: {{coverage_percentage}}%
       - Test files created: {{test_file_count}}
       - All unit tests passing: {{unit_test_status}}
+
+      **Code Quality:**
+      - Linter (ruff): Passed
+      - Formatter (black): Passed
+      - Type checker (mypy): Passed
 
       **Implementation:**
       - Changed files: {{file_list}}
@@ -1161,9 +1289,52 @@ workflow:
       - Database schema changes: {{schema_changes}}
       - API endpoints added/modified: {{api_endpoints}}
 
-      **Ready for Testing:**
+      **Ready for Code Review:**
+      Please perform security scan and code quality review before QA testing.
+      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
+
+    code_reviewer_to_qa: |
+      Story {{epic}}.{{story}} code review and security scan complete - APPROVED for QA testing.
+
+      **Security Scan Results:**
+      - No exposed secrets/API keys found ✅
+      - No SQL injection vulnerabilities ✅
+      - No command injection risks ✅
+      - Input validation implemented ✅
+
+      **Code Quality:**
+      - Code readability: Excellent
+      - Error handling: Proper
+      - Performance: Acceptable
+      - Test coverage: {{coverage_percentage}}% ✅
+
+      **Warnings/Suggestions (if any):**
+      {{warnings_list}}
+
+      **Ready for QA Testing:**
       Please verify unit test coverage first, then perform integration and acceptance testing.
       Test each acceptance criterion from PRD.
+      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
+
+    code_reviewer_to_dev: |
+      Story {{epic}}.{{story}} code review found CRITICAL issues - returning to Dev.
+
+      **🚨 CRITICAL Issues (Must Fix Before QA):**
+      {{critical_issues_list}}
+
+      **⚠️ Warnings (Should Fix):**
+      {{warning_issues_list}}
+
+      **💡 Suggestions (Consider):**
+      {{suggestion_list}}
+
+      **Action Required:**
+      - Fix all critical security and quality issues
+      - Address warning items
+      - Consider suggested improvements
+      - Re-run tests locally
+      - Request code review again when ready
+
       Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
 
     qa_to_dev_fixes: |
@@ -1213,7 +1384,7 @@ workflow:
       - Return to Dev for modifications
       {{/if}}
 
-    sm_to_bmad_pr: |
+    sm_to_code_reviewer_pr: |
       Pull Request created for story {{epic}}.{{story}}.
 
       **PR Details:**
@@ -1226,30 +1397,68 @@ workflow:
       - Test status: All passing
       - Coverage: {{coverage_percentage}}%
       - Files changed: {{files_changed_count}}
+      - Security scan: Passed (pre-QA review)
+      - QA testing: All acceptance criteria validated
 
-      Please review for:
-      - Code quality and architecture compliance
-      - Security considerations
-      - Documentation completeness
-      - Test coverage adequacy
+      **Ready for PR Review:**
+      Please conduct comprehensive PR review following 8-step workflow:
+      1. Understand context (read story, PRD, business logic)
+      2. Analyze changes (git diff, check for unintended changes)
+      3. Security scan (secrets, injection, sanitization)
+      4. Quality check (readability, error handling, DRY)
+      5. Testing validation (coverage, edge cases)
+      6. Performance review (complexity, queries, resources)
+      7. Documentation check (docstrings, README)
+      8. Approval decision (approve/request changes/comment)
 
       Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
 
-    bmad_to_dev_changes: |
+    code_reviewer_to_dev_pr_changes: |
       PR #{{pr_number}} requires changes for story {{epic}}.{{story}}.
 
-      **Change Requests:**
-      {{change_requests}}
+      **🚨 CRITICAL Issues (Block Merge):**
+      {{critical_issues_list}}
+
+      **⚠️ WARNING Issues (Should Fix):**
+      {{warning_issues_list}}
+
+      **💡 SUGGESTIONS (Consider):**
+      {{suggestion_list}}
 
       **Priority:** {{priority}}
 
       **Action Required:**
-      - Address all requested changes
-      - Reply to each review comment
+      - Fix all CRITICAL issues (security, breaking changes, tests)
+      - Address WARNING issues (code quality, performance)
+      - Consider SUGGESTION improvements
+      - Reply to each review comment with explanations
       - Push updates to feature branch
-      - Request re-review when complete
+      - Request re-review from code-reviewer when complete
 
       Branch: feature/story-{{epic}}.{{story}}
+
+    code_reviewer_to_bmad_approved: |
+      ✅ PR #{{pr_number}} APPROVED for story {{epic}}.{{story}}.
+
+      **Code Review Summary:**
+      - Security scan: ✅ No critical vulnerabilities
+      - Code quality: ✅ Meets standards
+      - Test coverage: ✅ {{coverage_percentage}}%
+      - Performance: ✅ Acceptable
+      - Documentation: ✅ Complete
+
+      **Warnings Documented (if any):**
+      {{warnings_summary}}
+
+      **Approval Status:** APPROVED
+      - All critical issues resolved
+      - Quality standards met
+      - Ready for merge
+
+      **Next Step:**
+      BMad Master for final oversight and merge to main.
+
+      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
 
     bmad_to_team_merged: |
       ✅ PR #{{pr_number}} merged to main!
@@ -1363,13 +1572,15 @@ workflow:
         1. prerequisites_check → 2. story_selection → 3. story_planning →
         4. [conditional: requirements_clarification] →
         5. [conditional: architecture_review] → 6. story_implementation →
-        7. code_quality_validation → 8. qa_testing_cycle →
-        9. [conditional loop: dev_fixes → qa_retest until pass] →
-        10. architect_final_review → 11. sm_story_approval →
-        12. create_pull_request → 13. bmad_pr_review →
-        14. [conditional loop: pr_changes_requested → qa_verify_pr_changes until approved] →
-        15. bmad_pr_approval → 16. story_retrospective →
-        17. next_story_decision → RETURN to step 2 OR proceed to epic_completion
+        7. code_quality_validation → 8. code_review_security_scan →
+        9. [conditional loop: dev_fixes if code review fails] →
+        10. qa_testing_cycle →
+        11. [conditional loop: dev_fixes → qa_retest until pass] →
+        12. architect_final_review → 13. sm_story_approval →
+        14. create_pull_request → 15. code_reviewer_pr_review →
+        16. [conditional loop: pr_changes_requested → qa_verify_pr_changes until approved] →
+        17. bmad_pr_approval → 18. story_retrospective →
+        19. next_story_decision → RETURN to step 2 OR proceed to epic_completion
 
       AUTONOMOUS DECISION LOGIC:
         - All conditionals are evaluated automatically by bmad-orchestrator
