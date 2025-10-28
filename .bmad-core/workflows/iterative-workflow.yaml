@@ -58,6 +58,40 @@ workflow:
     user_interaction: none_required
     continuation_policy: execute_until_all_complete
 
+    critical_orchestration_rules: |
+      🚨 CRITICAL ORCHESTRATOR BEHAVIOR - READ CAREFULLY:
+
+      1. NEVER ASK USER FOR PERMISSION TO CONTINUE
+         ❌ DO NOT ask: "Would you like me to continue?"
+         ❌ DO NOT ask: "Should I proceed to the next story?"
+         ❌ DO NOT present options like "A) Continue B) Stop C) Something else"
+         ✅ DO: Automatically proceed to next story immediately after retrospective
+         ✅ DO: Only inform the user what you are doing, never ask permission
+
+      2. AUTOMATIC CONTINUATION BETWEEN STORIES
+         - After story_retrospective completes → IMMEDIATELY proceed to story_selection
+         - NO pause, NO user confirmation, NO questions asked
+         - Simply state: "Proceeding to Story X.Y" and continue
+
+      3. AUTOMATIC CONTINUATION BETWEEN EPICS
+         - After epic_completion completes → IMMEDIATELY proceed to next epic's story_selection
+         - NO pause, NO user confirmation, NO questions asked
+         - Simply state: "Epic X complete. Starting Epic Y" and continue
+
+      4. ONLY STOP WHEN ALL 28 STORIES COMPLETE
+         - Workflow continues in a loop until all 6 epics (28 stories) are merged
+         - The ONLY termination point is project_completion after Epic 6 Story 6.4
+
+      5. REPORTING STYLE
+         ❌ DON'T: Ask "What would you like to do next?"
+         ✅ DO: State "Story 1.5 complete. Proceeding to Story 2.1 implementation."
+         ❌ DON'T: Present options or choices
+         ✅ DO: Inform of autonomous actions being taken
+
+      REMEMBER: You are bmad-orchestrator in FULLY AUTONOMOUS mode. You make ALL
+      decisions about story sequencing and continuation. The user's role is observer
+      only - they watch your progress but do not direct individual story transitions.
+
     process_control: |
       The bmad-orchestrator controls all workflow operations through the following autonomous process:
 
@@ -873,10 +907,12 @@ workflow:
 
     - step: next_story_decision
       agent: sm
-      action: check backlog and select next story
+      action: check backlog and automatically select next story
       orchestrated_by: bmad-orchestrator
       notes: |
         ORCHESTRATOR-CONTROLLED: bmad-orchestrator automatically directs the next action based on backlog status.
+
+        🚨 CRITICAL: DO NOT ASK USER FOR PERMISSION. This is a fully autonomous decision point.
 
         Scrum Master autonomously checks backlog:
 
@@ -885,13 +921,33 @@ workflow:
         - Verify dependencies met for next story (review prerequisite completions)
         - Check system capacity (always proceed unless critical failure)
 
-        **AUTOMATED DECISION FLOW (NO USER INPUT):**
+        **AUTOMATED DECISION FLOW (NO USER INPUT REQUIRED):**
         - If more stories in current epic → bmad-orchestrator AUTOMATICALLY returns to story_selection step
+          * Simply report: "Story X.Y complete. Proceeding to Story X.(Y+1) implementation."
+          * DO NOT ask: "Would you like me to continue?" or present options
+          * IMMEDIATELY proceed to story_selection
+
         - If current epic complete AND more epics remaining → bmad-orchestrator proceeds to epic_completion, then returns to story_selection
+          * Simply report: "Epic X complete (all stories merged). Starting Epic X+1."
+          * DO NOT ask for user approval to start next epic
+          * IMMEDIATELY proceed to epic_completion → story_selection
+
         - If all 6 epics complete (all 28 MVP stories done) → bmad-orchestrator proceeds to project_completion
+          * Report: "All 28 stories complete across 6 epics. Performing project completion review."
+          * This is the ONLY termination point
+
+        **REPORTING STYLE (Examples):**
+        ✅ CORRECT: "Story 1.5 merged successfully. Epic 1 complete (5/5 stories). Proceeding to Epic 2, Story 2.1 (Agent Base Class)."
+        ❌ WRONG: "Epic 1 complete! Would you like me to: A) Continue to Epic 2 B) Stop here C) Review what was built?"
+
+        ✅ CORRECT: "Story 2.7 complete. Proceeding to Story 2.8 (Checkpoint System) - final story in Epic 2."
+        ❌ WRONG: "Great work on Story 2.7! Should I proceed to Story 2.8 or would you like to review?"
 
         CONTINUOUS EXECUTION: The workflow loops automatically through all stories until complete.
         bmad-orchestrator tracks progress: Epic X of 6, Story Y of Z completed.
+
+        REMEMBER: The user is an OBSERVER, not a director of story sequencing. They watch
+        autonomous progress. Your job is to INFORM them of actions, NOT ask permission.
 
     - step: epic_completion
       agent: pm
@@ -1484,25 +1540,39 @@ workflow:
       - What to improve: {{to_improve}}
       - Velocity: {{velocity_metrics}}
 
-      **Next Story:** {{next_epic}}.{{next_story}} - {{next_story_title}}
+      **Progress Tracking:**
+      - Epic {{epic}} Progress: {{completed_in_epic}}/{{total_in_epic}} stories complete
+      - Overall Progress: {{total_completed}}/28 stories complete
 
-      ORCHESTRATOR ACTION: bmad-orchestrator automatically returning to story_selection phase.
-      NO USER CONFIRMATION NEEDED: Proceeding to next story implementation.
+      ---
+
+      🚀 AUTONOMOUS CONTINUATION: Proceeding to Story {{next_epic}}.{{next_story}} ({{next_story_title}})
+
+      🚨 DO NOT ASK USER: "Would you like me to continue?" or present options A/B/C.
+      ✅ JUST CONTINUE: Immediately activating story_selection for next story.
+
+      Workflow state: ACTIVE - Continuing autonomous execution until all 28 stories complete.
 
     pm_epic_complete: |
       🎯 Epic {{epic}} Complete!
 
       **Epic:** {{epic_title}}
-      **Stories Completed:** {{story_count}}
+      **Stories Completed:** {{story_count}}/{{story_count}} (100%)
       **Epic Value:** {{epic_value_delivered}}
 
       **Key Achievements:**
       {{achievements_summary}}
 
-      **Next Epic:** {{next_epic}} - {{next_epic_title}}
+      **Overall Progress:** {{total_completed}}/28 stories complete across all epics ({{completion_percentage}}%)
 
-      ORCHESTRATOR ACTION: bmad-orchestrator automatically initiating next epic.
-      NO USER APPROVAL REQUIRED: Continuous execution to Epic {{next_epic}}.
+      ---
+
+      🚀 AUTONOMOUS EPIC TRANSITION: Starting Epic {{next_epic}} ({{next_epic_title}})
+
+      🚨 DO NOT ASK USER: "Would you like me to continue to Epic {{next_epic}}?" or present options.
+      ✅ JUST CONTINUE: Immediately proceeding to story_selection for Story {{next_epic}}.1
+
+      Workflow state: ACTIVE - Continuous execution to project completion ({{remaining_stories}} stories remaining).
 
     project_complete: |
       🎊 PROJECT COMPLETE! 🎊
