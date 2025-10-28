@@ -65,7 +65,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY --chown=appuser:appuser ./app /app/app
 COPY --chown=appuser:appuser ./config /app/config
-COPY --chown=appuser:appuser ./.mcp.json /app/.mcp.json
+# Note: .mcp.json contains secrets and should not be in the image
+# Mount it at runtime via volume or use environment variables:
+# docker run -v $(pwd)/.mcp.json:/app/.mcp.json ...
 
 # Create necessary directories with correct permissions
 RUN mkdir -p /app/data /app/logs /app/current_cv_coverletter /app/export_cv_cover_letter /app/second_folder && \
@@ -94,7 +96,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy application code
 COPY --chown=appuser:appuser ./app /app/app
 COPY --chown=appuser:appuser ./config /app/config
-COPY --chown=appuser:appuser ./.mcp.json /app/.mcp.json
+# Note: .mcp.json contains secrets and should not be in the image
+# Mount it at runtime via volume or use environment variables
 
 # Create necessary directories with correct permissions
 RUN mkdir -p /app/data /app/logs /app/current_cv_coverletter /app/export_cv_cover_letter /app/second_folder && \

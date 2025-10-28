@@ -1,8 +1,11 @@
-# Environment variables
+# Environment variables and secrets
 .env
 .env.local
 .env.*.local
 .env.production
+
+# MCP Configuration (contains API keys and cookies)
+.mcp.json
 
 # Python
 __pycache__/
