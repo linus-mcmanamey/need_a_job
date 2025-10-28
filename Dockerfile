@@ -52,8 +52,7 @@ COPY pyproject.toml poetry.lock* ./
 
 # Install dependencies (without dev dependencies for production)
 RUN --mount=type=cache,target=$POETRY_CACHE_DIR \
-    poetry install --no-root --only main && \
-    rm -rf $POETRY_CACHE_DIR
+    poetry install --no-root --only main --no-interaction --no-ansi
 
 # Stage 3: Application runtime (FastAPI + Gradio)
 FROM base as app
