@@ -38,6 +38,7 @@ class Application:
     job_id: str
     status: Literal[
         "discovered",
+        "queued",
         "matched",
         "documents_generated",
         "ready_to_send",
