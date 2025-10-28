@@ -7,7 +7,7 @@
         "git+https://github.com/stickerdaniel/linkedin-mcp-server",
         "linkedin-mcp-server",
         "--cookie",
-        "YOUR_LINKEDIN_COOKIE_HERE"
+        "${LINKEDIN_COOKIE}"
       ],
       "env": {
         "NO_PROXY": "localhost,127.0.0.1,::1",
@@ -37,7 +37,7 @@
         "@modelcontextprotocol/server-github"
       ],
       "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_GITHUB_TOKEN_HERE"
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
       }
     }
   }
