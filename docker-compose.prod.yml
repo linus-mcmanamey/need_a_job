@@ -1,0 +1,99 @@
+# Production Docker Compose Override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  redis:
+    # Production Redis configuration
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  app:
+    # Production app configuration
+    environment:
+      - APP_ENV=production
+      - LOG_LEVEL=WARNING
+      - ENABLE_AUTO_DISCOVERY=false
+      - APPROVAL_MODE=true
+      - DEBUG=false
+
+    # Remove development volume mounts (use baked-in code from image)
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config:ro
+      - ./.mcp.json:/app/.mcp.json:ro
+      - ./.env:/app/.env:ro
+      - ./current_cv_coverletter:/app/current_cv_coverletter:ro
+      - ./export_cv_cover_letter:/app/export_cv_cover_letter
+      - ./second_folder:/app/second_folder
+      - ./logs:/app/logs
+
+    restart: always
+
+    # Resource limits for production
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  worker:
+    # Production worker configuration
+    environment:
+      - APP_ENV=production
+      - LOG_LEVEL=WARNING
+      - DEBUG=false
+
+    # Remove development volume mounts
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config:ro
+      - ./.mcp.json:/app/.mcp.json:ro
+      - ./.env:/app/.env:ro
+      - ./current_cv_coverletter:/app/current_cv_coverletter:ro
+      - ./export_cv_cover_letter:/app/export_cv_cover_letter
+      - ./second_folder:/app/second_folder
+      - ./logs:/app/logs
+
+    restart: always
+
+    # Production worker scaling
+    deploy:
+      replicas: 5
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # Enable RQ Dashboard for production monitoring
+  rq-dashboard:
+    restart: always
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
