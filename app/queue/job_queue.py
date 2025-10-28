@@ -3,17 +3,19 @@
 This module provides the JobQueue class for enqueueing jobs, monitoring
 queue status, and managing job lifecycle.
 """
+
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Any
 from uuid import UUID
+
+from loguru import logger
 from redis import Redis
 from rq import Queue
 from rq.job import Job as RQJob
 from rq.worker import Worker
-from loguru import logger
 
-from app.repositories.jobs_repository import JobsRepository
 from app.repositories.application_repository import ApplicationRepository
+from app.repositories.jobs_repository import JobsRepository
 
 
 class JobQueue:
@@ -55,7 +57,7 @@ class JobQueue:
 
         logger.info(f"JobQueue initialized: queue='{queue_name}'")
 
-    def enqueue_job(self, job_id: UUID) -> Dict[str, Any]:
+    def enqueue_job(self, job_id: UUID) -> dict[str, Any]:
         """Enqueue a job for processing by worker.
 
         Validates job exists in database, enqueues job for processing,
@@ -101,8 +103,7 @@ class JobQueue:
         self.app_repo.update_status(job_id, "queued")
 
         logger.info(
-            f"Job enqueued: job_id={job_id}, rq_job_id={rq_job.id}, "
-            f"queue_depth={self.queue.count}"
+            f"Job enqueued: job_id={job_id}, rq_job_id={rq_job.id}, queue_depth={self.queue.count}"
         )
 
         return {
@@ -140,7 +141,7 @@ class JobQueue:
         logger.debug(f"Active workers: {workers}")
         return workers
 
-    def get_failed_jobs(self) -> List[RQJob]:
+    def get_failed_jobs(self) -> list[RQJob]:
         """Get list of failed jobs from dead letter queue.
 
         Returns:
@@ -156,7 +157,7 @@ class JobQueue:
         logger.debug(f"Failed jobs: {len(failed_jobs)}")
         return list(failed_jobs)
 
-    def get_queue_metrics(self) -> Dict[str, Any]:
+    def get_queue_metrics(self) -> dict[str, Any]:
         """Get comprehensive queue metrics.
 
         Returns:

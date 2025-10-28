@@ -4,7 +4,6 @@ Jobs repository for CRUD operations on jobs table.
 Handles all database operations for job postings.
 """
 
-from typing import Optional
 from loguru import logger
 
 from app.models.job import Job
@@ -65,7 +64,7 @@ class JobsRepository:
             logger.error(f"Failed to insert job: {e}")
             raise
 
-    def get_job_by_id(self, job_id: str) -> Optional[Job]:
+    def get_job_by_id(self, job_id: str) -> Job | None:
         """
         Retrieve a job by its ID.
 
@@ -82,7 +81,7 @@ class JobsRepository:
             return Job.from_db_row(result)
         return None
 
-    def get_job_by_url(self, job_url: str) -> Optional[Job]:
+    def get_job_by_url(self, job_url: str) -> Job | None:
         """
         Retrieve a job by its URL.
 
@@ -164,7 +163,7 @@ class JobsRepository:
 
     def list_jobs(
         self,
-        filters: Optional[dict] = None,
+        filters: dict | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[Job]:
@@ -200,7 +199,7 @@ class JobsRepository:
         results = self.conn.execute(query, params).fetchall()
         return [Job.from_db_row(row) for row in results]
 
-    def count_jobs(self, filters: Optional[dict] = None) -> int:
+    def count_jobs(self, filters: dict | None = None) -> int:
         """
         Count jobs with optional filtering.
 

@@ -5,9 +5,8 @@ Tests YAML loading, singleton pattern, error handling, and environment
 variable overrides.
 """
 
-import os
 from pathlib import Path
-from unittest.mock import patch, mock_open
+from unittest.mock import patch
 
 import pytest
 import yaml

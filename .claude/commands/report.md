@@ -96,7 +96,7 @@ SPRINT BURNDOWN - Sprint 24
 
 Tasks Remaining by Day:
 Day 1: ████████████████████ 24
-Day 2: ████████████████     20 
+Day 2: ████████████████     20
 Day 3: ████████████         15 (TODAY)
 Day 4: ████████             10 (projected)
 Day 5: ████                 5  (projected)

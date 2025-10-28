@@ -8,15 +8,17 @@ Usage:
     python scripts/retry_failed_jobs.py --all
     python scripts/retry_failed_jobs.py --job-id <uuid>
 """
+
 import argparse
 from uuid import UUID
+
 from loguru import logger
 
-from app.queue.redis_client import get_redis_connection
 from app.queue.job_queue import JobQueue
+from app.queue.redis_client import get_redis_connection
+from app.repositories.application_repository import ApplicationRepository
 from app.repositories.database import get_connection
 from app.repositories.jobs_repository import JobsRepository
-from app.repositories.application_repository import ApplicationRepository
 
 
 def main():
@@ -65,7 +67,7 @@ def main():
             job_uuid = UUID(args.job_id)
             logger.info(f"Retrying job: {job_uuid}")
             job_queue.retry_job(job_uuid)
-            logger.info(f"Job re-enqueued successfully")
+            logger.info("Job re-enqueued successfully")
         except ValueError:
             logger.error(f"Invalid UUID format: {args.job_id}")
         except Exception as e:

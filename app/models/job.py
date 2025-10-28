@@ -7,8 +7,8 @@ Represents a job posting with all associated metadata.
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Literal, Optional
-from uuid import UUID, uuid4
+from typing import Literal
+from uuid import uuid4
 
 
 @dataclass
@@ -37,14 +37,14 @@ class Job:
     job_url: str
     platform_source: Literal["linkedin", "seek", "indeed"]
     job_id: str = field(default_factory=lambda: str(uuid4()))
-    salary_aud_per_day: Optional[Decimal] = None
-    location: Optional[str] = None
-    posted_date: Optional[date] = None
-    job_description: Optional[str] = None
-    requirements: Optional[str] = None
-    responsibilities: Optional[str] = None
+    salary_aud_per_day: Decimal | None = None
+    location: str | None = None
+    posted_date: date | None = None
+    job_description: str | None = None
+    requirements: str | None = None
+    responsibilities: str | None = None
     discovered_timestamp: datetime = field(default_factory=datetime.now)
-    duplicate_group_id: Optional[str] = None
+    duplicate_group_id: str | None = None
 
     def to_dict(self) -> dict:
         """
@@ -59,7 +59,9 @@ class Job:
             "company_name": self.company_name,
             "job_title": self.job_title,
             "job_url": self.job_url,
-            "salary_aud_per_day": float(self.salary_aud_per_day) if self.salary_aud_per_day else None,
+            "salary_aud_per_day": float(self.salary_aud_per_day)
+            if self.salary_aud_per_day
+            else None,
             "location": self.location,
             "posted_date": self.posted_date,
             "job_description": self.job_description,

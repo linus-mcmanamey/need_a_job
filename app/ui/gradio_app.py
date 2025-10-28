@@ -6,7 +6,6 @@ the automated job application system.
 """
 
 import os
-from typing import Any
 
 import gradio as gr
 from loguru import logger
@@ -106,9 +105,9 @@ def create_pending_tab() -> gr.Blocks:
         )
 
         with gr.Row():
-            retry_btn = gr.Button("Retry Selected", variant="primary")
-            skip_btn = gr.Button("Skip Selected", variant="secondary")
-            manual_btn = gr.Button("Mark as Manual Complete")
+            gr.Button("Retry Selected", variant="primary")
+            gr.Button("Skip Selected", variant="secondary")
+            gr.Button("Mark as Manual Complete")
 
         gr.Markdown("### Error Summary")
         gr.BarPlot(
@@ -134,26 +133,24 @@ def create_settings_tab() -> gr.Blocks:
 
         gr.Markdown("### System Controls")
         with gr.Row():
-            approval_mode = gr.Checkbox(label="Require approval before sending", value=True)
-            dry_run_mode = gr.Checkbox(label="Dry-run mode (don't send applications)", value=False)
+            gr.Checkbox(label="Require approval before sending", value=True)
+            gr.Checkbox(label="Dry-run mode (don't send applications)", value=False)
 
         gr.Markdown("### Discovery Settings")
         with gr.Row():
-            auto_discovery = gr.Checkbox(label="Enable automatic job discovery", value=False)
-            discovery_interval = gr.Slider(
-                minimum=1, maximum=24, value=1, step=1, label="Discovery interval (hours)"
-            )
+            gr.Checkbox(label="Enable automatic job discovery", value=False)
+            gr.Slider(minimum=1, maximum=24, value=1, step=1, label="Discovery interval (hours)")
 
         gr.Markdown("### Matching Thresholds")
         with gr.Row():
-            match_threshold = gr.Slider(
+            gr.Slider(
                 minimum=0.0,
                 maximum=1.0,
                 value=0.70,
                 step=0.05,
                 label="Job match threshold",
             )
-            dup_threshold = gr.Slider(
+            gr.Slider(
                 minimum=0.0,
                 maximum=1.0,
                 value=0.90,
@@ -161,8 +158,8 @@ def create_settings_tab() -> gr.Blocks:
                 label="Duplicate detection threshold",
             )
 
-        save_btn = gr.Button("Save Settings", variant="primary")
-        status_msg = gr.Textbox(label="Status", value="", interactive=False)
+        gr.Button("Save Settings", variant="primary")
+        gr.Textbox(label="Status", value="", interactive=False)
 
     return settings
 

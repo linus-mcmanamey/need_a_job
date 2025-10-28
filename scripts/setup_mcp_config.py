@@ -40,12 +40,12 @@ def load_env_file(env_path: Path) -> dict[str, str]:
         for line in f:
             line = line.strip()
             # Skip comments and empty lines
-            if not line or line.startswith('#'):
+            if not line or line.startswith("#"):
                 continue
 
             # Parse KEY=VALUE
-            if '=' in line:
-                key, value = line.split('=', 1)
+            if "=" in line:
+                key, value = line.split("=", 1)
                 # Remove quotes if present
                 value = value.strip().strip('"').strip("'")
                 env_vars[key.strip()] = value
@@ -96,14 +96,14 @@ def generate_mcp_config(template_path: Path, output_path: Path, env_vars: dict[s
         sys.exit(1)
 
     # Write output
-    with open(output_path, 'w') as f:
+    with open(output_path, "w") as f:
         f.write(result)
 
     # Set restrictive permissions (owner read/write only)
     output_path.chmod(0o600)
 
     print(f"✅ Generated {output_path}")
-    print(f"   Permissions set to 600 (owner read/write only)")
+    print("   Permissions set to 600 (owner read/write only)")
 
 
 def main():
@@ -128,8 +128,8 @@ def main():
     env_vars = load_env_file(env_path)
 
     # Check for required variables
-    linkedin_cookie = env_vars.get('LINKEDIN_COOKIE') or os.getenv('LINKEDIN_COOKIE')
-    github_token = env_vars.get('GITHUB_TOKEN') or os.getenv('GITHUB_TOKEN')
+    linkedin_cookie = env_vars.get("LINKEDIN_COOKIE") or os.getenv("LINKEDIN_COOKIE")
+    github_token = env_vars.get("GITHUB_TOKEN") or os.getenv("GITHUB_TOKEN")
 
     if not linkedin_cookie:
         print("⚠️  Warning: LINKEDIN_COOKIE not found")

@@ -4,17 +4,15 @@ Unit tests for database module.
 Tests database connection, initialization, and schema creation.
 """
 
-import pytest
 import duckdb
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+import pytest
 
 from app.repositories.database import (
-    get_connection,
-    initialize_database,
-    create_tables,
     create_indexes,
+    create_tables,
+    get_connection,
     get_database_info,
+    initialize_database,
 )
 
 

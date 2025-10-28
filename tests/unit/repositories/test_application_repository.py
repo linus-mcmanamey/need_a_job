@@ -5,13 +5,12 @@ Tests CRUD operations for the application_tracking table.
 """
 
 import pytest
-from datetime import datetime
 
-from app.models.job import Job
 from app.models.application import Application
-from app.repositories.jobs_repository import JobsRepository
+from app.models.job import Job
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.database import initialize_database
+from app.repositories.jobs_repository import JobsRepository
 
 
 @pytest.fixture
@@ -105,7 +104,9 @@ class TestApplicationRepositoryGet:
 
     def test_get_application_by_job_id_returns_none_for_nonexistent(self, repos):
         """Test that get_application_by_job_id returns None for non-existent job ID."""
-        result = repos["applications"].get_application_by_job_id("00000000-0000-0000-0000-000000000000")
+        result = repos["applications"].get_application_by_job_id(
+            "00000000-0000-0000-0000-000000000000"
+        )
         assert result is None
 
 
@@ -129,9 +130,7 @@ class TestApplicationRepositoryUpdate:
             "match_score": 0.85,
             "match_reasons": ["Python", "Cloud"],
         }
-        repos["applications"].update_application_stage(
-            app_id, "job_matcher_agent", stage_output
-        )
+        repos["applications"].update_application_stage(app_id, "job_matcher_agent", stage_output)
 
         updated_app = repos["applications"].get_application_by_id(app_id)
         assert updated_app.current_stage == "job_matcher_agent"
@@ -177,15 +176,13 @@ class TestApplicationRepositoryList:
         repos["applications"].insert_application(app2)
         repos["applications"].insert_application(app3)
 
-        matched_apps = repos["applications"].list_applications(
-            filters={"status": "matched"}
-        )
+        matched_apps = repos["applications"].list_applications(filters={"status": "matched"})
         assert len(matched_apps) == 2
         assert all(app.status == "matched" for app in matched_apps)
 
     def test_list_applications_with_pagination(self, repos, sample_job):
         """Test pagination for applications."""
-        for i in range(5):
+        for _i in range(5):
             app = Application(job_id=sample_job.job_id, status="discovered")
             repos["applications"].insert_application(app)
 

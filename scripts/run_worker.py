@@ -9,12 +9,14 @@ Usage:
     python scripts/run_worker.py --name worker-1
     python scripts/run_worker.py --burst  # Exit after processing all jobs
 """
+
 import argparse
 import sys
+
 from loguru import logger
 from rq import Worker
 
-from app.queue.redis_client import get_redis_connection, check_redis_health
+from app.queue.redis_client import check_redis_health, get_redis_connection
 
 
 def main():

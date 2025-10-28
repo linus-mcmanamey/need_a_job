@@ -4,12 +4,14 @@ This module provides the JobProcessorService which will orchestrate
 the execution of all agents in the pipeline. For Story 1.5, this is
 a stub that returns mock success. Full implementation in Epic 2.
 """
-from typing import Dict, Any
+
+from typing import Any
 from uuid import UUID
+
 from loguru import logger
 
-from app.repositories.jobs_repository import JobsRepository
 from app.repositories.application_repository import ApplicationRepository
+from app.repositories.jobs_repository import JobsRepository
 
 
 class JobProcessorService:
@@ -43,7 +45,7 @@ class JobProcessorService:
 
         logger.info("JobProcessorService initialized")
 
-    def process_job(self, job_id: UUID) -> Dict[str, Any]:
+    def process_job(self, job_id: UUID) -> dict[str, Any]:
         """Process job through agent pipeline.
 
         STUB IMPLEMENTATION for Story 1.5:
@@ -100,7 +102,7 @@ class JobProcessorService:
             "message": "Job processed successfully (STUB for Story 1.5)",
         }
 
-    def get_processing_status(self, job_id: UUID) -> Dict[str, Any]:
+    def get_processing_status(self, job_id: UUID) -> dict[str, Any]:
         """Get current processing status for a job.
 
         Args:

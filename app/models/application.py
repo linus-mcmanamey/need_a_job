@@ -7,7 +7,7 @@ Represents the application workflow state for a job.
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 from uuid import uuid4
 
 
@@ -50,15 +50,15 @@ class Application:
         "duplicate",
     ] = "discovered"
     application_id: str = field(default_factory=lambda: str(uuid4()))
-    current_stage: Optional[str] = None
+    current_stage: str | None = None
     completed_stages: list[str] = field(default_factory=list)
     stage_outputs: dict[str, Any] = field(default_factory=dict)
-    error_info: Optional[dict[str, Any]] = None
-    cv_file_path: Optional[str] = None
-    cl_file_path: Optional[str] = None
-    submission_method: Optional[Literal["email", "web_form"]] = None
-    submitted_timestamp: Optional[datetime] = None
-    contact_person_name: Optional[str] = None
+    error_info: dict[str, Any] | None = None
+    cv_file_path: str | None = None
+    cl_file_path: str | None = None
+    submission_method: Literal["email", "web_form"] | None = None
+    submitted_timestamp: datetime | None = None
+    contact_person_name: str | None = None
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
 

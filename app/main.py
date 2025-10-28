@@ -6,14 +6,13 @@ and configuration needed for the REST API.
 """
 
 import os
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
-
 
 # Configure logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
@@ -137,6 +136,7 @@ async def get_configuration() -> dict:
         Sanitized configuration data
     """
     from app.config import get_config
+    from app.repositories.database import get_database_info
 
     config = get_config()
 
@@ -203,8 +203,9 @@ async def get_job(job_id: str) -> dict:
     Returns:
         Job details
     """
-    from app.repositories.jobs_repository import JobsRepository
     from fastapi import HTTPException
+
+    from app.repositories.jobs_repository import JobsRepository
 
     repo = JobsRepository()
     job = repo.get_job_by_id(job_id)
@@ -267,8 +268,9 @@ async def get_application(application_id: str) -> dict:
     Returns:
         Application details
     """
-    from app.repositories.application_repository import ApplicationRepository
     from fastapi import HTTPException
+
+    from app.repositories.application_repository import ApplicationRepository
 
     repo = ApplicationRepository()
     application = repo.get_application_by_id(application_id)

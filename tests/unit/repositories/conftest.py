@@ -4,7 +4,6 @@ Pytest configuration for repository unit tests.
 Sets up test environment and fixtures.
 """
 
-import os
 import pytest
 
 

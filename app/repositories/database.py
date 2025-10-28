@@ -5,9 +5,9 @@ Provides connection pooling and utilities for the job application database.
 """
 
 import os
+from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator
 
 import duckdb
 from loguru import logger
@@ -281,7 +281,9 @@ def get_database_info() -> dict:
     return {
         "path": str(db.db_path),
         "exists": db.db_path.exists() if str(db.db_path) != ":memory:" else True,
-        "size_bytes": db.db_path.stat().st_size if db.db_path.exists() and str(db.db_path) != ":memory:" else 0,
+        "size_bytes": db.db_path.stat().st_size
+        if db.db_path.exists() and str(db.db_path) != ":memory:"
+        else 0,
         "table_count": table_count,
     }
 

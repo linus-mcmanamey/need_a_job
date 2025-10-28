@@ -119,7 +119,7 @@ Create and manage complex automation workflows with dependency management, sched
       "command": "npm run test:unit"
     },
     {
-      "id": "integration-tests", 
+      "id": "integration-tests",
       "command": "npm run test:integration"
     },
     {
@@ -186,14 +186,14 @@ class WorkflowOrchestrator {
 
   async execute(workflowPath) {
     const workflow = await this.loadWorkflow(workflowPath);
-    
+
     try {
       await this.validateWorkflow(workflow);
       await this.setupEnvironment(workflow.environment);
-      
+
       const result = await this.executeWorkflow(workflow);
       await this.cleanup();
-      
+
       return result;
     } catch (error) {
       await this.handleError(error, workflow);
@@ -212,7 +212,7 @@ class WorkflowOrchestrator {
 
     while (this.hasRunnableTasks(taskGraph)) {
       const runnableTasks = this.getRunnableTasks(taskGraph);
-      
+
       if (runnableTasks.length === 0) {
         break; // Circular dependency or all failed
       }
@@ -237,10 +237,10 @@ class WorkflowOrchestrator {
     try {
       // Pre-execution hooks
       await this.runPreHooks(task);
-      
+
       // Task execution
       const result = await this.runTaskByType(task);
-      
+
       // Post-execution hooks
       await this.runPostHooks(task, result);
 
@@ -301,7 +301,7 @@ class WorkflowOrchestrator {
 ```javascript
 async executeShellTask(task) {
   const { spawn } = require('child_process');
-  
+
   return new Promise((resolve, reject) => {
     const process = spawn('sh', ['-c', task.command], {
       cwd: task.cwd || process.cwd(),
@@ -344,7 +344,7 @@ async executeShellTask(task) {
 ```javascript
 async executeHttpTask(task) {
   const axios = require('axios');
-  
+
   const config = {
     method: task.method || 'GET',
     url: task.url,
@@ -422,7 +422,7 @@ class WorkflowMonitor {
 
   recordExecution(execution) {
     this.metrics.totalRuns++;
-    
+
     if (execution.status === 'completed') {
       this.metrics.successfulRuns++;
     } else {
@@ -445,7 +445,7 @@ class WorkflowMonitor {
 
       const taskMetrics = this.metrics.taskMetrics.get(taskId);
       taskMetrics.runs++;
-      
+
       if (task.status === 'failed') {
         taskMetrics.failures++;
       }
@@ -457,7 +457,7 @@ class WorkflowMonitor {
 
   getHealthReport() {
     const successRate = (this.metrics.successfulRuns / this.metrics.totalRuns) * 100;
-    
+
     return {
       overall: {
         successRate: successRate.toFixed(2) + '%',
@@ -531,7 +531,7 @@ workflow generate --type "ci-cd" --output ci-workflow.json
 ```javascript
 async function sendSlackNotification(message, channel = '#deployments') {
   const webhook = process.env.SLACK_WEBHOOK_URL;
-  
+
   await axios.post(webhook, {
     channel: channel,
     text: message,

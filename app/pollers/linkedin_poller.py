@@ -7,9 +7,9 @@ Searches LinkedIn via MCP server and stores discovered jobs in database.
 import re
 import signal
 import time
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
-from typing import Any, Optional
+from typing import Any
 
 from loguru import logger
 
@@ -56,7 +56,9 @@ class RateLimiter:
             wait_seconds = (wait_until - now).total_seconds()
 
             if wait_seconds > 0:
-                logger.info(f"Rate limit reached ({self.calls_per_hour}/hour), waiting {wait_seconds:.0f}s")
+                logger.info(
+                    f"Rate limit reached ({self.calls_per_hour}/hour), waiting {wait_seconds:.0f}s"
+                )
                 time.sleep(wait_seconds)
 
                 # Clear expired calls after waiting
@@ -97,15 +99,15 @@ class LinkedInPoller:
         self.mcp_client = mcp_client
 
         # Initialize rate limiter
-        rate_limit = config.get('linkedin', {}).get('rate_limit_requests_per_minute', 10) * 60
+        rate_limit = config.get("linkedin", {}).get("rate_limit_requests_per_minute", 10) * 60
         self.rate_limiter = RateLimiter(calls_per_hour=rate_limit)
 
         # Initialize metrics
         self.metrics = {
-            'jobs_found': 0,
-            'jobs_inserted': 0,
-            'duplicates_skipped': 0,
-            'errors': 0,
+            "jobs_found": 0,
+            "jobs_inserted": 0,
+            "duplicates_skipped": 0,
+            "errors": 0,
         }
 
         # Shutdown flag
@@ -124,33 +126,33 @@ class LinkedInPoller:
             Job model instance with extracted metadata
         """
         # Extract required fields
-        company_name = raw_job.get('company', '')
-        job_title = raw_job.get('title', '')
-        job_url = raw_job.get('job_url', '')
+        company_name = raw_job.get("company", "")
+        job_title = raw_job.get("title", "")
+        job_url = raw_job.get("job_url", "")
 
         # Extract optional fields
-        location = raw_job.get('location')
-        description = raw_job.get('description')
-        requirements = raw_job.get('requirements')
-        responsibilities = raw_job.get('responsibilities')
+        location = raw_job.get("location")
+        description = raw_job.get("description")
+        requirements = raw_job.get("requirements")
+        responsibilities = raw_job.get("responsibilities")
 
         # Parse posted date
         posted_date = None
-        if raw_job.get('posted_date'):
+        if raw_job.get("posted_date"):
             try:
-                posted_date = datetime.strptime(raw_job['posted_date'], '%Y-%m-%d').date()
+                posted_date = datetime.strptime(raw_job["posted_date"], "%Y-%m-%d").date()
             except (ValueError, TypeError) as e:
                 logger.warning(f"Invalid posted_date format: {raw_job.get('posted_date')}: {e}")
 
         # Parse salary
-        salary_aud_per_day = self._parse_salary(raw_job.get('salary'))
+        salary_aud_per_day = self._parse_salary(raw_job.get("salary"))
 
         # Create Job instance
         job = Job(
             company_name=company_name,
             job_title=job_title,
             job_url=job_url,
-            platform_source='linkedin',
+            platform_source="linkedin",
             salary_aud_per_day=salary_aud_per_day,
             location=location,
             posted_date=posted_date,
@@ -162,7 +164,7 @@ class LinkedInPoller:
         logger.debug(f"Extracted job metadata: {job_title} at {company_name}")
         return job
 
-    def _parse_salary(self, salary_str: Optional[str]) -> Optional[Decimal]:
+    def _parse_salary(self, salary_str: str | None) -> Decimal | None:
         """
         Parse salary string to daily rate.
 
@@ -182,7 +184,7 @@ class LinkedInPoller:
 
         try:
             # Extract numbers from salary string
-            numbers = re.findall(r'\d+', salary_str)
+            numbers = re.findall(r"\d+", salary_str)
 
             if not numbers:
                 return None
@@ -216,7 +218,7 @@ class LinkedInPoller:
             logger.error(f"Error checking for duplicate job: {e}")
             return False  # Assume not duplicate on error
 
-    def store_job(self, job: Job) -> Optional[str]:
+    def store_job(self, job: Job) -> str | None:
         """
         Store job in database and create application tracking record.
 
@@ -235,7 +237,7 @@ class LinkedInPoller:
             try:
                 application = Application(
                     job_id=job_id,
-                    status='discovered',
+                    status="discovered",
                 )
                 app_id = self.app_repo.insert_application(application)
                 logger.debug(f"Created application tracking record: {app_id}")
@@ -247,18 +249,18 @@ class LinkedInPoller:
 
         except Exception as e:
             error_msg = str(e).lower()
-            if 'constraint' in error_msg or 'unique' in error_msg:
+            if "constraint" in error_msg or "unique" in error_msg:
                 logger.debug(f"Duplicate job skipped (constraint violation): {job.job_url}")
             else:
                 logger.error(f"Failed to store job {job.job_url}: {e}")
-                self.metrics['errors'] += 1
+                self.metrics["errors"] += 1
             return None
 
     def search_jobs(
         self,
         keywords: list[str],
-        location: Optional[str] = None,
-        job_type: Optional[str] = None,
+        location: str | None = None,
+        job_type: str | None = None,
         limit: int = 50,
     ) -> list[dict[str, Any]]:
         """
@@ -284,28 +286,30 @@ class LinkedInPoller:
         self.rate_limiter.wait_if_needed()
 
         # Build search query
-        query = ' '.join(keywords)
+        query = " ".join(keywords)
 
         # Build MCP call parameters
         params = {
-            'query': query,
-            'limit': limit,
+            "query": query,
+            "limit": limit,
         }
 
         if location:
-            params['location'] = location
+            params["location"] = location
 
         if job_type:
-            params['job_type'] = job_type
+            params["job_type"] = job_type
 
-        logger.info(f"Searching LinkedIn: query='{query}', location={location}, job_type={job_type}")
+        logger.info(
+            f"Searching LinkedIn: query='{query}', location={location}, job_type={job_type}"
+        )
 
         # Call MCP server (may raise ConnectionError, TimeoutError, or other exceptions)
-        response = self.mcp_client.call_tool('mcp__linkedin__search_jobs', params=params)
+        response = self.mcp_client.call_tool("mcp__linkedin__search_jobs", params=params)
 
         # Parse response
-        if isinstance(response, dict) and 'jobs' in response:
-            jobs = response['jobs']
+        if isinstance(response, dict) and "jobs" in response:
+            jobs = response["jobs"]
             logger.info(f"LinkedIn search complete: {len(jobs)} jobs found")
             return jobs
         else:
@@ -315,8 +319,8 @@ class LinkedInPoller:
     def search_jobs_with_retry(
         self,
         keywords: list[str],
-        location: Optional[str] = None,
-        job_type: Optional[str] = None,
+        location: str | None = None,
+        job_type: str | None = None,
         max_retries: int = 3,
         backoff_seconds: list[int] = None,
     ) -> list[dict[str, Any]]:
@@ -336,13 +340,10 @@ class LinkedInPoller:
         if backoff_seconds is None:
             backoff_seconds = [5, 15, 45]  # Default exponential backoff
 
-        last_error = None
-
         for attempt in range(max_retries):
             try:
                 return self.search_jobs(keywords, location, job_type)
             except (ConnectionError, TimeoutError) as e:
-                last_error = e
                 if attempt < max_retries - 1:
                     wait_time = backoff_seconds[min(attempt, len(backoff_seconds) - 1)]
                     logger.warning(f"Attempt {attempt + 1} failed, retrying in {wait_time}s: {e}")
@@ -352,15 +353,15 @@ class LinkedInPoller:
             except Exception as e:
                 # For non-retryable errors, fail immediately
                 error_msg = str(e).lower()
-                if 'rate limit' in error_msg:
+                if "rate limit" in error_msg:
                     logger.warning(f"LinkedIn rate limit exceeded: {e}")
                 else:
                     logger.error(f"Non-retryable error in search: {e}")
-                self.metrics['errors'] += 1
+                self.metrics["errors"] += 1
                 return []
 
         # All retries exhausted
-        self.metrics['errors'] += 1
+        self.metrics["errors"] += 1
         return []
 
     def run_once(self) -> dict[str, int]:
@@ -378,20 +379,20 @@ class LinkedInPoller:
 
         try:
             # Get search configuration
-            search_config = self.config.get('search', {})
-            linkedin_config = self.config.get('linkedin', {})
+            search_config = self.config.get("search", {})
+            linkedin_config = self.config.get("linkedin", {})
 
             # Extract search parameters
-            keywords = search_config.get('keywords', {}).get('primary', ['Data Engineer'])
-            location = linkedin_config.get('search_filters', {}).get('location', 'Australia')
-            job_type = search_config.get('job_type', 'contract')
+            keywords = search_config.get("keywords", {}).get("primary", ["Data Engineer"])
+            location = linkedin_config.get("search_filters", {}).get("location", "Australia")
+            job_type = search_config.get("job_type", "contract")
 
             # Search for jobs
             raw_jobs = self.search_jobs_with_retry(
                 keywords=keywords, location=location, job_type=job_type
             )
 
-            self.metrics['jobs_found'] = len(raw_jobs)
+            self.metrics["jobs_found"] = len(raw_jobs)
 
             # Process each job
             for raw_job in raw_jobs:
@@ -402,17 +403,17 @@ class LinkedInPoller:
                     # Check for duplicates
                     if self.is_duplicate(job.job_url):
                         logger.debug(f"Duplicate job skipped: {job.job_url}")
-                        self.metrics['duplicates_skipped'] += 1
+                        self.metrics["duplicates_skipped"] += 1
                         continue
 
                     # Store job
                     job_id = self.store_job(job)
                     if job_id:
-                        self.metrics['jobs_inserted'] += 1
+                        self.metrics["jobs_inserted"] += 1
 
                 except Exception as e:
                     logger.error(f"Error processing job: {e}")
-                    self.metrics['errors'] += 1
+                    self.metrics["errors"] += 1
                     # Continue processing other jobs
 
             # Log summary
@@ -426,11 +427,11 @@ class LinkedInPoller:
 
         except Exception as e:
             logger.error(f"Fatal error in poll cycle: {e}")
-            self.metrics['errors'] += 1
+            self.metrics["errors"] += 1
 
         return self.metrics.copy()
 
-    def run_continuously(self, interval_minutes: Optional[int] = None) -> None:
+    def run_continuously(self, interval_minutes: int | None = None) -> None:
         """
         Run poller continuously with specified interval.
 
@@ -439,7 +440,7 @@ class LinkedInPoller:
         """
         # Get interval from parameter or config
         if interval_minutes is None:
-            interval_minutes = self.config.get('linkedin', {}).get('polling_interval_minutes', 60)
+            interval_minutes = self.config.get("linkedin", {}).get("polling_interval_minutes", 60)
 
         logger.info(f"Starting continuous polling (interval: {interval_minutes} minutes)")
 
@@ -485,8 +486,8 @@ class LinkedInPoller:
     def reset_metrics(self) -> None:
         """Reset all metrics to zero."""
         self.metrics = {
-            'jobs_found': 0,
-            'jobs_inserted': 0,
-            'duplicates_skipped': 0,
-            'errors': 0,
+            "jobs_found": 0,
+            "jobs_inserted": 0,
+            "duplicates_skipped": 0,
+            "errors": 0,
         }

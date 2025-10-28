@@ -70,21 +70,21 @@ def create_mock_mcp_client():
 
     # Mock response with sample jobs
     mock_client.call_tool.return_value = {
-        'jobs': [
+        "jobs": [
             {
-                'job_id': 'mock-linkedin-123',
-                'title': 'Senior Data Engineer',
-                'company': 'Mock Tech Corp',
-                'location': 'Remote - Australia',
-                'posted_date': '2025-01-15',
-                'salary': '$1000-$1200/day',
-                'job_url': 'https://linkedin.com/jobs/view/mock-12345',
-                'description': 'Mock job description for testing...',
-                'requirements': 'Python, SQL, Cloud platforms',
-                'responsibilities': 'Design and build data pipelines'
+                "job_id": "mock-linkedin-123",
+                "title": "Senior Data Engineer",
+                "company": "Mock Tech Corp",
+                "location": "Remote - Australia",
+                "posted_date": "2025-01-15",
+                "salary": "$1000-$1200/day",
+                "job_url": "https://linkedin.com/jobs/view/mock-12345",
+                "description": "Mock job description for testing...",
+                "requirements": "Python, SQL, Cloud platforms",
+                "responsibilities": "Design and build data pipelines",
             }
         ],
-        'total_results': 1
+        "total_results": 1,
     }
 
     return mock_client
@@ -93,7 +93,7 @@ def create_mock_mcp_client():
 def main():
     """Main entry point for LinkedIn poller CLI."""
     parser = argparse.ArgumentParser(
-        description='LinkedIn Job Poller - Discover and store job postings',
+        description="LinkedIn Job Poller - Discover and store job postings",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -102,40 +102,37 @@ Examples:
   %(prog)s --interval 30        Run continuously with 30-minute interval
   %(prog)s --dry-run            Dry run mode (logs only, no database writes)
   %(prog)s --verbose            Enable verbose logging
-        """
+        """,
     )
 
     parser.add_argument(
-        '--once',
-        action='store_true',
-        help='Run one poll cycle and exit (default: run continuously)'
+        "--once",
+        action="store_true",
+        help="Run one poll cycle and exit (default: run continuously)",
     )
 
     parser.add_argument(
-        '--interval',
+        "--interval",
         type=int,
-        metavar='MINUTES',
-        help='Polling interval in minutes (overrides config)'
+        metavar="MINUTES",
+        help="Polling interval in minutes (overrides config)",
     )
 
     parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Dry run mode: log what would be done without database writes'
+        "--dry-run",
+        action="store_true",
+        help="Dry run mode: log what would be done without database writes",
     )
 
     parser.add_argument(
-        '--verbose',
-        '-v',
-        action='store_true',
-        help='Enable verbose (DEBUG) logging'
+        "--verbose", "-v", action="store_true", help="Enable verbose (DEBUG) logging"
     )
 
     parser.add_argument(
-        '--config-path',
+        "--config-path",
         type=Path,
-        default=project_root / 'config',
-        help='Path to configuration directory (default: config/)'
+        default=project_root / "config",
+        help="Path to configuration directory (default: config/)",
     )
 
     args = parser.parse_args()
@@ -159,10 +156,7 @@ Examples:
         platforms_config = config_loader.platforms
 
         # Combine configs
-        config = {
-            'search': search_config,
-            'linkedin': platforms_config.get('linkedin', {})
-        }
+        config = {"search": search_config, "linkedin": platforms_config.get("linkedin", {})}
 
         logger.info("Configuration loaded successfully")
         logger.debug(f"Search keywords: {search_config.get('keywords', {}).get('primary', [])}")
@@ -180,6 +174,7 @@ Examples:
         else:
             # Use mock repositories for dry run
             from unittest.mock import Mock
+
             jobs_repo = Mock()
             app_repo = Mock()
             logger.info("Using mock repositories (dry run mode)")
@@ -194,7 +189,7 @@ Examples:
             config=config,
             jobs_repository=jobs_repo,
             application_repository=app_repo,
-            mcp_client=mcp_client
+            mcp_client=mcp_client,
         )
 
         # Run poller
@@ -231,5 +226,5 @@ Examples:
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

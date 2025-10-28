@@ -4,7 +4,6 @@ Application repository for CRUD operations on application_tracking table.
 Handles all database operations for application tracking through the agent pipeline.
 """
 
-from typing import Optional
 from loguru import logger
 
 from app.models.application import Application
@@ -67,7 +66,7 @@ class ApplicationRepository:
             logger.error(f"Failed to insert application: {e}")
             raise
 
-    def get_application_by_id(self, application_id: str) -> Optional[Application]:
+    def get_application_by_id(self, application_id: str) -> Application | None:
         """
         Retrieve an application by its ID.
 
@@ -84,7 +83,7 @@ class ApplicationRepository:
             return Application.from_db_row(result)
         return None
 
-    def get_application_by_job_id(self, job_id: str) -> Optional[Application]:
+    def get_application_by_job_id(self, job_id: str) -> Application | None:
         """
         Retrieve an application by job ID.
 
@@ -210,7 +209,7 @@ class ApplicationRepository:
             raise
 
     def update_document_paths(
-        self, application_id: str, cv_path: Optional[str] = None, cl_path: Optional[str] = None
+        self, application_id: str, cv_path: str | None = None, cl_path: str | None = None
     ) -> None:
         """
         Update document file paths for an application.
@@ -248,7 +247,7 @@ class ApplicationRepository:
 
     def list_applications(
         self,
-        filters: Optional[dict] = None,
+        filters: dict | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[Application]:
@@ -284,7 +283,7 @@ class ApplicationRepository:
         results = self.conn.execute(query, params).fetchall()
         return [Application.from_db_row(row) for row in results]
 
-    def count_applications(self, filters: Optional[dict] = None) -> int:
+    def count_applications(self, filters: dict | None = None) -> int:
         """
         Count applications with optional filtering.
 

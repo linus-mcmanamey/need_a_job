@@ -129,7 +129,7 @@ Intelligently groups related tasks:
 ```
 Feature Group: Authentication (3 tasks)
 - TASK-001: Database schema
-- TASK-003: JWT implementation  
+- TASK-003: JWT implementation
 - TASK-005: Login endpoint
 
 Suggested commit: feat(auth): implement complete authentication system

@@ -289,12 +289,12 @@ class CoverLetterWriterAgent(BaseAgent):
         prompt = f"""You are a professional Cover Letter Writer. Write a personalized, compelling cover letter for this job application.
 
 JOB DETAILS:
-- Company: {job_context['company_name']}
-- Title: {job_context['job_title']}
-- Description: {job_context['job_description'][:800]}
+- Company: {job_context["company_name"]}
+- Title: {job_context["job_title"]}
+- Description: {job_context["job_description"][:800]}
 
 MATCHED CRITERIA:
-{', '.join(job_context['matched_technologies'][:10])}
+{", ".join(job_context["matched_technologies"][:10])}
 
 CONTACT PERSON:
 {contact_person}

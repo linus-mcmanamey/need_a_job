@@ -4,15 +4,16 @@ Integration tests for database operations.
 Tests full workflow and integration between repositories.
 """
 
-import pytest
-from decimal import Decimal
 from datetime import date
+from decimal import Decimal
 
-from app.models.job import Job
+import pytest
+
 from app.models.application import Application
-from app.repositories.jobs_repository import JobsRepository
+from app.models.job import Job
 from app.repositories.application_repository import ApplicationRepository
-from app.repositories.database import initialize_database, get_database_info
+from app.repositories.database import get_database_info, initialize_database
+from app.repositories.jobs_repository import JobsRepository
 
 
 @pytest.mark.integration
@@ -57,9 +58,7 @@ class TestDatabaseIntegration:
             "match_score": 0.85,
             "match_reasons": ["Python", "SQL", "Cloud"],
         }
-        self.app_repo.update_application_stage(
-            app_id, "job_matcher_agent", matcher_output
-        )
+        self.app_repo.update_application_stage(app_id, "job_matcher_agent", matcher_output)
 
         # Step 5: Verify final state
         final_app = self.app_repo.get_application_by_id(app_id)

@@ -3,14 +3,15 @@
 This module provides Redis connection management with singleton pattern,
 health checking, and graceful connection handling.
 """
-import os
-from typing import Optional
-from redis import Redis, ConnectionError as RedisConnectionError
-from loguru import logger
 
+import os
+
+from loguru import logger
+from redis import ConnectionError as RedisConnectionError
+from redis import Redis
 
 # Singleton Redis client instance
-_redis_client: Optional[Redis] = None
+_redis_client: Redis | None = None
 
 
 def get_redis_connection() -> Redis:
@@ -43,7 +44,7 @@ def get_redis_connection() -> Redis:
     redis_url = os.getenv("REDIS_URL")
 
     if redis_url:
-        logger.info(f"Connecting to Redis using REDIS_URL")
+        logger.info("Connecting to Redis using REDIS_URL")
         _redis_client = Redis.from_url(
             redis_url,
             decode_responses=True,

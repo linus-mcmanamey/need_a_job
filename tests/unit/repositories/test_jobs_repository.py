@@ -4,13 +4,14 @@ Unit tests for jobs repository.
 Tests CRUD operations for the jobs table.
 """
 
-import pytest
+from datetime import date
 from decimal import Decimal
-from datetime import date, datetime
+
+import pytest
 
 from app.models.job import Job
-from app.repositories.jobs_repository import JobsRepository
 from app.repositories.database import initialize_database
+from app.repositories.jobs_repository import JobsRepository
 
 
 @pytest.fixture

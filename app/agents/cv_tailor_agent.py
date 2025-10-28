@@ -177,8 +177,7 @@ class CVTailorAgent(BaseAgent):
 
             # Log success
             logger.info(
-                f"[cv_tailor] Job {job_id}: CV generated at {output_path}, "
-                f"size={file_size} bytes"
+                f"[cv_tailor] Job {job_id}: CV generated at {output_path}, size={file_size} bytes"
             )
 
             execution_time_ms = int((time.time() - start_time) * 1000)
@@ -304,10 +303,10 @@ ORIGINAL CV CONTENT:
 {cv_content[:2000]}  # Limit to 2000 chars for token efficiency
 
 JOB REQUIREMENTS:
-- Title: {job_context['job_title']}
-- Company: {job_context['company_name']}
-- Key Technologies: {', '.join(job_context['matched_technologies'][:10])}
-- Description: {job_context['job_description'][:500]}
+- Title: {job_context["job_title"]}
+- Company: {job_context["company_name"]}
+- Key Technologies: {", ".join(job_context["matched_technologies"][:10])}
+- Description: {job_context["job_description"][:500]}
 
 TASK:
 Provide customization instructions to tailor this CV for the job. Include:

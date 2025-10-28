@@ -5,10 +5,12 @@ Tests the job matching logic, configuration loading, scoring calculation,
 and Claude API integration.
 """
 
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
+
+from app.agents.base_agent import BaseAgent
 from app.agents.job_matcher_agent import JobMatcherAgent
-from app.agents.base_agent import AgentResult, BaseAgent
 
 
 class TestJobMatcherAgentStructure:

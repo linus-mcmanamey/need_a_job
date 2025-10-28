@@ -3,18 +3,20 @@
 This module defines the worker tasks that are executed by RQ workers
 to process jobs asynchronously through the agent pipeline.
 """
-from typing import Dict, Any
+
+from typing import Any
 from uuid import UUID
+
 from loguru import logger
 
 from app.queue.redis_client import get_redis_connection
+from app.repositories.application_repository import ApplicationRepository
 from app.repositories.database import get_connection
 from app.repositories.jobs_repository import JobsRepository
-from app.repositories.application_repository import ApplicationRepository
 from app.services.job_processor import JobProcessorService
 
 
-def process_job(job_id: str) -> Dict[str, Any]:
+def process_job(job_id: str) -> dict[str, Any]:
     """Process a job through the agent pipeline.
 
     This is the main RQ worker task that executes asynchronously.
@@ -50,7 +52,7 @@ def process_job(job_id: str) -> Dict[str, Any]:
     logger.info(f"Worker processing job: {job_id}")
 
     # Initialize dependencies
-    redis = get_redis_connection()
+    get_redis_connection()
     db_conn = get_connection()
     jobs_repo = JobsRepository(db_conn)
     app_repo = ApplicationRepository(db_conn)
@@ -108,6 +110,4 @@ def on_failure(job, connection, type, value, traceback):
         traceback: Exception traceback
     """
     job_id = job.kwargs.get("job_id", "unknown")
-    logger.error(
-        f"RQ job failed: {job.id} (job_id={job_id}) - {type.__name__}: {value}"
-    )
+    logger.error(f"RQ job failed: {job.id} (job_id={job_id}) - {type.__name__}: {value}")

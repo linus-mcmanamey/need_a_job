@@ -341,7 +341,6 @@ class TestDatabaseUpdates:
             patch("pathlib.Path.exists", return_value=True),
             patch("pathlib.Path.stat", return_value=Mock(st_size=1024)),
         ):
-
             agent = CVTailorAgent(config, mock_claude, mock_app_repo)
             await agent.process("job-123")
 
@@ -403,7 +402,6 @@ class TestProcessMethod:
             patch("pathlib.Path.exists", return_value=True),
             patch("pathlib.Path.stat", return_value=Mock(st_size=1024)),
         ):
-
             agent = CVTailorAgent(config, mock_claude, mock_app_repo)
             result = await agent.process("job-123")
 

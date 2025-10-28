@@ -51,7 +51,7 @@ class TestSuiteManager {
       },
       ...config
     };
-    
+
     this.testResults = {
       unit: null,
       integration: null,
@@ -62,17 +62,17 @@ class TestSuiteManager {
 
   async runFullTestSuite() {
     console.log('🧪 Starting comprehensive test suite...');
-    
+
     try {
       // Run tests in sequence for better resource management
       await this.runUnitTests();
       await this.runIntegrationTests();
       await this.runE2ETests();
       await this.generateCoverageReport();
-      
+
       const summary = this.generateTestSummary();
       await this.publishTestResults(summary);
-      
+
       return summary;
     } catch (error) {
       console.error('❌ Test suite failed:', error.message);
@@ -82,7 +82,7 @@ class TestSuiteManager {
 
   async runUnitTests() {
     console.log('🔬 Running unit tests...');
-    
+
     const jestConfig = {
       testMatch: [this.config.testPatterns.unit],
       collectCoverage: true,
@@ -104,13 +104,13 @@ class TestSuiteManager {
     try {
       const command = `npx jest --config='${JSON.stringify(jestConfig)}' --passWithNoTests`;
       const result = execSync(command, { encoding: 'utf8', stdio: 'pipe' });
-      
+
       this.testResults.unit = {
         status: 'passed',
         output: result,
         timestamp: new Date().toISOString()
       };
-      
+
       console.log('✅ Unit tests passed');
     } catch (error) {
       this.testResults.unit = {
@@ -119,27 +119,27 @@ class TestSuiteManager {
         error: error.stderr || error.message,
         timestamp: new Date().toISOString()
       };
-      
+
       throw new Error(`Unit tests failed: ${error.message}`);
     }
   }
 
   async runIntegrationTests() {
     console.log('🔗 Running integration tests...');
-    
+
     // Start test database and services
     await this.setupTestEnvironment();
-    
+
     try {
       const command = `npx jest --testMatch="${this.config.testPatterns.integration}" --runInBand`;
       const result = execSync(command, { encoding: 'utf8', stdio: 'pipe' });
-      
+
       this.testResults.integration = {
         status: 'passed',
         output: result,
         timestamp: new Date().toISOString()
       };
-      
+
       console.log('✅ Integration tests passed');
     } catch (error) {
       this.testResults.integration = {
@@ -148,7 +148,7 @@ class TestSuiteManager {
         error: error.stderr || error.message,
         timestamp: new Date().toISOString()
       };
-      
+
       throw new Error(`Integration tests failed: ${error.message}`);
     } finally {
       await this.teardownTestEnvironment();
@@ -157,18 +157,18 @@ class TestSuiteManager {
 
   async runE2ETests() {
     console.log('🌐 Running E2E tests...');
-    
+
     try {
       // Use Playwright for E2E testing
       const command = `npx playwright test --config=playwright.config.js`;
       const result = execSync(command, { encoding: 'utf8', stdio: 'pipe' });
-      
+
       this.testResults.e2e = {
         status: 'passed',
         output: result,
         timestamp: new Date().toISOString()
       };
-      
+
       console.log('✅ E2E tests passed');
     } catch (error) {
       this.testResults.e2e = {
@@ -177,27 +177,27 @@ class TestSuiteManager {
         error: error.stderr || error.message,
         timestamp: new Date().toISOString()
       };
-      
+
       throw new Error(`E2E tests failed: ${error.message}`);
     }
   }
 
   async setupTestEnvironment() {
     console.log('⚙️ Setting up test environment...');
-    
+
     // Start test database
     try {
       execSync('docker-compose -f docker-compose.test.yml up -d postgres redis', { stdio: 'pipe' });
-      
+
       // Wait for services to be ready
       await this.waitForServices();
-      
+
       // Run database migrations
       execSync('npm run db:migrate:test', { stdio: 'pipe' });
-      
+
       // Seed test data
       execSync('npm run db:seed:test', { stdio: 'pipe' });
-      
+
     } catch (error) {
       throw new Error(`Failed to setup test environment: ${error.message}`);
     }
@@ -205,7 +205,7 @@ class TestSuiteManager {
 
   async teardownTestEnvironment() {
     console.log('🧹 Cleaning up test environment...');
-    
+
     try {
       execSync('docker-compose -f docker-compose.test.yml down', { stdio: 'pipe' });
     } catch (error) {
@@ -215,7 +215,7 @@ class TestSuiteManager {
 
   async waitForServices(timeout = 30000) {
     const startTime = Date.now();
-    
+
     while (Date.now() - startTime < timeout) {
       try {
         execSync('pg_isready -h localhost -p 5433', { stdio: 'pipe' });
@@ -225,7 +225,7 @@ class TestSuiteManager {
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
-    
+
     throw new Error('Test services failed to start within timeout');
   }
 
@@ -246,7 +246,7 @@ class TestSuiteManager {
     console.log(`Overall Status: ${summary.overall.status}`);
     console.log(`Total Duration: ${summary.overall.duration}ms`);
     console.log(`Tests Run: ${summary.overall.testsRun}`);
-    
+
     return summary;
   }
 
@@ -258,7 +258,7 @@ class TestSuiteManager {
 
   generateRecommendations() {
     const recommendations = [];
-    
+
     // Coverage recommendations
     const coverage = this.parseCoverageReport();
     if (coverage && coverage.total.lines.pct < 80) {
@@ -269,7 +269,7 @@ class TestSuiteManager {
         recommendation: `Increase line coverage from ${coverage.total.lines.pct}% to at least 80%`
       });
     }
-    
+
     // Failed test recommendations
     Object.entries(this.testResults).forEach(([type, result]) => {
       if (result && result.status === 'failed') {
@@ -281,7 +281,7 @@ class TestSuiteManager {
         });
       }
     });
-    
+
     return recommendations;
   }
 
@@ -309,7 +309,7 @@ class TestPatterns {
   // Page Object Model for E2E tests
   static createPageObject(page, selectors) {
     const pageObject = {};
-    
+
     Object.entries(selectors).forEach(([name, selector]) => {
       pageObject[name] = {
         element: () => page.locator(selector),
@@ -320,7 +320,7 @@ class TestPatterns {
         waitFor: (options) => page.waitForSelector(selector, options)
       };
     });
-    
+
     return pageObject;
   }
 
@@ -329,7 +329,7 @@ class TestPatterns {
     return {
       build: (overrides = {}) => {
         const data = {};
-        
+
         Object.entries(schema).forEach(([key, generator]) => {
           if (overrides[key] !== undefined) {
             data[key] = overrides[key];
@@ -339,12 +339,12 @@ class TestPatterns {
             data[key] = generator;
           }
         });
-        
+
         return data;
       },
-      
+
       buildList: (count, overrides = {}) => {
-        return Array.from({ length: count }, (_, index) => 
+        return Array.from({ length: count }, (_, index) =>
           this.build({ ...overrides, id: index + 1 })
         );
       }
@@ -354,23 +354,23 @@ class TestPatterns {
   // Mock service factory
   static createMockService(serviceName, methods) {
     const mock = {};
-    
+
     methods.forEach(method => {
       mock[method] = jest.fn();
     });
-    
+
     mock.reset = () => {
       methods.forEach(method => {
         mock[method].mockReset();
       });
     };
-    
+
     mock.restore = () => {
       methods.forEach(method => {
         mock[method].mockRestore();
       });
     };
-    
+
     return mock;
   }
 
@@ -382,7 +382,7 @@ class TestPatterns {
           await db.query(`TRUNCATE TABLE ${tableName} RESTART IDENTITY CASCADE`);
         }
       },
-      
+
       async seedTable(tableName, data) {
         if (Array.isArray(data)) {
           for (const row of data) {
@@ -392,7 +392,7 @@ class TestPatterns {
           await db.query(`INSERT INTO ${tableName} (${Object.keys(data).join(', ')}) VALUES (${Object.keys(data).map((_, i) => `$${i + 1}`).join(', ')})`, Object.values(data));
         }
       },
-      
+
       async getLastInserted(tableName) {
         const result = await db.query(`SELECT * FROM ${tableName} ORDER BY id DESC LIMIT 1`);
         return result.rows[0];
@@ -403,35 +403,35 @@ class TestPatterns {
   // API test helpers
   static createAPITestHelpers(baseURL) {
     const axios = require('axios');
-    
+
     const client = axios.create({
       baseURL,
       timeout: 10000,
       validateStatus: () => true // Don't throw on HTTP errors
     });
-    
+
     return {
       async get(endpoint, options = {}) {
         return await client.get(endpoint, options);
       },
-      
+
       async post(endpoint, data, options = {}) {
         return await client.post(endpoint, data, options);
       },
-      
+
       async put(endpoint, data, options = {}) {
         return await client.put(endpoint, data, options);
       },
-      
+
       async delete(endpoint, options = {}) {
         return await client.delete(endpoint, options);
       },
-      
+
       withAuth(token) {
         client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         return this;
       },
-      
+
       clearAuth() {
         delete client.defaults.headers.common['Authorization'];
         return this;
@@ -558,7 +558,7 @@ class PerformanceTestFramework {
     } = config;
 
     console.log(`🚀 Starting load test: ${concurrent} users for ${duration}ms`);
-    
+
     const results = {
       requests: [],
       errors: [],
@@ -583,16 +583,16 @@ class PerformanceTestFramework {
 
   async simulateUser(endpoint, method, payload, duration, delay, results) {
     await new Promise(resolve => setTimeout(resolve, delay));
-    
+
     const endTime = Date.now() + duration;
-    
+
     while (Date.now() < endTime) {
       const startTime = performance.now();
-      
+
       try {
         const response = await this.makeRequest(endpoint, method, payload);
         const endTime = performance.now();
-        
+
         results.requests.push({
           startTime,
           endTime,
@@ -600,7 +600,7 @@ class PerformanceTestFramework {
           status: response.status,
           size: response.data ? JSON.stringify(response.data).length : 0
         });
-        
+
       } catch (error) {
         results.errors.push({
           timestamp: Date.now(),
@@ -608,7 +608,7 @@ class PerformanceTestFramework {
           type: error.code || 'unknown'
         });
       }
-      
+
       // Small delay between requests
       await new Promise(resolve => setTimeout(resolve, 100));
     }
@@ -616,30 +616,30 @@ class PerformanceTestFramework {
 
   async makeRequest(endpoint, method, payload) {
     const axios = require('axios');
-    
+
     const config = {
       method,
       url: endpoint,
       timeout: 30000,
       validateStatus: () => true
     };
-    
+
     if (payload && ['POST', 'PUT', 'PATCH'].includes(method.toUpperCase())) {
       config.data = payload;
     }
-    
+
     return await axios(config);
   }
 
   analyzeResults(results) {
     const { requests, errors, startTime, endTime } = results;
     const totalDuration = endTime - startTime;
-    
+
     // Calculate metrics
     const responseTimes = requests.map(r => r.duration);
     const successfulRequests = requests.filter(r => r.status < 400);
     const failedRequests = requests.filter(r => r.status >= 400);
-    
+
     const analysis = {
       summary: {
         totalRequests: requests.length,
@@ -729,7 +729,7 @@ class PerformanceTestFramework {
     console.log(`Throughput: ${analysis.summary.throughput.toFixed(2)} req/s`);
     console.log(`Average Response Time: ${analysis.responseTime.mean.toFixed(2)}ms`);
     console.log(`95th Percentile: ${analysis.responseTime.p95.toFixed(2)}ms`);
-    
+
     if (analysis.recommendations.length > 0) {
       console.log('\n⚠️ Recommendations:');
       analysis.recommendations.forEach(rec => {
@@ -758,24 +758,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
-    
+
     - name: Install dependencies
       run: npm ci
-    
+
     - name: Run unit tests
       run: npm run test:unit -- --coverage
-    
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage/lcov.info
-    
+
     - name: Comment coverage on PR
       uses: romeovs/lcov-reporter-action@v0.3.1
       with:
@@ -795,7 +795,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      
+
       redis:
         image: redis:7
         options: >-
@@ -803,24 +803,24 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
-    
+
     - name: Install dependencies
       run: npm ci
-    
+
     - name: Run database migrations
       run: npm run db:migrate
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
-    
+
     - name: Run integration tests
       run: npm run test:integration
       env:
@@ -831,25 +831,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
-    
+
     - name: Install dependencies
       run: npm ci
-    
+
     - name: Install Playwright
       run: npx playwright install --with-deps
-    
+
     - name: Build application
       run: npm run build
-    
+
     - name: Run E2E tests
       run: npm run test:e2e
-    
+
     - name: Upload test results
       uses: actions/upload-artifact@v3
       if: always()
@@ -863,19 +863,19 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'npm'
-    
+
     - name: Install dependencies
       run: npm ci
-    
+
     - name: Run performance tests
       run: npm run test:performance
-    
+
     - name: Upload performance results
       uses: actions/upload-artifact@v3
       with:
@@ -886,10 +886,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Run security audit
       run: npm audit --production --audit-level moderate
-    
+
     - name: Run CodeQL Analysis
       uses: github/codeql-action/analyze@v2
       with:
@@ -906,19 +906,19 @@ describe('UserService', () => {
     it('should create user with valid data', async () => {
       // Arrange
       const userData = { email: 'test@example.com', name: 'Test User' };
-      
+
       // Act
       const result = await userService.createUser(userData);
-      
+
       // Assert
       expect(result).toHaveProperty('id');
       expect(result.email).toBe(userData.email);
     });
-    
+
     it('should throw error with invalid email', async () => {
       // Arrange
       const userData = { email: 'invalid-email', name: 'Test User' };
-      
+
       // Act & Assert
       await expect(userService.createUser(userData)).rejects.toThrow('Invalid email');
     });

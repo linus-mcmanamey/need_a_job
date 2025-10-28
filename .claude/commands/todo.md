@@ -11,7 +11,7 @@ Manage todos in a `todos.md` file at the root of your current project directory:
 ## Usage Examples:
 - `/user:todo add "Fix navigation bug"`
 - `/user:todo add "Fix navigation bug" [date/time/"tomorrow"/"next week"]` an optional 2nd parameter to set a due date
-- `/user:todo complete 1` 
+- `/user:todo complete 1`
 - `/user:todo remove 2`
 - `/user:todo list`
 - `/user:todo undo 1`
@@ -40,11 +40,11 @@ Use this markdown format in todos.md:
 
 ## Active
 - [ ] Task description here | Due: MM-DD-YYYY (conditionally include HH:MM AM/PM, if specified)
-- [ ] Another task 
+- [ ] Another task
 
-## Completed  
-- [x] Finished task | Done: MM-DD-YYYY (conditionally include HH:MM AM/PM, if specified) 
-- [x] Another completed task | Due: MM-DD-YYYY (conditionally include HH:MM AM/PM, if specified) | Done: MM-DD-YYYY (conditionally include HH:MM AM/PM, if specified) 
+## Completed
+- [x] Finished task | Done: MM-DD-YYYY (conditionally include HH:MM AM/PM, if specified)
+- [x] Another completed task | Due: MM-DD-YYYY (conditionally include HH:MM AM/PM, if specified) | Done: MM-DD-YYYY (conditionally include HH:MM AM/PM, if specified)
 ```
 
 ## Behavior:
@@ -56,6 +56,6 @@ Use this markdown format in todos.md:
 - Show helpful feedback after each action
 - Handle edge cases gracefully (invalid numbers, missing file, etc.)
 - All provided dates/times should be saved/formatted in a standardized format of MM/DD/YYYY (or DD/MM/YYYY depending on locale), unless the user specifies a different format
-- Times should not be included in the due date format unless requested (`due N in 2 hours` should be MM/DD/YYYY @ [+ 2 hours from now]) 
+- Times should not be included in the due date format unless requested (`due N in 2 hours` should be MM/DD/YYYY @ [+ 2 hours from now])
 
 Always be concise and helpful in your responses.

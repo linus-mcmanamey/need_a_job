@@ -767,15 +767,15 @@ workflow:
         - code_coverage_minimum: 90
         - quality_tools_passed: [ruff, black, mypy]
         - all_files_committed: true
-        enforced_by: orchestrator
-        on_fail: return_to_dev_with_issues
+        - enforced_by: orchestrator
+        - on_fail: return_to_dev_with_issues
 
       before_qa_handoff:
         - security_scan_passed: true
         - no_critical_security_issues: true
         - code_review_approved: true
-        enforced_by: orchestrator
-        on_fail: return_to_dev_fixes
+        - enforced_by: orchestrator
+        - on_fail: return_to_dev_fixes
 
       before_pr_creation:
         - all_acceptance_criteria_met: true
@@ -783,23 +783,23 @@ workflow:
         - code_coverage_maintained: 90
         - architect_approved: true
         - sm_approved: true
-        enforced_by: orchestrator
-        on_fail: return_to_failing_step
+        - enforced_by: orchestrator
+        - on_fail: return_to_failing_step
 
       before_pr_merge:
         - code_reviewer_approved: true
         - all_ci_checks_passed: true
         - no_merge_conflicts: true
         - qa_verified_pr_changes: true
-        enforced_by: orchestrator
-        on_fail: return_to_pr_changes
+        - enforced_by: orchestrator
+        - on_fail: return_to_pr_changes
 
       before_next_story:
         - previous_story_merged: true
         - retrospective_documented: true
         - no_blocking_issues: true
-        enforced_by: orchestrator
-        on_fail: resolve_blockers_before_proceeding
+        - enforced_by: orchestrator
+        - on_fail: resolve_blockers_before_proceeding
 
   continuous_execution_guarantees:
     no_pause_points: |

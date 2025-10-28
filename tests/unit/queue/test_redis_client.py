@@ -1,14 +1,17 @@
 """Unit tests for Redis client module."""
+
 import os
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
-from redis import Redis, ConnectionError as RedisConnectionError
+from redis import ConnectionError as RedisConnectionError
+from redis import Redis
 
 import app.queue.redis_client as redis_client_module
 from app.queue.redis_client import (
-    get_redis_connection,
     check_redis_health,
     close_redis_connection,
+    get_redis_connection,
 )
 
 
@@ -36,12 +39,15 @@ class TestRedisClient:
 
     def test_get_redis_connection_uses_environment_variables(self):
         """Test that Redis connection uses environment variables."""
-        with patch.dict(os.environ, {
-            "REDIS_HOST": "testhost",
-            "REDIS_PORT": "7000",
-            "REDIS_DB": "2",
-            "REDIS_PASSWORD": "testpass",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "REDIS_HOST": "testhost",
+                "REDIS_PORT": "7000",
+                "REDIS_DB": "2",
+                "REDIS_PASSWORD": "testpass",
+            },
+        ):
             with patch("app.queue.redis_client.Redis") as mock_redis:
                 get_redis_connection()
 
@@ -133,7 +139,7 @@ class TestRedisClient:
                 get_redis_connection()
 
                 # Should use from_url method
-                call_args = mock_redis.from_url.call_args if hasattr(mock_redis, 'from_url') else None
+                (mock_redis.from_url.call_args if hasattr(mock_redis, "from_url") else None)
                 # This tests that we handle REDIS_URL if present
 
 

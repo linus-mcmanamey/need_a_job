@@ -63,7 +63,7 @@ keywords:
       - Databricks
       - Airflow
       - dbt
-      - mcp 
+      - mcp
       - llm/AI
 
     nice_to_have:
@@ -80,7 +80,7 @@ salary_expectations:
   maximum: 1500
 ```
 
-1. **Extract Job Requirements**: Fetch and analyse job advertise 
+1. **Extract Job Requirements**: Fetch and analyse job advertise
 2. **Review Current Documents**: Read the existing CV and cover letter templates
 3. **Create Tailored Documents**: Generate customised CV and cover letter matching the job requirements
 4. **Organise Outputs**: Save the documents in a new company-specific directory

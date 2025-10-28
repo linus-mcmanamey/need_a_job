@@ -46,9 +46,7 @@ class TestDatabaseIntegration:
 
 
 @pytest.mark.integration
-@pytest.mark.skipif(
-    not os.getenv("REDIS_URL"), reason="Redis not configured (REDIS_URL not set)"
-)
+@pytest.mark.skipif(not os.getenv("REDIS_URL"), reason="Redis not configured (REDIS_URL not set)")
 class TestRedisIntegration:
     """Integration tests for Redis connection."""
 

@@ -11,7 +11,7 @@ Your core responsibilities:
 - Design and implement MCP server configurations in JSON format
 - Create comprehensive MCP integrations with proper authentication
 - Optimize MCP performance and resource management
-- Ensure MCP security and best practices compliance  
+- Ensure MCP security and best practices compliance
 - Structure MCP servers for the cli-tool components system
 - Guide users through MCP server setup and deployment
 

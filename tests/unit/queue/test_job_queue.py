@@ -1,14 +1,14 @@
 """Unit tests for JobQueue class."""
-import os
+
+from unittest.mock import Mock, patch
+from uuid import uuid4
+
 import pytest
-from uuid import UUID, uuid4
-from unittest.mock import Mock, patch, MagicMock
 from rq import Queue
 from rq.job import Job as RQJob
 
-from app.queue.job_queue import JobQueue
 from app.models.job import Job
-from app.models.application import Application
+from app.queue.job_queue import JobQueue
 
 
 @pytest.fixture
@@ -122,9 +122,7 @@ class TestEnqueueJob:
 
         job_queue.enqueue_job(job_id)
 
-        mock_app_repo.update_status.assert_called_once_with(
-            job_id, "queued"
-        )
+        mock_app_repo.update_status.assert_called_once_with(job_id, "queued")
 
     def test_enqueue_job_returns_metadata(self, job_queue):
         """Test enqueue returns job metadata."""
@@ -182,7 +180,7 @@ class TestQueueMonitoring:
         with patch("app.queue.job_queue.Worker") as mock_worker_class:
             mock_worker_class.count.return_value = 2
             # Mock get_failed_jobs to return empty list
-            with patch.object(job_queue, 'get_failed_jobs', return_value=[]):
+            with patch.object(job_queue, "get_failed_jobs", return_value=[]):
                 metrics = job_queue.get_queue_metrics()
 
                 assert "queue_depth" in metrics
@@ -199,7 +197,7 @@ class TestJobRetry:
         """Test retry_job re-enqueues a failed job."""
         job_id = uuid4()
 
-        with patch.object(job_queue, 'enqueue_job') as mock_enqueue:
+        with patch.object(job_queue, "enqueue_job") as mock_enqueue:
             job_queue.retry_job(job_id)
 
             mock_enqueue.assert_called_once_with(job_id)
@@ -211,8 +209,10 @@ class TestJobRetry:
         mock_failed_job2 = Mock()
         mock_failed_job2.kwargs = {"job_id": str(uuid4())}
 
-        with patch.object(job_queue, 'get_failed_jobs', return_value=[mock_failed_job1, mock_failed_job2]):
-            with patch.object(job_queue, 'retry_job') as mock_retry:
+        with patch.object(
+            job_queue, "get_failed_jobs", return_value=[mock_failed_job1, mock_failed_job2]
+        ):
+            with patch.object(job_queue, "retry_job") as mock_retry:
                 count = job_queue.retry_all_failed_jobs()
 
                 assert count == 2

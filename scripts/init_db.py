@@ -13,8 +13,9 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app.repositories.database import initialize_database, get_database_info
 from loguru import logger
+
+from app.repositories.database import get_database_info, initialize_database
 
 
 def init_database(reset: bool = False) -> None:

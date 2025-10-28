@@ -270,24 +270,24 @@ Return your analysis as valid JSON only, no additional text."""
             Formatted prompt string
         """
         prompt = f"""JOB DETAILS:
-- Title: {job_data.get('title', 'N/A')}
-- Company: {job_data.get('company_name', 'N/A')}
-- Description: {job_data.get('description', 'N/A')}
-- Location: {job_data.get('location', 'N/A')}
+- Title: {job_data.get("title", "N/A")}
+- Company: {job_data.get("company_name", "N/A")}
+- Description: {job_data.get("description", "N/A")}
+- Location: {job_data.get("location", "N/A")}
 
 CANDIDATE CRITERIA:
 Must-Have Technologies (Required):
-{', '.join(criteria['must_have'])}
+{", ".join(criteria["must_have"])}
 
 Strong Preference Technologies (Highly Valued):
-{', '.join(criteria['strong_preference'])}
+{", ".join(criteria["strong_preference"])}
 
 Nice-to-Have Technologies (Bonus):
-{', '.join(criteria['nice_to_have'])}
+{", ".join(criteria["nice_to_have"])}
 
 Location Preferences:
-- Primary: {criteria['primary_location']}
-- Acceptable: {criteria.get('acceptable_location', 'Not specified')}
+- Primary: {criteria["primary_location"]}
+- Acceptable: {criteria.get("acceptable_location", "Not specified")}
 
 TASK:
 Analyze the job description and identify which technologies are mentioned.

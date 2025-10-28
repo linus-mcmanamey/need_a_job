@@ -4,9 +4,9 @@ Pytest configuration for repository integration tests.
 Sets up integration test environment with database cleanup.
 """
 
-import os
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture(scope="function", autouse=True)
