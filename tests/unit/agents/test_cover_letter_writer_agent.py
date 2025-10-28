@@ -195,3 +195,60 @@ class TestErrorHandling:
         result = await agent.process("missing-job")
         assert result.success is False
         assert "not found" in result.error_message.lower()
+
+    @patch("app.agents.cover_letter_writer_agent.Document")
+    async def test_process_template_not_found(self, mock_doc):
+        mock_doc.side_effect = FileNotFoundError("Template not found")
+        mock_repo = AsyncMock()
+        mock_repo.get_job_by_id = AsyncMock(return_value={"id": "job-123", "title": "Engineer"})
+
+        agent = CoverLetterWriterAgent({"model": "claude-sonnet-4"}, Mock(), mock_repo)
+        result = await agent.process("job-123")
+
+        assert result.success is False
+        assert "template not found" in result.error_message.lower()
+
+
+@pytest.mark.asyncio
+class TestFilenameSanitization:
+    """Test filename sanitization for security."""
+
+    async def test_sanitize_normal_text(self):
+        agent = CoverLetterWriterAgent({"model": "claude-sonnet-4"}, Mock(), Mock())
+        assert agent._sanitize_filename("Acme Corp") == "acme-corp"
+
+    async def test_sanitize_path_traversal(self):
+        agent = CoverLetterWriterAgent({"model": "claude-sonnet-4"}, Mock(), Mock())
+        # Should remove path separators (making .. harmless)
+        result = agent._sanitize_filename("../../etc/passwd")
+        assert "/" not in result
+        assert "\\" not in result
+        # Verify result is safe (no path components)
+        assert Path(f"export_cv_cover_letter/{result}").name == result
+
+    async def test_sanitize_invalid_chars(self):
+        agent = CoverLetterWriterAgent({"model": "claude-sonnet-4"}, Mock(), Mock())
+        result = agent._sanitize_filename('Company<>:"/\\|?*Name')
+        assert all(c not in result for c in '<>:"/\\|?*')
+
+    async def test_sanitize_long_name(self):
+        agent = CoverLetterWriterAgent({"model": "claude-sonnet-4"}, Mock(), Mock())
+        long_name = "Very Long Company Name That Exceeds Fifty Characters Limit"
+        result = agent._sanitize_filename(long_name)
+        assert len(result) <= 50
+
+
+@pytest.mark.asyncio
+class TestFileSizeValidation:
+    """Test file size validation."""
+
+    @patch("pathlib.Path.exists")
+    @patch("pathlib.Path.stat")
+    @patch("app.agents.cover_letter_writer_agent.Document")
+    async def test_validate_file_too_large(self, mock_doc, mock_stat, mock_exists):
+        mock_exists.return_value = True
+        mock_stat.return_value = Mock(st_size=3 * 1024 * 1024)  # 3MB > 2MB limit
+        mock_doc.return_value = MagicMock()
+
+        agent = CoverLetterWriterAgent({"model": "claude-sonnet-4"}, Mock(), Mock())
+        assert agent._validate_output_file(Path("huge.docx")) is False

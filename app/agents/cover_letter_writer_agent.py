@@ -6,6 +6,7 @@ criteria and demonstrate genuine interest. Extracts contact person name and
 maintains professional Australian English tone.
 """
 
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -115,11 +116,11 @@ class CoverLetterWriterAgent(BaseAgent):
             if cv_file_path:
                 output_dir = Path(cv_file_path).parent
             else:
-                # Fallback: create new directory
+                # Fallback: create new directory with sanitized company name
                 from datetime import datetime
 
                 date_str = datetime.now().strftime("%Y-%m-%d")
-                company = job_data.get("company_name", "unknown").lower().replace(" ", "-")
+                company = self._sanitize_filename(job_data.get("company_name", "unknown"))
                 output_dir = Path(f"export_cv_cover_letter/{date_str}_{company}")
                 output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -236,6 +237,30 @@ class CoverLetterWriterAgent(BaseAgent):
                 return local_part[0].upper() + " " + local_part[1:].capitalize()
         except Exception:
             return "Unknown"
+
+    def _sanitize_filename(self, text: str) -> str:
+        """
+        Sanitize text for use in filename to prevent path traversal.
+
+        Removes invalid characters and path separators for cross-platform safety.
+
+        Args:
+            text: Text to sanitize
+
+        Returns:
+            Sanitized string safe for use in filename
+        """
+        # Remove or replace invalid filesystem characters and path separators
+        sanitized = re.sub(r'[<>:"/\\|?*]', "", text)
+        # Replace spaces with hyphens
+        sanitized = sanitized.replace(" ", "-")
+        # Convert to lowercase
+        sanitized = sanitized.lower()
+        # Limit length to 50 characters
+        sanitized = sanitized[:50]
+        # Remove trailing hyphens
+        sanitized = sanitized.rstrip("-")
+        return sanitized if sanitized else "unknown"
 
     def _prepare_job_context(
         self, job_data: dict[str, Any], stage_outputs: dict[str, Any]
