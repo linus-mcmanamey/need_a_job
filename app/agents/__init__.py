@@ -8,6 +8,7 @@ from app.agents.base_agent import AgentResult, BaseAgent
 from app.agents.job_matcher_agent import JobMatcherAgent
 from app.agents.salary_validator_agent import SalaryValidatorAgent
 from app.agents.cv_tailor_agent import CVTailorAgent
+from app.agents.cover_letter_writer_agent import CoverLetterWriterAgent
 from app.agents.registry import AgentRegistry
 
 __all__ = [
@@ -16,5 +17,6 @@ __all__ = [
     "JobMatcherAgent",
     "SalaryValidatorAgent",
     "CVTailorAgent",
+    "CoverLetterWriterAgent",
     "AgentRegistry",
 ]
