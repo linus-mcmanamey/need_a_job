@@ -43,6 +43,9 @@ files:
   - path: .bmad-core/workflows/brownfield-fullstack.yaml
     hash: 9716ad5956a37037
     modified: false
+  - path: .bmad-core/workflows/iterative-workflow.yaml
+    hash: 926ad5956a374447
+    modified: false
   - path: .bmad-core/templates/story-tmpl.yaml
     hash: 11e79b87ff700c8f
     modified: false
@@ -213,6 +216,9 @@ files:
     modified: false
   - path: .bmad-core/agents/architect.md
     hash: f5d211e80b8e160d
+    modified: false
+  - path: .bmad-core/agents/code-reviewer.md
+    hash: aad200e80b8e160d
     modified: false
   - path: .bmad-core/agents/analyst.md
     hash: 220103a5b3af7eb1
