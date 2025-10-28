@@ -25,6 +25,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Install docker-compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
       - name: Log in to Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
@@ -80,8 +85,14 @@ jobs:
 
       - name: Run tests
         run: |
-          # Run pytest in container
-          docker-compose exec -T app pytest tests/ -v --cov=app --cov-report=xml
+          # Run pytest in container and extract coverage.xml
+          docker-compose run --rm -T app pytest tests/ -v --cov=app --cov-report=xml || EXIT_CODE=$?
+          # Try to copy coverage.xml from container/service to workspace (best-effort)
+          CONTAINER_ID=$(docker-compose ps -q app || true)
+          if [ -n "$CONTAINER_ID" ]; then
+            docker cp "$CONTAINER_ID":/app/coverage.xml ./coverage.xml || true
+          fi
+          exit ${EXIT_CODE:-0}
 
       - name: Upload coverage reports
         if: always()
