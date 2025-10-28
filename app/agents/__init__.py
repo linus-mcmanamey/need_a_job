@@ -7,10 +7,11 @@ Contains the base agent infrastructure and all specialized agents for the 7-agen
 from app.agents.base_agent import AgentResult, BaseAgent
 from app.agents.cover_letter_writer_agent import CoverLetterWriterAgent
 from app.agents.cv_tailor_agent import CVTailorAgent
+from app.agents.form_handler_agent import FormHandlerAgent
 from app.agents.job_matcher_agent import JobMatcherAgent
 from app.agents.orchestrator_agent import OrchestratorAgent
 from app.agents.qa_agent import QAAgent
 from app.agents.registry import AgentRegistry
 from app.agents.salary_validator_agent import SalaryValidatorAgent
 
-__all__ = ["AgentResult", "BaseAgent", "JobMatcherAgent", "SalaryValidatorAgent", "CVTailorAgent", "CoverLetterWriterAgent", "QAAgent", "OrchestratorAgent", "AgentRegistry"]
+__all__ = ["AgentResult", "BaseAgent", "JobMatcherAgent", "SalaryValidatorAgent", "CVTailorAgent", "CoverLetterWriterAgent", "QAAgent", "OrchestratorAgent", "FormHandlerAgent", "AgentRegistry"]
