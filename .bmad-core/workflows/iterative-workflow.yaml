@@ -2,18 +2,47 @@
 # Job Application Automation System - Iterative Story Development
 # Project: need_a_job
 # Tech Stack: Python 3.11+, FastAPI, Redis+RQ, DuckDB, Gradio, Claude LLM
+#
+# ========================================================================
+# FULLY AUTONOMOUS WORKFLOW - NO USER INTERACTION REQUIRED
+# ========================================================================
+# This workflow is controlled entirely by the bmad-orchestrator.
+# The orchestrator autonomously manages all 28 user stories across 6 epics.
+# NO user interaction is required to start epics or user stories.
+# Agents continue execution until ALL epics and stories are complete.
+#
+# ORCHESTRATION MODEL:
+#   - bmad-orchestrator controls all flow operations
+#   - Automatic story selection and sequencing (1.1 → 1.2 → ... → 6.4)
+#   - Automatic epic transitions (Epic 1 → Epic 2 → ... → Epic 6)
+#   - Automatic quality gate enforcement and retry loops
+#   - Autonomous decision-making at all checkpoints
+#   - Continuous execution until project completion (28 stories merged)
+#
+# EXECUTION FLOW:
+#   Prerequisites Check → Story Selection → Planning → Implementation (TDD) →
+#   QA Testing → Fix Cycles (auto-retry) → Architecture Review → PR Creation →
+#   BMad Review → Merge → Retrospective → Next Story (auto-continue)
+#
+# TERMINATION: Workflow completes only when all 6 epics are done.
+# ========================================================================
 
 workflow:
   id: iterative-story-development
   name: Job Application Automation - Iterative Story Development
   description: >-
-    Agent workflow for iterative development of the automated job application system.
-    Each story from the PRD epics is fully developed, tested with pytest achieving 90% code coverage,
-    and merged before the next story begins. The system includes 7 AI agents (Job Matcher, Salary Validator,
-    CV Tailor, Cover Letter Writer, QA, Orchestrator, Application Handler) that process jobs through a pipeline.
-    Each story needs BMad SM approval and PR management. Stories are developed by the BMad dev agent,
-    validated by the BMad QA agent, and reviewed by the BMad architect before merge.
+    FULLY AUTONOMOUS agent workflow for iterative development of the automated job application system.
+    The bmad-orchestrator controls all flow operations and agents continue execution until ALL epics
+    and user stories are complete. NO USER INTERACTION REQUIRED. Each story from the PRD epics is
+    fully developed, tested with pytest achieving 90% code coverage, and merged before the next story begins.
+    The system includes 7 AI agents (Job Matcher, Salary Validator, CV Tailor, Cover Letter Writer, QA,
+    Orchestrator, Application Handler) that process jobs through a pipeline. Stories are developed by the
+    BMad dev agent, validated by the BMad QA agent, and reviewed by the BMad architect before merge.
+    The bmad-orchestrator autonomously selects and sequences all stories across all 6 epics until project completion.
   type: iterative
+  automation_mode: fully_autonomous
+  orchestration_control: bmad-orchestrator
+  execution_policy: continue_until_all_complete
   project_types:
     - python-development
     - fastapi-backend
@@ -22,12 +51,79 @@ workflow:
     - story-driven-development
     - multi-agent-system
 
+  orchestration_strategy:
+    controller: bmad-orchestrator
+    execution_mode: fully_autonomous
+    user_interaction: none_required
+    continuation_policy: execute_until_all_complete
+
+    process_control: |
+      The bmad-orchestrator controls all workflow operations through the following autonomous process:
+
+      1. INITIALIZATION PHASE (Automatic):
+         - Verify prerequisites without user confirmation
+         - Load PRD epic definitions from docs/prd/
+         - Initialize story tracking (28 total MVP stories across 6 epics)
+         - Set execution state: Epic 1, Story 1.1
+
+      2. STORY EXECUTION LOOP (Continuous):
+         For each story in sequential order (1.1 → 1.2 → ... → 6.4):
+           a. Story Selection: SM autonomously selects next story
+           b. Story Planning: SM creates implementation plan
+           c. Architecture Review: Architect reviews if needed (conditional)
+           d. TDD Implementation: Dev implements with tests (90% coverage minimum)
+           e. Quality Validation: Dev validates code quality gates
+           f. QA Testing: QA validates all acceptance criteria
+           g. Fix Cycle: Dev fixes issues, QA retests (iterate until pass)
+           h. Final Review: Architect approves implementation
+           i. SM Approval: SM verifies story completion
+           j. PR Creation: SM creates pull request
+           k. BMad Review: BMad Master reviews and approves
+           l. PR Merge: BMad Master merges to main
+           m. Retrospective: SM documents completion
+
+      3. EPIC TRANSITION (Automatic):
+         When all stories in current epic complete:
+           - PM documents epic completion
+           - bmad-orchestrator automatically proceeds to next epic
+           - No user approval needed
+           - Process continues with next epic's Story X.1
+
+      4. PROJECT COMPLETION (Final):
+         When all 6 epics complete (28 stories total):
+           - BMad Master performs final project review
+           - Generate comprehensive project summary
+           - Workflow terminates with success
+
+      5. ERROR HANDLING (Autonomous):
+         - Quality gate failures: Automatically return to previous step
+         - Test failures: Automatically trigger fix cycle (dev → qa loop)
+         - Merge conflicts: Automatically attempt resolution or flag for dev
+         - Critical failures: Log issue, attempt auto-remediation, continue if possible
+
+      6. DECISION POINTS (All Automatic):
+         - Complex story needs analysis? → Analyst step (conditional, auto-triggered)
+         - Architectural changes needed? → Architect review (conditional, auto-triggered)
+         - QA tests failed? → Dev fixes step (conditional, auto-triggered)
+         - PR changes requested? → Dev fixes + QA retest (conditional, auto-triggered)
+         - More stories in epic? → Loop to story_selection (automatic)
+         - Epic complete? → Epic completion → Next epic (automatic)
+         - All epics complete? → Project completion (automatic)
+
+      CONTINUOUS OPERATION: The bmad-orchestrator maintains execution state and ensures
+      uninterrupted progress through all 28 stories until project completion. Agents are
+      activated in sequence based on workflow steps, complete their tasks, and hand off
+      to the next agent automatically.
+
   sequence:
     - step: prerequisites_check
       agent: sm
       action: verify prerequisites and environment
+      orchestrated_by: bmad-orchestrator
       notes: |
-        Scrum Master verifies before starting:
+        ORCHESTRATOR-CONTROLLED: bmad-orchestrator initiates and monitors this step.
+
+        Scrum Master autonomously verifies before starting:
         - Python 3.11+ environment configured
         - Redis server running for job queue (docker or local)
         - DuckDB database initialized (data/jobs.duckdb)
@@ -38,16 +134,20 @@ workflow:
         - LinkedIn MCP server configured in .mcp.json
         - All unit tests from previous story passed with 90% coverage
 
-        Ask user: "Ready to continue story development? Current epic and story?"
+        NO USER INTERACTION: bmad-orchestrator automatically proceeds to story_selection once prerequisites are verified.
+        If prerequisites fail, orchestrator logs issues and attempts auto-remediation where possible.
 
     - step: story_selection
       agent: sm
       action: select next story from PRD epics
+      orchestrated_by: bmad-orchestrator
       reviews:
         - docs/prd/epic-*.md
         - docs/prd/7-implementation-roadmap.md
       notes: |
-        SM selects the next story from PRD epic sequence:
+        ORCHESTRATOR-CONTROLLED: bmad-orchestrator directs SM to autonomously select the next story in sequence.
+
+        SM automatically selects the next story from PRD epic sequence following strict sequential order:
         - Epic 1: Foundation (Stories 1.1-1.5)
         - Epic 2: Core Agents (Stories 2.1-2.8)
         - Epic 3: Duplicate Detection (Stories 3.1-3.3)
@@ -55,17 +155,27 @@ workflow:
         - Epic 5: Gradio UI (Stories 5.1-5.5)
         - Epic 6: Testing & Refinement (Stories 6.1-6.4)
 
-        Create feature branch: feature/story-{epic}-{story}
+        PROCESS FOLLOWED:
+        1. Check completed stories in docs/stories/ directory
+        2. Identify next incomplete story based on epic/story numbering
+        3. Verify all prerequisite stories are complete
+        4. Automatically create feature branch: feature/story-{epic}-{story}
+        5. Proceed to story_planning step without user confirmation
+
+        bmad-orchestrator ensures continuous flow through all 28 MVP stories until project completion.
 
     - step: story_planning
       agent: sm
       action: review story acceptance criteria and create implementation plan
+      orchestrated_by: bmad-orchestrator
       reviews:
         - docs/prd/epic-{epic}.md
         - docs/architecture/7-agent-architecture.md
         - docs/architecture/12-technology-stack.md
       notes: |
-        SM reviews story from PRD epic file:
+        ORCHESTRATOR-CONTROLLED: bmad-orchestrator directs SM to autonomously plan the selected story.
+
+        SM autonomously reviews story from PRD epic file:
         - Read story definition, acceptance criteria, technical notes
         - Verify dependencies from previous stories are met
         - Identify technical tasks for implementation
@@ -139,11 +249,14 @@ workflow:
     - step: story_implementation
       agent: dev
       action: implement story using Test-Driven Development (TDD)
+      orchestrated_by: bmad-orchestrator
       creates: implementation_files
       requires: docs/stories/{epic}.{story}.{title}.md
       branch: feature/story-{epic}-{story}
       notes: |
-        Developer implements story using TDD methodology:
+        ORCHESTRATOR-CONTROLLED: bmad-orchestrator initiates TDD implementation cycle for the story.
+
+        Developer autonomously implements story using TDD methodology:
 
         **SETUP:**
         - Read story requirements in docs/stories/{epic}.{story}.{title}.md
@@ -248,13 +361,16 @@ workflow:
     - step: qa_testing_cycle
       agent: qa
       action: verify all acceptance criteria and quality standards
+      orchestrated_by: bmad-orchestrator
       updates: docs/stories/{epic}.{story}.{title}.md
       requires:
         - docs/prd/epic-{epic}.md
         - code_quality_validation
       iterates: until_all_criteria_pass
       notes: |
-        QA Agent tests each acceptance criterion from PRD:
+        ORCHESTRATOR-CONTROLLED: bmad-orchestrator manages QA testing cycle and automatic iteration.
+
+        QA Agent autonomously tests each acceptance criterion from PRD:
 
         **FIRST - Verify test coverage from Dev:**
         - Confirm code quality validation gate passed
@@ -496,9 +612,12 @@ workflow:
     - step: bmad_pr_review
       agent: bmad-master
       action: comprehensive PR review
+      orchestrated_by: bmad-orchestrator
       reviews: pull_request
       notes: |
-        BMad Master conducts comprehensive PR review:
+        ORCHESTRATOR-CONTROLLED: bmad-orchestrator assigns PR review to BMad Master automatically.
+
+        BMad Master autonomously conducts comprehensive PR review:
 
         **CODE QUALITY REVIEW:**
         - Review all code changes for quality
@@ -661,47 +780,58 @@ workflow:
     - step: next_story_decision
       agent: sm
       action: check backlog and select next story
+      orchestrated_by: bmad-orchestrator
       notes: |
-        Scrum Master checks backlog:
+        ORCHESTRATOR-CONTROLLED: bmad-orchestrator automatically directs the next action based on backlog status.
 
-        **BACKLOG REVIEW:**
-        - Are there more stories in current epic?
-        - Are dependencies met for next story?
-        - Is team capacity available?
+        Scrum Master autonomously checks backlog:
 
-        **DECISION:**
-        - If more stories in epic: Return to story_selection step
-        - If epic complete, more epics remaining: Return to story_selection step
-        - If all epics complete: Proceed to project completion
+        **AUTONOMOUS BACKLOG REVIEW:**
+        - Count remaining stories in current epic (check docs/prd/epic-{epic}.md)
+        - Verify dependencies met for next story (review prerequisite completions)
+        - Check system capacity (always proceed unless critical failure)
+
+        **AUTOMATED DECISION FLOW (NO USER INPUT):**
+        - If more stories in current epic → bmad-orchestrator AUTOMATICALLY returns to story_selection step
+        - If current epic complete AND more epics remaining → bmad-orchestrator proceeds to epic_completion, then returns to story_selection
+        - If all 6 epics complete (all 28 MVP stories done) → bmad-orchestrator proceeds to project_completion
+
+        CONTINUOUS EXECUTION: The workflow loops automatically through all stories until complete.
+        bmad-orchestrator tracks progress: Epic X of 6, Story Y of Z completed.
 
     - step: epic_completion
       agent: pm
       action: review and document epic completion
+      orchestrated_by: bmad-orchestrator
       creates: epic_summary.md
       condition: epic_complete
       notes: |
-        Product Manager reviews epic completion:
+        ORCHESTRATOR-CONTROLLED: bmad-orchestrator triggers epic completion review when all stories in epic are merged.
 
-        **EPIC REVIEW:**
-        - Verify all stories in epic completed
-        - Review epic deliverable achieved
+        Product Manager autonomously reviews epic completion:
+
+        **AUTOMATED EPIC REVIEW:**
+        - Verify all stories in epic completed (check story_progress_tracking section)
+        - Review epic deliverable achieved against PRD
         - Assess epic value delivered
 
-        **EPIC SUMMARY:**
-        - Create epic summary document
-        - Document key achievements
-        - Note technical innovations
-        - Record challenges overcome
+        **EPIC SUMMARY (AUTO-GENERATED):**
+        - Create epic summary document at docs/epics/epic-{epic}-summary.md
+        - Document key achievements from story implementations
+        - Note technical innovations and patterns established
+        - Record challenges overcome during epic
 
-        **DEMO PREPARATION:**
-        - Prepare epic demo for stakeholders
-        - Document user-facing features
-        - Prepare metrics and analytics
+        **METRICS COLLECTION:**
+        - Calculate epic completion time
+        - Average test coverage across epic stories
+        - Total LOC added in epic
+        - Velocity metrics for epic
 
-        **NEXT EPIC:**
-        - Review next epic in roadmap
-        - Assess readiness to start
-        - Plan epic kickoff
+        **AUTONOMOUS NEXT EPIC TRANSITION:**
+        - Review next epic in roadmap (Epic 1→2→3→4→5→6)
+        - Verify readiness: prerequisites met, architecture established
+        - bmad-orchestrator automatically initiates story_selection for next epic
+        - NO USER APPROVAL REQUIRED: Continuous flow to next epic
 
     - step: project_completion
       agent: bmad-master
@@ -817,6 +947,35 @@ workflow:
     ```
 
   agent_responsibilities:
+    orchestration_control: |
+      The bmad-orchestrator controls agent activation and manages all handoffs:
+
+      AGENT ACTIVATION SEQUENCE (per story):
+        1. Scrum Master (SM) - Prerequisites, Selection, Planning, Approval, PR Creation, Retrospective
+        2. Business Analyst (Analyst) - Requirements Clarification [CONDITIONAL]
+        3. Technical Architect (Architect) - Architecture Review [CONDITIONAL], Final Review
+        4. Developer (Dev) - TDD Implementation, Quality Validation, Fixes
+        5. QA Tester (QA) - Testing Cycle, Retesting, PR Verification
+        6. BMad Master - PR Review, Approval, Merge, Project Completion
+
+      AUTOMATIC HANDOFF PROTOCOL:
+        - Agents complete their task and signal completion to orchestrator
+        - bmad-orchestrator validates completion criteria
+        - bmad-orchestrator activates next agent in sequence
+        - No user confirmation required for any handoff
+        - Failed quality gates trigger automatic retry with previous agent
+        - All agents operate autonomously within their scope
+
+      CONDITIONAL AGENT ACTIVATION:
+        - Analyst: Triggered if story complexity threshold exceeded
+        - Architect: Triggered if architectural changes detected
+        - Dev Fixes: Triggered automatically if QA tests fail
+        - PR Changes: Triggered automatically if BMad requests changes
+
+      PARALLEL OPERATIONS (where applicable):
+        - None: This workflow is strictly sequential per story
+        - However, multiple agents may prepare for their steps concurrently
+
     scrum_master:
       - Select next story from PRD epics
       - Review story acceptance criteria from PRD
@@ -1118,8 +1277,8 @@ workflow:
 
       **Next Story:** {{next_epic}}.{{next_story}} - {{next_story_title}}
 
-      Returning to story selection phase.
-      Ready to continue?
+      ORCHESTRATOR ACTION: bmad-orchestrator automatically returning to story_selection phase.
+      NO USER CONFIRMATION NEEDED: Proceeding to next story implementation.
 
     pm_epic_complete: |
       🎯 Epic {{epic}} Complete!
@@ -1132,7 +1291,9 @@ workflow:
       {{achievements_summary}}
 
       **Next Epic:** {{next_epic}} - {{next_epic_title}}
-      Ready to start next epic?
+
+      ORCHESTRATOR ACTION: bmad-orchestrator automatically initiating next epic.
+      NO USER APPROVAL REQUIRED: Continuous execution to Epic {{next_epic}}.
 
     project_complete: |
       🎊 PROJECT COMPLETE! 🎊
@@ -1167,6 +1328,57 @@ workflow:
       **Ready for Production Deployment! 🚀**
 
   decision_guidance:
+    orchestration_flow_control: |
+      BMAD-ORCHESTRATOR CONTINUOUS EXECUTION MODEL:
+
+      The bmad-orchestrator maintains a persistent execution loop that continues
+      until all 6 epics (28 total stories) are complete. No user interaction is
+      required at any point in the workflow.
+
+      EXECUTION STATE MACHINE:
+        State: {current_epic: int, current_story: int, total_completed: int}
+        Initial: {current_epic: 1, current_story: 1, total_completed: 0}
+        Final: {current_epic: 6, current_story: 4, total_completed: 28}
+
+      LOOPING MECHANISM:
+        OUTER LOOP (Epic Level):
+          FOR epic IN [1, 2, 3, 4, 5, 6]:
+            INNER LOOP (Story Level):
+              FOR story IN epic.stories:
+                EXECUTE story_workflow_cycle(epic, story)
+                IF story_workflow_cycle.status == MERGED:
+                  total_completed += 1
+                  CONTINUE to next story
+                ELSE:
+                  RETRY story_workflow_cycle until MERGED
+              END FOR
+            EXECUTE epic_completion_review(epic)
+            IF epic < 6:
+              CONTINUE to next epic (NO USER APPROVAL)
+          END FOR
+        EXECUTE project_completion_review()
+        TERMINATE with success
+
+      STORY WORKFLOW CYCLE (Executed for each story):
+        1. prerequisites_check → 2. story_selection → 3. story_planning →
+        4. [conditional: requirements_clarification] →
+        5. [conditional: architecture_review] → 6. story_implementation →
+        7. code_quality_validation → 8. qa_testing_cycle →
+        9. [conditional loop: dev_fixes → qa_retest until pass] →
+        10. architect_final_review → 11. sm_story_approval →
+        12. create_pull_request → 13. bmad_pr_review →
+        14. [conditional loop: pr_changes_requested → qa_verify_pr_changes until approved] →
+        15. bmad_pr_approval → 16. story_retrospective →
+        17. next_story_decision → RETURN to step 2 OR proceed to epic_completion
+
+      AUTONOMOUS DECISION LOGIC:
+        - All conditionals are evaluated automatically by bmad-orchestrator
+        - No user prompts or confirmations at any decision point
+        - Failed quality gates trigger automatic retry loops
+        - Story sequence is strictly ordered (1.1 → 1.2 → ... → 6.4)
+        - Epic transitions happen automatically when all stories complete
+        - Workflow only terminates when all 28 stories are merged to main
+
     when_to_use:
       - Multiple stories across 6 epics need sequential development
       - Python/FastAPI backend development with LLM integration
@@ -1175,6 +1387,7 @@ workflow:
       - Team requires clear handoffs between specialists
       - PR review process is mandatory
       - Story-by-story tracking needed for complex system
+      - FULLY AUTONOMOUS execution required without user intervention
 
     benefits:
       - Clear accountability at each step
@@ -1186,6 +1399,8 @@ workflow:
       - Specialist expertise applied at right time
       - Architecture compliance enforced
       - High-quality automated job application system
+      - ZERO MANUAL INTERVENTION: Runs until all epics complete
+      - CONTINUOUS PROGRESS: 24/7 development cycle capability
 
     prerequisites:
       - Python 3.11+ development environment
