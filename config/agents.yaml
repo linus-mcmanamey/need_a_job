@@ -4,7 +4,7 @@
 
 # Job Matcher Agent - Evaluates job fit against search criteria
 job_matcher_agent:
-  model: claude-sonnet-4  # Claude Sonnet 4 for complex matching logic
+  model: claude-haiku-4-5-20251001  # Claude Haiku 4 for complex matching logic
   match_threshold: 0.70   # Minimum score to proceed (0.0-1.0)
 
   # Scoring weights for match calculation (must sum to 1.0)
@@ -16,26 +16,26 @@ job_matcher_agent:
 
 # Salary Validator Agent - Validates salary against expectations
 salary_validator_agent:
-  model: claude-haiku-4.5  # Claude Haiku for simple validation
+  model: claude-haiku-4-5-20251001 # Claude Haiku for simple validation
   strict_validation: false  # Allow unclear salary if job otherwise matches
 
 # CV Tailor Agent - Customizes CV for each job
 cv_tailor_agent:
-  model: claude-sonnet-4   # Claude Sonnet 4 for document generation
+  model: claude-sonnet-4-5-20250929  # Claude Sonnet 4 for document generation
   template_path: current_cv_coverletter/Linus_McManamey_CV.docx
   output_dir: export_cv_cover_letter
   max_length_words: 800    # Maximum CV length in words
 
 # Cover Letter Writer Agent - Generates personalized cover letters
 cover_letter_agent:
-  model: claude-sonnet-4   # Claude Sonnet 4 for document generation
+  model: claude-sonnet-4-5-20250929   # Claude Sonnet 4 for document generation
   template_path: current_cv_coverletter/Linus_McManamey_CL.docx
   output_dir: export_cv_cover_letter
   max_length_words: 400    # Maximum cover letter length in words
 
 # QA Agent - Validates generated documents and match scores
 qa_agent:
-  model: claude-haiku-3.5  # Claude Haiku for validation checks
+  model: claude-haiku-4-5-20251001 # Claude Haiku for validation checks
 
   # Quality checks to perform
   quality_checks:
@@ -48,12 +48,12 @@ qa_agent:
 
 # Orchestrator Agent - Makes final application decisions
 orchestrator_agent:
-  model: claude-sonnet-4.5     # Claude Sonnet 4 for decision-making
+  model: claude-sonnet-4-5-20250929     # Claude Sonnet 4 for decision-making
   decision_policy: conservative  # Options: conservative, aggressive
   approval_mode: false        # Set true to require human approval
 
 # Form Handler Agent - Automates web form submissions
 form_handler_agent:
-  model: claude-sonnet-4.5  # Claude Sonnet 4 for form automation
+  model: claude-sonnet-4-5-20250929 # Claude Sonnet 4 for form automation
   timeout_seconds: 120    # Maximum time for form submission
   retry_attempts: 3       # Number of retry attempts on failure
