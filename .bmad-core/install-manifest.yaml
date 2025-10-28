@@ -44,7 +44,7 @@ files:
     hash: 9716ad5956a37037
     modified: false
   - path: .bmad-core/workflows/iterative-workflow.yaml
-    hash: 926ad5956a374447
+    hash: a716bd5956a37011
     modified: false
   - path: .bmad-core/templates/story-tmpl.yaml
     hash: 11e79b87ff700c8f
