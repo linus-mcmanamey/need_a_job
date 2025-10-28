@@ -92,16 +92,18 @@ async def health_check() -> JSONResponse:
     try:
         db_info = get_database_info()
         db_status = "connected" if db_info["exists"] else "not_initialized"
+        table_count = db_info.get("table_count", 0)
     except Exception as e:
         logger.error(f"Health check - database error: {e}")
         db_status = "error"
+        table_count = 0
 
     health_data = {
         "status": "healthy",
         "service": "job-automation-api",
         "version": "1.0.0-mvp",
         "environment": os.getenv("APP_ENV", "development"),
-        "database": {"status": db_status},
+        "database": {"status": db_status, "tables": table_count},
     }
 
     logger.debug(f"Health check: {health_data}")
@@ -145,7 +147,136 @@ async def get_configuration() -> dict:
         },
         "agents": list(config.agents.keys()),
         "platforms": list(config.platforms.keys()),
+        "database": get_database_info(),
     }
+
+
+@app.get("/api/jobs", tags=["Jobs"])
+async def list_jobs(
+    platform: str | None = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> dict:
+    """
+    List jobs with optional filtering.
+
+    Args:
+        platform: Filter by platform source (linkedin, seek, indeed)
+        limit: Maximum number of jobs to return (default: 20, max: 100)
+        offset: Number of jobs to skip for pagination
+
+    Returns:
+        List of jobs with pagination info
+    """
+    from app.repositories.jobs_repository import JobsRepository
+
+    # Validate limit
+    limit = min(limit, 100)
+
+    filters = {}
+    if platform:
+        filters["platform_source"] = platform
+
+    repo = JobsRepository()
+    jobs = repo.list_jobs(filters=filters, limit=limit, offset=offset)
+    total = repo.count_jobs(filters=filters)
+
+    return {
+        "jobs": [job.to_dict() for job in jobs],
+        "pagination": {
+            "limit": limit,
+            "offset": offset,
+            "total": total,
+            "has_more": (offset + len(jobs)) < total,
+        },
+    }
+
+
+@app.get("/api/jobs/{job_id}", tags=["Jobs"])
+async def get_job(job_id: str) -> dict:
+    """
+    Get a specific job by ID.
+
+    Args:
+        job_id: The job ID to retrieve
+
+    Returns:
+        Job details
+    """
+    from app.repositories.jobs_repository import JobsRepository
+    from fastapi import HTTPException
+
+    repo = JobsRepository()
+    job = repo.get_job_by_id(job_id)
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    return job.to_dict()
+
+
+@app.get("/api/applications", tags=["Applications"])
+async def list_applications(
+    status: str | None = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> dict:
+    """
+    List applications with optional filtering.
+
+    Args:
+        status: Filter by application status
+        limit: Maximum number of applications to return (default: 20, max: 100)
+        offset: Number of applications to skip for pagination
+
+    Returns:
+        List of applications with pagination info
+    """
+    from app.repositories.application_repository import ApplicationRepository
+
+    # Validate limit
+    limit = min(limit, 100)
+
+    filters = {}
+    if status:
+        filters["status"] = status
+
+    repo = ApplicationRepository()
+    applications = repo.list_applications(filters=filters, limit=limit, offset=offset)
+    total = repo.count_applications(filters=filters)
+
+    return {
+        "applications": [app.to_dict() for app in applications],
+        "pagination": {
+            "limit": limit,
+            "offset": offset,
+            "total": total,
+            "has_more": (offset + len(applications)) < total,
+        },
+    }
+
+
+@app.get("/api/applications/{application_id}", tags=["Applications"])
+async def get_application(application_id: str) -> dict:
+    """
+    Get a specific application by ID.
+
+    Args:
+        application_id: The application ID to retrieve
+
+    Returns:
+        Application details
+    """
+    from app.repositories.application_repository import ApplicationRepository
+    from fastapi import HTTPException
+
+    repo = ApplicationRepository()
+    application = repo.get_application_by_id(application_id)
+
+    if not application:
+        raise HTTPException(status_code=404, detail="Application not found")
+
+    return application.to_dict()
 
 
 # Future API endpoints will be added here as routers

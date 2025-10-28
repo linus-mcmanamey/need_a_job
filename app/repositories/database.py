@@ -34,7 +34,10 @@ class DatabaseConnection:
 
     def _get_db_path(self) -> Path:
         """Get the database file path from environment or use default."""
-        db_path_str = os.getenv("DUCKDB_PATH", "data/job_applications.duckdb")
+        # Use in-memory database for tests
+        if os.getenv("TESTING", "false").lower() == "true":
+            return Path(":memory:")
+        db_path_str = os.getenv("DUCKDB_PATH", "data/jobs.duckdb")
         return Path(db_path_str)
 
     def _ensure_db_directory(self) -> None:
@@ -130,15 +133,108 @@ def get_db_connection() -> Generator[duckdb.DuckDBPyConnection, None, None]:
         raise
 
 
+def create_tables() -> None:
+    """
+    Create database tables for jobs and application tracking.
+
+    Creates the jobs and application_tracking tables with proper schema.
+    """
+    db = DatabaseConnection()
+    conn = db.connection
+
+    # Create jobs table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS jobs (
+            job_id VARCHAR PRIMARY KEY,
+            platform_source VARCHAR CHECK(platform_source IN ('linkedin', 'seek', 'indeed')),
+            company_name VARCHAR NOT NULL,
+            job_title VARCHAR NOT NULL,
+            job_url VARCHAR NOT NULL,
+            salary_aud_per_day DECIMAL(10,2),
+            location VARCHAR,
+            posted_date DATE,
+            job_description TEXT,
+            requirements TEXT,
+            responsibilities TEXT,
+            discovered_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            duplicate_group_id VARCHAR
+        )
+    """)
+    logger.debug("Jobs table created successfully")
+
+    # Create application_tracking table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS application_tracking (
+            application_id VARCHAR PRIMARY KEY,
+            job_id VARCHAR NOT NULL,
+            status VARCHAR CHECK(status IN (
+                'discovered', 'matched', 'documents_generated', 'ready_to_send',
+                'sending', 'completed', 'pending', 'failed', 'rejected', 'duplicate'
+            )),
+            current_stage VARCHAR,
+            completed_stages JSON,
+            stage_outputs JSON,
+            error_info JSON,
+            cv_file_path VARCHAR,
+            cl_file_path VARCHAR,
+            submission_method VARCHAR CHECK(submission_method IN ('email', 'web_form')),
+            submitted_timestamp TIMESTAMP,
+            contact_person_name VARCHAR,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (job_id) REFERENCES jobs(job_id) ON DELETE CASCADE
+        )
+    """)
+    logger.debug("Application tracking table created successfully")
+
+
+def create_indexes() -> None:
+    """
+    Create indexes for database performance optimization.
+
+    Creates unique and composite indexes for common queries.
+    """
+    db = DatabaseConnection()
+    conn = db.connection
+
+    # Create unique index on job_url
+    conn.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_jobs_url ON jobs(job_url)
+    """)
+
+    # Create composite index on platform_source and posted_date
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_jobs_platform_date ON jobs(platform_source, posted_date)
+    """)
+
+    # Create index on application status
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_app_status ON application_tracking(status)
+    """)
+
+    # Create index on application job_id
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_app_job_id ON application_tracking(job_id)
+    """)
+
+    logger.debug("Database indexes created successfully")
+
+
 def initialize_database() -> None:
     """
-    Initialize the database and create the file if it doesn't exist.
+    Initialize the database with schema and indexes.
 
-    This function ensures the database file is created and accessible.
-    Schema initialization will be handled in a separate migration system.
+    Creates tables and indexes if they don't exist.
+    This is idempotent and can be called multiple times safely.
     """
     db = DatabaseConnection()
     try:
+        # Create tables
+        create_tables()
+
+        # Create indexes
+        create_indexes()
+
         # Test basic query to verify database is working
         result = db.fetch_one("SELECT 1 as test")
         if result and result[0] == 1:
@@ -150,6 +246,17 @@ def initialize_database() -> None:
         raise
 
 
+def get_connection() -> duckdb.DuckDBPyConnection:
+    """
+    Get the active database connection.
+
+    Returns:
+        DuckDB connection instance
+    """
+    db = DatabaseConnection()
+    return db.connection
+
+
 def get_database_info() -> dict:
     """
     Get information about the database.
@@ -158,10 +265,23 @@ def get_database_info() -> dict:
         Dictionary with database information
     """
     db = DatabaseConnection()
+
+    # Count tables in database
+    table_count = 0
+    try:
+        result = db.fetch_all(
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'main'"
+        )
+        if result:
+            table_count = result[0][0]
+    except Exception:
+        pass  # Database might not be initialized yet
+
     return {
         "path": str(db.db_path),
-        "exists": db.db_path.exists(),
-        "size_bytes": db.db_path.stat().st_size if db.db_path.exists() else 0,
+        "exists": db.db_path.exists() if str(db.db_path) != ":memory:" else True,
+        "size_bytes": db.db_path.stat().st_size if db.db_path.exists() and str(db.db_path) != ":memory:" else 0,
+        "table_count": table_count,
     }
 
 
