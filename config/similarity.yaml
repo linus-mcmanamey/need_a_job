@@ -1,0 +1,23 @@
+# Duplicate Detection Configuration
+# Two-tier duplicate detection system for identifying duplicate job postings
+
+# Tier 1: Fuzzy String Matching
+# Fast, rule-based duplicate detection using fuzzy string comparison
+tier_1_fuzzy:
+  title_threshold: 0.85     # Minimum similarity for job titles (0.0-1.0)
+  company_threshold: 0.90   # Minimum similarity for company names (0.0-1.0)
+
+# Tier 2: Semantic Similarity
+# AI-powered semantic analysis for complex duplicate detection
+tier_2_semantic:
+  model: claude-sonnet-4       # Claude Sonnet 4 for semantic analysis
+  embedding_threshold: 0.95    # Minimum embedding similarity (0.0-1.0)
+  batch_size: 50               # Number of jobs to process per batch
+
+# Comparison Weights
+# Weights for different fields in duplicate scoring (must sum to 1.0)
+comparison_weights:
+  title: 0.40        # Weight for job title similarity
+  company: 0.30      # Weight for company name similarity
+  description: 0.20  # Weight for job description similarity
+  location: 0.10     # Weight for location similarity

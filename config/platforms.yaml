@@ -1,0 +1,33 @@
+# Platform Configuration
+# Configuration for job board platforms and their polling/scraping settings
+
+# LinkedIn - Primary job source (via MCP server)
+linkedin:
+  mcp_server_path: linkedin-mcp-server  # Path to LinkedIn MCP server
+  polling_interval_minutes: 60          # Poll every hour
+  rate_limit_requests_per_minute: 10    # Max requests per minute
+  timeout_seconds: 30                   # Request timeout
+
+  # LinkedIn search filters
+  search_filters:
+    location: Australia
+    job_type: Contract
+    remote: true
+
+# SEEK - Australian job board (Phase 3 implementation)
+seek:
+  base_url: https://www.seek.com.au
+  polling_interval_minutes: 120   # Poll every 2 hours
+  timeout_seconds: 30             # Request timeout
+  # Phase 3: Add Playwright scraper configuration
+  # scraper_enabled: false
+  # max_pages: 5
+
+# Indeed - Global job board (Phase 3 implementation)
+indeed:
+  base_url: https://au.indeed.com
+  polling_interval_minutes: 120   # Poll every 2 hours
+  timeout_seconds: 30             # Request timeout
+  # Phase 3: Add Playwright scraper configuration
+  # scraper_enabled: false
+  # max_pages: 5
