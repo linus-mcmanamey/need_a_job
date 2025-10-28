@@ -1,6 +1,6 @@
 # <!-- Powered by BMAD™ Core -->
 workflow:
-  id: ç
+  id: greenfield-fullstack
   name: Greenfield Full-Stack Application Development
   description: >-
     Agent workflow for building full-stack applications from concept to development.
