@@ -4,46 +4,60 @@
 # Tech Stack: Python 3.11+, FastAPI, Redis+RQ, DuckDB, Gradio, Claude LLM
 #
 # ========================================================================
-# FULLY AUTONOMOUS WORKFLOW - NO USER INTERACTION REQUIRED
+# FULLY AUTONOMOUS WORKFLOW - ORCHESTRATOR CONTROLLED
 # ========================================================================
 # This workflow is controlled entirely by the bmad-orchestrator.
-# The orchestrator autonomously manages all 28 user stories across 6 epics.
-# NO user interaction is required to start epics or user stories.
-# Agents continue execution until ALL epics and stories are complete.
+# Agents complete their tasks and IMMEDIATELY hand back control to orchestrator.
+# Orchestrator validates completion and IMMEDIATELY activates next step.
+# NO USER INTERACTION AT ANY POINT - Complete autonomous execution.
 #
-# ORCHESTRATION MODEL:
-#   - bmad-orchestrator controls all flow operations
-#   - Automatic story selection and sequencing (1.1 → 1.2 → ... → 6.4)
-#   - Automatic epic transitions (Epic 1 → Epic 2 → ... → Epic 6)
-#   - Automatic quality gate enforcement and retry loops
-#   - Autonomous decision-making at all checkpoints
-#   - Continuous execution until project completion (28 stories merged)
+# ORCHESTRATOR CONTROL MODEL:
+#   1. Orchestrator activates agent for specific step
+#   2. Agent completes task autonomously
+#   3. Agent hands back control to orchestrator WITH completion status
+#   4. Orchestrator validates completion criteria
+#   5. Orchestrator IMMEDIATELY proceeds to next step (no pause, no user prompt)
+#   6. Loop continues until all 28 stories complete
 #
-# EXECUTION FLOW:
-#   Prerequisites Check → Story Selection → Planning → Implementation (TDD) →
-#   Code Review & Security Scan → QA Testing → Fix Cycles (auto-retry) →
-#   Architecture Review → PR Creation → Code-Reviewer PR Review →
-#   BMad Final Oversight → Merge → Retrospective → Next Story (auto-continue)
+# HANDBACK PROTOCOL:
+#   Every step includes "handback_to_orchestrator: true"
+#   Orchestrator receives: {step_complete: bool, next_step: string, context: dict}
+#   Orchestrator validates quality gates
+#   Orchestrator activates next step WITHOUT user confirmation
 #
-# TERMINATION: Workflow completes only when all 6 epics are done.
+# ZERO USER INTERACTION POINTS:
+#   - Story selection → Planning (auto)
+#   - Planning → Implementation (auto)
+#   - Implementation → Code Review (auto)
+#   - Code Review → QA (auto)
+#   - QA → Architect Review (auto)
+#   - Architect → SM Approval (auto)
+#   - SM Approval → PR Creation (auto)
+#   - PR Creation → PR Review (auto)
+#   - PR Review → Merge (auto)
+#   - Merge → Retrospective (auto)
+#   - Retrospective → Next Story (auto) ← CRITICAL: NO USER PROMPT HERE
+#   - Epic Complete → Next Epic (auto) ← CRITICAL: NO USER PROMPT HERE
+#
+# CONTINUOUS EXECUTION: Workflow runs 1.1 → 1.2 → ... → 6.4 without stopping
 # ========================================================================
 
 workflow:
   id: iterative-story-development
   name: Job Application Automation - Iterative Story Development
   description: >-
-    FULLY AUTONOMOUS agent workflow for iterative development of the automated job application system.
-    The bmad-orchestrator controls all flow operations and agents continue execution until ALL epics
-    and user stories are complete. NO USER INTERACTION REQUIRED. Each story from the PRD epics is
-    fully developed, tested with pytest achieving 90% code coverage, and merged before the next story begins.
-    The system includes 7 AI agents (Job Matcher, Salary Validator, CV Tailor, Cover Letter Writer, QA,
-    Orchestrator, Application Handler) that process jobs through a pipeline. Stories are developed by the
-    BMad dev agent, validated by the BMad QA agent, and reviewed by the BMad architect before merge.
-    The bmad-orchestrator autonomously selects and sequences all stories across all 6 epics until project completion.
+    FULLY AUTONOMOUS orchestrator-controlled workflow for iterative development.
+    The bmad-orchestrator maintains control throughout all 28 stories across 6 epics.
+    Agents complete tasks and IMMEDIATELY hand back control to orchestrator.
+    Orchestrator validates and IMMEDIATELY proceeds to next step.
+    ZERO USER INTERACTION REQUIRED AT ANY POINT.
   type: iterative
-  automation_mode: fully_autonomous
+  automation_mode: fully_autonomous_orchestrator_controlled
   orchestration_control: bmad-orchestrator
-  execution_policy: continue_until_all_complete
+  execution_policy: continuous_until_project_complete
+  handback_protocol: agents_return_control_immediately
+  user_interaction: absolutely_none
+
   project_types:
     - python-development
     - fastapi-backend
@@ -52,1679 +66,840 @@ workflow:
     - story-driven-development
     - multi-agent-system
 
-  orchestration_strategy:
+  orchestration_model:
     controller: bmad-orchestrator
-    execution_mode: fully_autonomous
-    user_interaction: none_required
-    continuation_policy: execute_until_all_complete
+    control_mechanism: explicit_handback_per_step
+    validation_mode: orchestrator_validates_each_step
+    progression_policy: immediate_next_step_on_validation
+    user_approval_required: never
 
-    critical_orchestration_rules: |
-      🚨 CRITICAL ORCHESTRATOR BEHAVIOR - READ CAREFULLY:
+    orchestrator_responsibilities: |
+      The bmad-orchestrator is the ONLY entity that controls workflow progression:
 
-      1. NEVER ASK USER FOR PERMISSION TO CONTINUE
-         ❌ DO NOT ask: "Would you like me to continue?"
-         ❌ DO NOT ask: "Should I proceed to the next story?"
-         ❌ DO NOT present options like "A) Continue B) Stop C) Something else"
-         ✅ DO: Automatically proceed to next story immediately after retrospective
-         ✅ DO: Only inform the user what you are doing, never ask permission
+      1. STEP ACTIVATION:
+         - Orchestrator selects next step based on workflow sequence
+         - Orchestrator activates appropriate agent for that step
+         - Orchestrator provides agent with: story context, previous outputs, quality criteria
 
-      2. AUTOMATIC CONTINUATION BETWEEN STORIES
-         - After story_retrospective completes → IMMEDIATELY proceed to story_selection
-         - NO pause, NO user confirmation, NO questions asked
-         - Simply state: "Proceeding to Story X.Y" and continue
+      2. AGENT MONITORING:
+         - Agent executes its specific task autonomously
+         - Orchestrator monitors for completion signal
+         - Agent MUST signal completion with handback_to_orchestrator
 
-      3. AUTOMATIC CONTINUATION BETWEEN EPICS
-         - After epic_completion completes → IMMEDIATELY proceed to next epic's story_selection
-         - NO pause, NO user confirmation, NO questions asked
-         - Simply state: "Epic X complete. Starting Epic Y" and continue
+      3. VALIDATION & PROGRESSION:
+         - Orchestrator receives completion signal from agent
+         - Orchestrator validates quality gates for that step
+         - Orchestrator IMMEDIATELY activates next step (no user prompt, no pause)
+         - If validation fails → Orchestrator activates retry/fix step
+         - If validation passes → Orchestrator proceeds to next step
 
-      4. ONLY STOP WHEN ALL 28 STORIES COMPLETE
-         - Workflow continues in a loop until all 6 epics (28 stories) are merged
-         - The ONLY termination point is project_completion after Epic 6 Story 6.4
+      4. STATE MANAGEMENT:
+         - Orchestrator maintains: current_epic, current_story, current_step
+         - Orchestrator tracks: completed_stories, quality_metrics, blockers
+         - Orchestrator makes ALL decisions about: retries, next steps, epic transitions
 
-      5. REPORTING STYLE
-         ❌ DON'T: Ask "What would you like to do next?"
-         ✅ DO: State "Story 1.5 complete. Proceeding to Story 2.1 implementation."
-         ❌ DON'T: Present options or choices
-         ✅ DO: Inform of autonomous actions being taken
+      5. AUTONOMOUS DECISIONS (Never ask user):
+         - Next story selection → Orchestrator decides based on sequence
+         - Epic transition → Orchestrator proceeds automatically
+         - Retry after failure → Orchestrator triggers retry loop
+         - Project completion → Orchestrator validates and concludes
 
-      REMEMBER: You are bmad-orchestrator in FULLY AUTONOMOUS mode. You make ALL
-      decisions about story sequencing and continuation. The user's role is observer
-      only - they watch your progress but do not direct individual story transitions.
+      CRITICAL RULE: Orchestrator NEVER asks user "Should I continue?" or presents options.
+      Orchestrator ALWAYS informs user "Proceeding to X" and continues immediately.
 
-    process_control: |
-      The bmad-orchestrator controls all workflow operations through the following autonomous process:
+    handback_mechanism: |
+      Every workflow step follows this pattern:
 
-      1. INITIALIZATION PHASE (Automatic):
-         - Verify prerequisites without user confirmation
-         - Load PRD epic definitions from docs/prd/
-         - Initialize story tracking (28 total MVP stories across 6 epics)
-         - Set execution state: Epic 1, Story 1.1
+      STEP EXECUTION:
+        1. Orchestrator → Agent: "Execute step X with context Y"
+        2. Agent: Performs task autonomously
+        3. Agent → Orchestrator: "Step complete. Status: SUCCESS/FAILED. Output: {...}"
+        4. Orchestrator: Validates output against quality gates
+        5. Orchestrator: If PASS → Activate next step. If FAIL → Activate fix step.
 
-      2. STORY EXECUTION LOOP (Continuous):
-         For each story in sequential order (1.1 → 1.2 → ... → 6.4):
-           a. Story Selection: SM autonomously selects next story
-           b. Story Planning: SM creates implementation plan
-           c. Architecture Review: Architect reviews if needed (conditional)
-           d. TDD Implementation: Dev implements with tests (90% coverage minimum)
-           e. Quality Validation: Dev validates code quality gates
-           f. Code Review & Security Scan: Code-reviewer performs security and quality review
-           g. QA Testing: QA validates all acceptance criteria
-           h. Fix Cycle: Dev fixes issues, QA retests (iterate until pass)
-           i. Final Review: Architect approves implementation
-           j. SM Approval: SM verifies story completion
-           k. PR Creation: SM creates pull request
-           l. Code-Reviewer PR Review: Code-reviewer performs comprehensive PR review with approval authority
-           m. PR Changes: Dev addresses feedback if needed (conditional)
-           n. BMad Final Oversight: BMad Master verifies and merges (or validates merge)
-           o. Retrospective: SM documents completion
+      HANDBACK FORMAT:
+        {
+          step_id: "string",
+          step_status: "completed" | "failed" | "blocked",
+          quality_gates_passed: boolean,
+          next_step_recommended: "string",
+          context_for_next_step: {...},
+          blocking_issues: [...] or null
+        }
 
-      3. EPIC TRANSITION (Automatic):
-         When all stories in current epic complete:
-           - PM documents epic completion
-           - bmad-orchestrator automatically proceeds to next epic
-           - No user approval needed
-           - Process continues with next epic's Story X.1
+      ORCHESTRATOR RESPONSE:
+        - Validates handback against quality criteria
+        - Updates workflow state
+        - IMMEDIATELY activates next step (no delay, no user prompt)
+        - Logs progression: "Step X complete. Proceeding to step Y."
 
-      4. PROJECT COMPLETION (Final):
-         When all 6 epics complete (28 stories total):
-           - BMad Master performs final project review
-           - Generate comprehensive project summary
-           - Workflow terminates with success
+  critical_orchestration_rules: |
+    🚨 ABSOLUTE RULES - NO EXCEPTIONS:
 
-      5. ERROR HANDLING (Autonomous):
-         - Quality gate failures: Automatically return to previous step
-         - Test failures: Automatically trigger fix cycle (dev → qa loop)
-         - Merge conflicts: Automatically attempt resolution or flag for dev
-         - Critical failures: Log issue, attempt auto-remediation, continue if possible
+    1. AGENTS HAND BACK CONTROL IMMEDIATELY AFTER TASK COMPLETION
+       ✅ DO: Complete task → Signal orchestrator → Wait for next activation
+       ❌ NEVER: Complete task → Ask user what to do next
+       ❌ NEVER: Complete task → Assume next step and proceed without orchestrator
 
-      6. DECISION POINTS (All Automatic):
-         - Complex story needs analysis? → Analyst step (conditional, auto-triggered)
-         - Architectural changes needed? → Architect review (conditional, auto-triggered)
-         - QA tests failed? → Dev fixes step (conditional, auto-triggered)
-         - PR changes requested? → Dev fixes + QA retest (conditional, auto-triggered)
-         - More stories in epic? → Loop to story_selection (automatic)
-         - Epic complete? → Epic completion → Next epic (automatic)
-         - All epics complete? → Project completion (automatic)
+    2. ORCHESTRATOR VALIDATES AND PROGRESSES IMMEDIATELY
+       ✅ DO: Receive handback → Validate → Activate next step immediately
+       ❌ NEVER: Receive handback → Ask user for approval to continue
+       ❌ NEVER: Receive handback → Wait for user input before proceeding
 
-      CONTINUOUS OPERATION: The bmad-orchestrator maintains execution state and ensures
-      uninterrupted progress through all 28 stories until project completion. Agents are
-      activated in sequence based on workflow steps, complete their tasks, and hand off
-      to the next agent automatically.
+    3. ZERO USER PROMPTS FOR CONTINUATION
+       ❌ NEVER say: "Would you like me to continue to Story X?"
+       ❌ NEVER say: "Should I proceed? A) Yes B) No C) Review"
+       ❌ NEVER present options or ask for direction
+       ✅ ALWAYS say: "Story X complete. Proceeding to Story Y immediately."
+       ✅ ALWAYS inform of actions, never ask permission
+
+    4. EPIC TRANSITIONS ARE AUTOMATIC
+       When all stories in epic complete:
+       ✅ Orchestrator: Triggers epic_completion step
+       ✅ PM: Documents epic summary and hands back to orchestrator
+       ✅ Orchestrator: IMMEDIATELY proceeds to first story of next epic
+       ❌ NEVER: Ask user "Epic X complete. Start Epic Y? Yes/No"
+
+    5. STORY TRANSITIONS ARE IMMEDIATE
+       After story retrospective:
+       ✅ SM: Documents retrospective and hands back to orchestrator
+       ✅ Orchestrator: IMMEDIATELY proceeds to story_selection for next story
+       ❌ NEVER: Pause and wait for user to say "continue"
+       ❌ NEVER: Ask "Ready for next story?"
+
+    6. FAILURE HANDLING IS AUTONOMOUS
+       When quality gate fails:
+       ✅ Orchestrator: Automatically activates fix step (dev_fixes, pr_changes, etc.)
+       ✅ Agent: Fixes issues and hands back to orchestrator
+       ✅ Orchestrator: Re-runs validation step
+       ❌ NEVER: Ask user "Tests failed. What should I do?"
+
+    7. WORKFLOW TERMINATION CONDITION
+       The ONLY stopping point is: all_epics_complete (Epic 6, Story 6.4 merged)
+       Until then, orchestrator CONTINUOUSLY loops through stories
+       User observes progress but does NOT direct execution
 
   sequence:
     - step: prerequisites_check
       agent: sm
       action: verify prerequisites and environment
       orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
+      orchestrator_validates:
+        - python_environment_ready
+        - redis_server_accessible
+        - duckdb_initialized
+        - dependencies_installed
+        - prd_files_present
+      on_validation_pass: proceed_to_story_selection
+      on_validation_fail: log_issues_and_attempt_remediation
       notes: |
-        ORCHESTRATOR-CONTROLLED: bmad-orchestrator initiates and monitors this step.
-
-        Scrum Master autonomously verifies before starting:
-        - Python 3.11+ environment configured
-        - Redis server running for job queue (docker or local)
-        - DuckDB database initialized (data/jobs.duckdb)
-        - All dependencies from requirements.txt installed
-        - Configuration files present (search.yaml, agents.yaml, platforms.yaml)
-        - PRD at docs/prd/ directory with all epic files
-        - Architecture docs at docs/architecture/
-        - LinkedIn MCP server configured in .mcp.json
-        - All unit tests from previous story passed with 90% coverage
-
-        NO USER INTERACTION: bmad-orchestrator automatically proceeds to story_selection once prerequisites are verified.
-        If prerequisites fail, orchestrator logs issues and attempts auto-remediation where possible.
+        ORCHESTRATOR CONTROL POINT:
+        - Orchestrator activates SM to check prerequisites
+        - SM checks: Python 3.11+, Redis, DuckDB, dependencies, PRD, configs
+        - SM hands back: {step_status: "completed", prerequisites_met: boolean, issues: [...]}
+        - Orchestrator validates: If all prerequisites met → proceed to story_selection
+        - Orchestrator: If issues found → logs for user review, attempts auto-fix where possible
+        - NO USER APPROVAL NEEDED - Orchestrator proceeds automatically
 
     - step: story_selection
       agent: sm
-      action: select next story from PRD epics
+      action: select next story from PRD epics in sequential order
       orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
+      orchestrator_validates:
+        - story_selected_matches_sequence
+        - story_prerequisites_met
+        - story_file_structure_correct
+      on_validation_pass: proceed_to_story_planning
+      next_step_automatic: story_planning
       reviews:
         - docs/prd/epic-*.md
         - docs/prd/7-implementation-roadmap.md
       notes: |
-        ORCHESTRATOR-CONTROLLED: bmad-orchestrator directs SM to autonomously select the next story in sequence.
-
-        SM automatically selects the next story from PRD epic sequence following strict sequential order:
-        - Epic 1: Foundation (Stories 1.1-1.5)
-        - Epic 2: Core Agents (Stories 2.1-2.8)
-        - Epic 3: Duplicate Detection (Stories 3.1-3.3)
-        - Epic 4: Application Submission (Stories 4.1-4.3)
-        - Epic 5: Gradio UI (Stories 5.1-5.5)
-        - Epic 6: Testing & Refinement (Stories 6.1-6.4)
-
-        PROCESS FOLLOWED:
-        1. Check completed stories in docs/stories/ directory
-        2. Identify next incomplete story based on epic/story numbering
-        3. Verify all prerequisite stories are complete
-        4. Automatically create feature branch: feature/story-{epic}-{story}
-        5. Proceed to story_planning step without user confirmation
-
-        bmad-orchestrator ensures continuous flow through all 28 MVP stories until project completion.
+        ORCHESTRATOR CONTROL POINT:
+        - Orchestrator activates SM with instruction: "Select next story in sequence"
+        - SM autonomously determines next story (Epic X, Story Y) based on:
+          * Completed stories in docs/stories/
+          * Epic sequence: 1 → 2 → 3 → 4 → 5 → 6
+          * Story sequence within epic: X.1 → X.2 → X.3 → ...
+        - SM creates feature branch: feature/story-{epic}-{story}
+        - SM hands back: {story_selected: "X.Y", story_title: "...", branch_created: "..."}
+        - Orchestrator validates selection matches expected sequence
+        - Orchestrator IMMEDIATELY proceeds to story_planning
+        - NO USER CONFIRMATION REQUIRED
 
     - step: story_planning
       agent: sm
-      action: review story acceptance criteria and create implementation plan
+      action: create implementation plan from PRD acceptance criteria
       orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
+      orchestrator_validates:
+        - story_document_created
+        - acceptance_criteria_copied_from_prd
+        - implementation_tasks_defined
+        - test_strategy_documented
+      on_validation_pass: proceed_to_conditional_analysis
+      next_step_automatic: check_if_architecture_review_needed
       reviews:
         - docs/prd/epic-{epic}.md
-        - docs/architecture/7-agent-architecture.md
-        - docs/architecture/12-technology-stack.md
+        - docs/architecture/
       notes: |
-        ORCHESTRATOR-CONTROLLED: bmad-orchestrator directs SM to autonomously plan the selected story.
-
-        SM autonomously reviews story from PRD epic file:
-        - Read story definition, acceptance criteria, technical notes
-        - Verify dependencies from previous stories are met
-        - Identify technical tasks for implementation
-        - Review relevant architecture patterns
-        - Create detailed user story at docs/stories/{epic}.{story}.{title}.md
-        - Create implementation checklist with tasks/subtasks
-        - Include test coverage requirements (90% minimum)
-        - Define integration points with existing agents/services
-
-        Story document should include:
-        - Story description and context
-        - Acceptance criteria (from PRD)
-        - Implementation tasks breakdown
-        - Testing strategy
-        - API endpoints to create/modify (if applicable)
-        - Database schema changes (if applicable)
-        - Agent modifications (if applicable)
-        - Dependencies and prerequisites
-
-    - step: requirements_clarification
-      agent: analyst
-      action: clarify requirements and edge cases
-      reviews:
-        - docs/stories/{epic}.{story}.{title}.md
-        - docs/prd/epic-{epic}.md
-      condition: complex_story_needs_analysis
-      notes: |
-        Business Analyst clarifies:
-        - Edge cases and error scenarios
-        - Integration points with LinkedIn MCP
-        - Data validation requirements
-        - User experience considerations (for UI stories)
-        - Business logic for agent decision-making
-        - Duplicate detection thresholds (for Epic 3)
-        - Form submission strategies (for Epic 4)
-
-        Output:
-        - Updated story document with clarifications
-        - Additional acceptance criteria if needed
-        - Risk analysis for complex features
+        ORCHESTRATOR CONTROL POINT:
+        - Orchestrator provides SM with story details from PRD
+        - SM creates detailed story document: docs/stories/{epic}.{story}.{title}.md
+        - SM includes: acceptance criteria, implementation tasks, test strategy
+        - SM hands back: {story_doc_created: true, complexity: "low|medium|high"}
+        - Orchestrator validates story document completeness
+        - Orchestrator checks complexity → If high → trigger architecture_review
+        - Orchestrator IMMEDIATELY proceeds (no user input)
 
     - step: architecture_review
       agent: architect
-      action: review technical design and patterns
-      reviews:
-        - docs/stories/{epic}.{story}.{title}.md
-        - docs/architecture/
-      condition: architectural_changes_needed
+      action: review technical design for architectural changes
+      orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
+      condition: architectural_changes_needed_or_high_complexity
+      orchestrator_validates:
+        - architecture_review_documented
+        - design_patterns_approved
+        - no_critical_architecture_issues
+      on_validation_pass: proceed_to_story_implementation
+      next_step_automatic: story_implementation
       notes: |
-        Technical Architect reviews:
-        - System design and component architecture
-        - Database schema changes (DuckDB)
-        - Agent pipeline modifications
-        - API design (FastAPI endpoints)
-        - Integration patterns (MCP servers, Redis queue)
-        - Performance considerations
-        - Security requirements
-
-        For agent stories (Epic 2):
-        - Agent class structure (BaseAgent inheritance)
-        - Claude model selection rationale
-        - AgentResult output schema
-        - Checkpoint/resume implementation
-
-        Output:
-        - Architecture notes added to story document
-        - Component diagrams if needed
-        - Technical debt considerations
-        - Approval to proceed or request clarifications
+        ORCHESTRATOR CONTROL POINT (CONDITIONAL):
+        - Orchestrator activates architect if: story complexity high OR architectural changes needed
+        - Architect reviews: system design, database schema, API patterns, integration
+        - Architect hands back: {approved: boolean, notes: "...", concerns: [...]}
+        - Orchestrator validates: If approved → proceed. If concerns → return to SM for clarification
+        - Orchestrator proceeds automatically based on validation
 
     - step: story_implementation
       agent: dev
-      action: implement story using Test-Driven Development (TDD)
+      action: implement story using TDD (RED → GREEN → REFACTOR)
       orchestrated_by: bmad-orchestrator
-      creates: implementation_files
-      requires: docs/stories/{epic}.{story}.{title}.md
+      handback_to_orchestrator: true
+      orchestrator_validates:
+        - tdd_cycle_completed
+        - all_unit_tests_passing
+        - code_coverage_minimum_90_percent
+        - code_quality_gates_passed
+      on_validation_pass: proceed_to_code_review_security_scan
+      next_step_automatic: code_review_security_scan
       branch: feature/story-{epic}-{story}
       notes: |
-        ORCHESTRATOR-CONTROLLED: bmad-orchestrator initiates TDD implementation cycle for the story.
-
-        Developer autonomously implements story using TDD methodology:
-
-        **SETUP:**
-        - Read story requirements in docs/stories/{epic}.{story}.{title}.md
-        - Review relevant architecture docs
-        - Understand existing codebase structure
-
-        **FOR EACH ACCEPTANCE CRITERION - Follow TDD Cycle:**
-
-        1. RED PHASE - Write failing tests first:
-           * Write unit tests using pytest
-           * Tests should fail initially (no implementation yet)
-           * Include edge cases, error scenarios, input validation
-           * Create test files in tests/ directory
-           * Use appropriate fixtures and mocks
-
-        2. GREEN PHASE - Write minimal code to pass:
-           * Implement just enough code to make tests pass
-           * For Epic 1 stories: Database operations, configuration loading, job polling
-           * For Epic 2 stories: Agent classes, Claude API integration, checkpoint system
-           * For Epic 3 stories: Duplicate detection algorithms, similarity scoring
-           * For Epic 4 stories: Form submission, email sending, Playwright automation
-           * For Epic 5 stories: Gradio UI components, real-time dashboards
-           * Run tests: pytest tests/ -v
-
-        3. REFACTOR PHASE - Improve code quality:
-           * Refactor while keeping tests green
-           * Follow Python best practices and type hints
-           * Ensure clean architecture and maintainability
-           * Use proper error handling and logging (loguru)
-
-        4. VERIFY & DOCUMENT:
-           * Run full test suite: pytest tests/ --cov=app --cov-report=term
-           * Check coverage: Must achieve minimum 90% code coverage
-           * Update docs/stories/{epic}.{story}.{title}.md with:
-             - Test files created
-             - Coverage percentage achieved
-             - Mark acceptance criterion as complete [x]
-
-        **INTEGRATION TESTING:**
-        - FastAPI endpoints: Test with FastAPI TestClient
-        - Database operations: Test DuckDB queries and schema
-        - Redis queue: Test job enqueue/dequeue operations
-        - Agent pipeline: Test agent execution and checkpointing
-        - LinkedIn MCP: Test job discovery integration
-        - Claude API: Test prompt/response handling
-
-        **MANDATORY BEFORE HANDOFF TO QA:**
-        * All unit tests must pass (100% pass rate)
-        * Code coverage must be ≥90%
-        * All acceptance criteria have corresponding tests
-        * Test results documented in story file
-        * Code follows project structure (app/, tests/, config/)
-        * Type hints added (run mypy for validation)
-        * Logging added for debugging
-
-        Commit all code and tests with descriptive messages
-
-    - step: code_quality_validation
-      agent: dev
-      action: validate code quality and test coverage
-      validates: code_quality_gates
-      required_before: code_review_security_scan
-      notes: |
-        Developer validates before code review:
-
-        **CODE QUALITY CHECKS:**
-        - Run linter: ruff check app/ tests/
-        - Run formatter: black --check app/ tests/
-        - Run type checker: mypy app/
-        - Fix any issues found
-
-        **TEST VALIDATION:**
-        - Run full test suite: pytest tests/ -v
-        - Generate coverage report: pytest --cov=app --cov-report=html
-        - Verify metrics:
-          * All unit tests passing (100% pass rate)
-          * Code coverage ≥90% overall
-          * Each acceptance criterion has corresponding tests
-          * No untested public methods or classes
-
-        **DOCUMENTATION:**
-        - Update docs/stories/{epic}.{story}.{title}.md:
-          * Test execution results
-          * Coverage percentage achieved
-          * List of test files created
-          * Any known limitations or edge cases
-
-        **MANUAL TESTING:**
-        - Test FastAPI endpoints manually (if applicable)
-        - Test agent execution with sample jobs (if applicable)
-        - Verify Redis queue operations (if applicable)
-        - Check DuckDB database state (if applicable)
-
-        If validation fails:
-        - Return to TDD cycle
-        - Write missing tests
-        - Fix code quality issues
-        - Achieve required coverage
-
-        Only proceed to code review when all gates pass
+        ORCHESTRATOR CONTROL POINT:
+        - Orchestrator activates Dev with: story doc, PRD acceptance criteria, architecture notes
+        - Dev implements using TDD: Write tests (RED) → Implement (GREEN) → Refactor
+        - Dev runs: pytest, coverage report, ruff, black, mypy
+        - Dev hands back: {
+            implementation_complete: true,
+            tests_passing: boolean,
+            coverage_percentage: float,
+            quality_checks_passed: boolean,
+            files_changed: [...]
+          }
+        - Orchestrator validates: coverage ≥ 90%, tests pass, quality gates pass
+        - If validation fails → Orchestrator returns to dev with specific issues
+        - If validation passes → Orchestrator IMMEDIATELY proceeds to code_review
+        - NO USER APPROVAL REQUIRED
 
     - step: code_review_security_scan
       agent: code-reviewer
-      action: comprehensive code quality and security review
+      action: security scan and code quality review before QA
       orchestrated_by: bmad-orchestrator
-      reviews: implementation_files
-      required_before: qa_testing_cycle
+      handback_to_orchestrator: true
+      orchestrator_validates:
+        - no_critical_security_issues
+        - no_exposed_secrets
+        - code_quality_acceptable
+        - review_documented
+      on_validation_pass: proceed_to_qa_testing_cycle
+      on_validation_fail: return_to_dev_with_issues
+      next_step_automatic: qa_testing_cycle_or_dev_fixes
       notes: |
-        ORCHESTRATOR-CONTROLLED: bmad-orchestrator assigns code review to code-reviewer agent automatically.
-
-        Code Reviewer (Alex) autonomously performs comprehensive review:
-
-        **SECURITY SCAN (Critical Priority):**
-        - 🚨 Search for exposed secrets/API keys/tokens/passwords
-        - 🚨 Check for SQL injection vulnerabilities (DuckDB queries)
-        - 🚨 Check for command injection risks
-        - 🚨 Validate input sanitization and validation
-        - 🚨 Review authentication/authorization logic
-        - 🚨 Check error messages don't leak sensitive info
-
-        **CODE QUALITY REVIEW:**
-        - Functions/variables have clear, descriptive names
-        - No duplicated code (DRY principle)
-        - Proper error handling for external calls
-        - Type hints present and correct
-        - No TODO comments without tickets
-        - Algorithmic complexity reasonable (no O(n²) where avoidable)
-
-        **TESTING VALIDATION:**
-        - Review test coverage adequacy (≥90%)
-        - Validate edge cases covered
-        - Check test quality and maintainability
-        - Verify integration tests appropriate
-
-        **PERFORMANCE REVIEW:**
-        - Database queries optimized (no N+1 problems)
-        - Resource usage appropriate
-        - Async/await patterns used correctly
-        - No memory leaks or resource exhaustion risks
-
-        **DOCUMENTATION CHECK:**
-        - Docstrings present for public APIs
-        - Complex logic explained
-        - Architecture patterns followed
-
-        **REVIEW OUTPUT:**
-        - Document findings by priority:
-          * 🚨 CRITICAL: Must fix before QA (blocks QA handoff)
-          * ⚠️ WARNING: Should fix (advisory, document in story)
-          * 💡 SUGGESTION: Consider improving (optional, document in story)
-
-        **DECISION:**
-        - APPROVE: No critical issues → Proceed to QA
-        - REQUEST CHANGES: Critical issues found → Return to Dev with specific feedback
-        - Update docs/stories/{epic}.{story}.{title}.md with review findings
+        ORCHESTRATOR CONTROL POINT:
+        - Orchestrator activates code-reviewer with: changed files, story context
+        - Code-reviewer performs: security scan (secrets, injection), quality review
+        - Code-reviewer hands back: {
+            security_scan_passed: boolean,
+            critical_issues: [...],
+            warnings: [...],
+            approved_for_qa: boolean
+          }
+        - Orchestrator validates: If critical issues found → return to dev_fixes
+        - Orchestrator: If approved → IMMEDIATELY proceed to qa_testing_cycle
+        - NO USER INPUT REQUIRED
 
     - step: qa_testing_cycle
       agent: qa
-      action: verify all acceptance criteria and quality standards
+      action: verify all acceptance criteria with integration tests
       orchestrated_by: bmad-orchestrator
-      updates: docs/stories/{epic}.{story}.{title}.md
-      requires:
-        - docs/prd/epic-{epic}.md
-        - code_quality_validation
-      iterates: until_all_criteria_pass
+      handback_to_orchestrator: true
+      orchestrator_validates:
+        - all_acceptance_criteria_tested
+        - all_tests_passed
+        - integration_tests_successful
+        - regression_tests_passed
+      on_validation_pass: proceed_to_architect_final_review
+      on_validation_fail: return_to_dev_fixes
+      next_step_automatic: architect_final_review_or_dev_fixes
+      iterates_until: all_criteria_pass
       notes: |
-        ORCHESTRATOR-CONTROLLED: bmad-orchestrator manages QA testing cycle and automatic iteration.
-
-        QA Agent autonomously tests each acceptance criterion from PRD:
-
-        **FIRST - Verify test coverage from Dev:**
-        - Confirm code quality validation gate passed
-        - Review coverage report in docs/stories/{epic}.{story}.{title}.md
-        - Verify ≥90% code coverage achieved
-        - Check all acceptance criteria have unit tests
-        - If unit tests insufficient:
-          * REJECT handoff back to Dev
-          * List missing test scenarios
-          * Require completion of TDD cycle
-
-        **THEN - Perform integration and acceptance testing:**
-
-        **For Foundation Stories (Epic 1):**
-        - Test configuration loading (search.yaml, agents.yaml, platforms.yaml)
-        - Test DuckDB database operations (CRUD, indexes, queries)
-        - Test LinkedIn job polling and data extraction
-        - Test Redis queue enqueue/dequeue operations
-        - Test RQ worker job processing
-        - Verify job flow: poller → database → queue
-
-        **For Agent Stories (Epic 2):**
-        - Test each agent individually with sample jobs
-        - Test agent pipeline execution (sequential processing)
-        - Test JobMatcherAgent scoring logic
-        - Test CVTailorAgent document generation
-        - Test CoverLetterWriterAgent personalization
-        - Test QAAgent validation checks
-        - Test OrchestratorAgent decision-making
-        - Test checkpoint/resume functionality
-        - Verify generated CV/CL files in export directory
-        - Test error handling and retry logic
-
-        **For Duplicate Detection Stories (Epic 3):**
-        - Test Tier 1 exact duplicate detection
-        - Test Tier 2 fuzzy matching algorithms
-        - Test similarity scoring and thresholds
-        - Test duplicate group assignment
-        - Verify database duplicate_group_id updates
-
-        **For Submission Stories (Epic 4):**
-        - Test email submission with test accounts
-        - Test web form detection and automation
-        - Test Playwright/Chrome MCP integration
-        - Test submission status tracking
-
-        **For UI Stories (Epic 5):**
-        - Test Gradio dashboard launch
-        - Test real-time job display and filters
-        - Test manual approval/rejection controls
-        - Test document preview functionality
-        - Test UI responsiveness and usability
-
-        **DOCUMENT RESULTS:**
-        - Update docs/stories/{epic}.{story}.{title}.md with testing notes
-        - For each acceptance criterion:
-          * ✅ PASS: Criterion met with evidence
-          * ❌ FAIL: Issue description with logs/screenshots
-          * ⚠️ BLOCKED: External dependency issue
-        - Include test execution logs
-        - Include screenshots (for UI stories)
-        - Include performance metrics (if applicable)
-
-        **REGRESSION TESTING:**
-        - Run full test suite to ensure no breakage
-        - Test previously completed stories still work
-        - Verify integration with existing components
-
-        Return to Dev if any criterion fails or unit tests inadequate
+        ORCHESTRATOR CONTROL POINT:
+        - Orchestrator activates QA with: story doc, acceptance criteria, implementation
+        - QA tests each acceptance criterion from PRD
+        - QA performs: integration tests, regression tests, criterion validation
+        - QA hands back: {
+            all_criteria_passed: boolean,
+            passing_criteria: [...],
+            failing_criteria: [...],
+            test_evidence: {...}
+          }
+        - Orchestrator validates test results
+        - If failures → Orchestrator activates dev_fixes step
+        - If all pass → Orchestrator IMMEDIATELY proceeds to architect_final_review
+        - Loop continues until all tests pass (orchestrator manages retry logic)
 
     - step: dev_fixes
       agent: dev
-      action: fix failing tests and issues
-      updates: docs/stories/{epic}.{story}.{title}.md
-      condition: qa_tests_failed
+      action: fix failing tests and address issues from QA or code-reviewer
+      orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
+      condition: qa_tests_failed_or_code_review_issues
+      orchestrator_validates:
+        - fixes_implemented
+        - unit_tests_passing_locally
+        - ready_for_retest
+      on_validation_pass: return_to_qa_retest_or_code_review
+      next_step_automatic: qa_retest_or_code_review
       notes: |
-        Developer fixes issues found by QA:
-
-        **REVIEW QA FEEDBACK:**
-        - Read QA test results in docs/stories/{epic}.{story}.{title}.md
-        - Prioritize failing acceptance criteria
-        - Understand root causes of failures
-
-        **FIX IMPLEMENTATION:**
-        - Fix code to address failing tests
-        - Add missing functionality
-        - Improve error handling
-        - Update unit tests if needed
-
-        **RE-TEST LOCALLY:**
-        - Run unit tests: pytest tests/ -v
-        - Run integration tests for fixed areas
-        - Verify fixes don't break existing functionality
-        - Test specific failing scenarios from QA report
-        - Achieve ≥90% coverage
-
-        **UPDATE DOCUMENTATION:**
-        - Update docs/stories/{epic}.{story}.{title}.md:
-          * Mark reopened tasks
-          * Add fix notes and explanations
-          * Document any technical debt created
-
-        **NOTIFY QA:**
-        - Commit fixes with descriptive messages
-        - Mark ready for QA re-test
-        - Provide summary of changes made
+        ORCHESTRATOR CONTROL POINT (TRIGGERED BY FAILURE):
+        - Orchestrator activates Dev when: QA finds failing tests OR code-reviewer finds issues
+        - Orchestrator provides: specific failures/issues to fix
+        - Dev fixes code, runs tests locally, verifies fixes
+        - Dev hands back: {fixes_complete: true, issues_resolved: [...]}
+        - Orchestrator validates fixes and automatically triggers retest
+        - Orchestrator manages retry loop autonomously
 
     - step: qa_retest
       agent: qa
       action: retest fixes and verify resolution
-      updates: docs/stories/{epic}.{story}.{title}.md
+      orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
       condition: after_dev_fixes
+      orchestrator_validates:
+        - previously_failing_tests_now_pass
+        - no_new_regressions
+        - all_criteria_still_met
+      on_validation_pass: proceed_to_architect_final_review
+      on_validation_fail: return_to_dev_fixes
+      next_step_automatic: architect_final_review_or_dev_fixes_again
       notes: |
-        QA Agent retests after Dev fixes:
-
-        **FOCUSED RE-TESTING:**
-        - Focus on previously failing tests
-        - Test specific fixes and edge cases
-        - Verify fix quality and completeness
-
-        **REGRESSION TESTING:**
-        - Run full test suite to check for side effects
-        - Test integration with other components
-        - Verify no new issues introduced
-
-        **EVIDENCE COLLECTION:**
-        - Capture test logs for fixed scenarios
-        - Take screenshots (for UI changes)
-        - Document performance improvements (if applicable)
-
-        **UPDATE RESULTS:**
-        - Update docs/stories/{epic}.{story}.{title}.md
-        - If still failing: Return to dev_fixes step with detailed feedback
-        - If all pass: Proceed to architect review
+        ORCHESTRATOR CONTROL POINT (RETRY VALIDATION):
+        - Orchestrator activates QA to retest after dev fixes
+        - QA focuses on previously failing scenarios
+        - QA hands back: {fixes_validated: boolean, new_issues: [...]}
+        - If still failing → Orchestrator returns to dev_fixes (loop continues)
+        - If all pass → Orchestrator proceeds to architect_final_review
+        - Orchestrator manages this retry loop until success
 
     - step: architect_final_review
       agent: architect
-      action: review implementation for architecture compliance
-      reviews:
-        - docs/stories/{epic}.{story}.{title}.md
-        - Changed code files
-        - docs/architecture/
+      action: final implementation review for architecture compliance
+      orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
+      orchestrator_validates:
+        - architecture_compliance_verified
+        - technical_debt_documented
+        - no_critical_architecture_violations
+      on_validation_pass: proceed_to_sm_story_approval
+      next_step_automatic: sm_story_approval
       notes: |
-        Technical Architect final review:
-
-        **CODE REVIEW:**
-        - Review implementation code for quality
-        - Verify architecture patterns followed
-        - Check component boundaries respected
-        - Validate API design (FastAPI endpoints)
-        - Review database schema changes
-
-        **TECHNICAL DEBT ASSESSMENT:**
-        - Identify any technical debt introduced
-        - Assess impact on future stories
-        - Document refactoring opportunities
-
-        **PERFORMANCE REVIEW:**
-        - Review performance implications
-        - Check resource usage (memory, database connections)
-        - Validate async/await patterns (if applicable)
-
-        **SECURITY REVIEW:**
-        - Check for security vulnerabilities
-        - Validate input validation and sanitization
-        - Review API key and credential handling
-        - Check for SQL injection risks (DuckDB queries)
-
-        **DECISION:**
-        - Approve for PR creation
-        - Request changes (return to dev with feedback)
-        - Approve with notes for future improvement
+        ORCHESTRATOR CONTROL POINT:
+        - Orchestrator activates Architect for final review
+        - Architect reviews: implementation code, architecture patterns, technical debt
+        - Architect hands back: {approved: boolean, technical_debt: [...], notes: "..."}
+        - Orchestrator validates approval
+        - Orchestrator IMMEDIATELY proceeds to sm_story_approval
+        - NO USER CONFIRMATION
 
     - step: sm_story_approval
       agent: sm
-      action: verify story completion and alignment with PRD
-      reviews:
-        - docs/prd/epic-{epic}.md
-        - docs/stories/{epic}.{story}.{title}.md
+      action: verify story completion and PRD alignment
+      orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
+      orchestrator_validates:
+        - all_acceptance_criteria_met
+        - story_document_complete
+        - ready_for_pr_creation
+      on_validation_pass: proceed_to_create_pull_request
+      next_step_automatic: create_pull_request
       notes: |
-        Scrum Master verifies story completion:
-
-        **ACCEPTANCE CRITERIA VERIFICATION:**
-        - Confirm all acceptance criteria from PRD met
-        - Review test results showing criterion coverage
-        - Verify alignment between PRD and implementation
-
-        **QUALITY VERIFICATION:**
-        - Code follows project standards
-        - Test coverage ≥90% maintained
-        - Integration with existing features works
-        - Documentation is up-to-date
-
-        **COMPLETENESS CHECK:**
-        - All tasks in story document marked complete [x]
-        - No open issues or blockers
-        - Technical debt documented
-        - Story ready for production
-
-        **PREPARE FOR PR:**
-        - Conduct final review of story
-        - Mark story as complete in tracking
-        - Commit all changes to feature branch
-        - Push feature branch to remote
-        - Prepare PR description with story summary
+        ORCHESTRATOR CONTROL POINT:
+        - Orchestrator activates SM to verify story completion
+        - SM checks: all ACs met, tests pass, coverage ≥90%, documentation complete
+        - SM hands back: {story_complete: true, ready_for_pr: boolean}
+        - Orchestrator validates story readiness
+        - Orchestrator IMMEDIATELY proceeds to create_pull_request
 
     - step: create_pull_request
       agent: sm
-      action: create pull request for review
+      action: create PR for review and merge
+      orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
+      orchestrator_validates:
+        - pr_created_successfully
+        - pr_description_complete
+        - pr_assigned_to_reviewers
+      on_validation_pass: proceed_to_code_reviewer_pr_review
+      next_step_automatic: code_reviewer_pr_review
       creates: pull_request
-      requires: story_approved
       notes: |
-        Scrum Master creates Pull Request:
-
-        **PR PREPARATION:**
-        - Ensure feature branch is up-to-date with main
-        - Resolve any merge conflicts
-        - Verify all commits are clean and descriptive
-
-        **CREATE PR:**
-        - Create PR from feature/story-{epic}-{story} to main
-        - PR title: "Story {epic}.{story}: {story title}"
-        - PR description includes:
-          * Story summary from docs/stories/{epic}.{story}.{title}.md
-          * Acceptance criteria checklist
-          * Implementation highlights
-          * Test results summary (coverage percentage)
-          * Changed files list
-          * Database schema changes (if applicable)
-          * Breaking changes (if any)
-          * Dependencies added (if any)
-
-        **ASSIGN REVIEWERS:**
-        - Assign BMad Master as primary reviewer
-        - Set PR labels (epic-1, epic-2, etc.)
-        - Set milestone (if applicable)
-        - Link to story document in PR description
+        ORCHESTRATOR CONTROL POINT:
+        - Orchestrator activates SM to create PR
+        - SM creates PR: feature/story-{epic}-{story} → main
+        - SM includes: story summary, AC checklist, test results, changed files
+        - SM hands back: {pr_created: true, pr_number: int, pr_url: "..."}
+        - Orchestrator validates PR creation
+        - Orchestrator IMMEDIATELY proceeds to code_reviewer_pr_review
 
     - step: code_reviewer_pr_review
       agent: code-reviewer
-      action: comprehensive PR review with approval authority
+      action: comprehensive 8-step PR review with approval authority
       orchestrated_by: bmad-orchestrator
-      reviews: pull_request
+      handback_to_orchestrator: true
+      orchestrator_validates:
+        - pr_review_complete
+        - security_scan_performed
+        - decision_made
+      on_validation_pass_approved: proceed_to_bmad_pr_approval_or_merge
+      on_validation_fail_changes_requested: return_to_pr_changes_requested
+      next_step_automatic: bmad_pr_approval_or_pr_changes
       notes: |
-        ORCHESTRATOR-CONTROLLED: bmad-orchestrator assigns PR review to code-reviewer automatically.
-
-        Code Reviewer (Alex) autonomously conducts comprehensive PR review with authority to approve/merge:
-
-        **UNDERSTAND CONTEXT (Step 1):**
-        - Read PR description and linked story document
-        - Review acceptance criteria from PRD
-        - Understand business logic and use cases
-
-        **ANALYZE CHANGES (Step 2):**
-        - Run git diff main...HEAD to see all changes
-        - Focus on modified files, not entire codebase
-        - Check for unintended changes
-
-        **SECURITY SCAN (Step 3 - Critical):**
-        - 🚨 Search for exposed secrets/API keys (BLOCKS MERGE)
-        - 🚨 Check for SQL injection vulnerabilities (BLOCKS MERGE)
-        - 🚨 Validate input sanitization (BLOCKS MERGE)
-        - 🚨 Review authentication/authorization (BLOCKS MERGE)
-        - 🚨 Check for command injection risks (BLOCKS MERGE)
-
-        **QUALITY CHECK (Step 4):**
-        - Code readability and maintainability
-        - Proper error handling
-        - Naming conventions followed
-        - No code duplication (DRY)
-
-        **TESTING VALIDATION (Step 5):**
-        - All tests passing (verify CI/test output)
-        - New tests cover new functionality
-        - Edge cases considered
-        - Integration tests appropriate
-        - Coverage ≥90% maintained
-
-        **PERFORMANCE REVIEW (Step 6):**
-        - Algorithmic complexity reasonable
-        - Database queries optimized
-        - No N+1 query problems
-        - Resource usage appropriate
-
-        **DOCUMENTATION CHECK (Step 7):**
-        - Docstrings present for public APIs
-        - Complex logic explained
-        - README updated if needed
-        - Story document complete
-
-        **APPROVAL DECISION (Step 8):**
-        - APPROVE + MERGE: No critical issues, tests pass, quality standards met
-          * Use MCP GitHub tools to approve PR
-          * Can merge if all checks pass
-        - REQUEST CHANGES: Critical or multiple warning issues present
-          * Provide detailed, actionable feedback with code examples
-          * Block merge until issues resolved
-        - COMMENT: Suggestions only, no blocking issues
-          * Document advisory warnings and suggestions in PR comments
-
-        **REVIEW OUTPUT FORMAT:**
-        Provide constructive feedback with specific examples:
-        - ✅ **Approved**: Ready to merge, excellent work
-        - 🚨 **CRITICAL**: Must fix (with code example showing fix)
-        - ⚠️ **WARNING**: Should fix (with explanation and suggestion)
-        - 💡 **SUGGESTION**: Consider improving (with alternative approach)
+        ORCHESTRATOR CONTROL POINT:
+        - Orchestrator activates code-reviewer for comprehensive PR review
+        - Code-reviewer performs 8-step review: context, changes, security, quality, tests, performance, docs, decision
+        - Code-reviewer hands back: {
+            review_complete: true,
+            decision: "approved" | "request_changes" | "comment",
+            critical_issues: [...],
+            warnings: [...],
+            can_merge: boolean
+          }
+        - Orchestrator validates review decision
+        - If approved → Orchestrator proceeds to bmad_pr_approval
+        - If changes requested → Orchestrator activates pr_changes_requested
+        - Orchestrator manages review cycle autonomously
 
     - step: pr_changes_requested
       agent: dev
-      action: address PR feedback from code reviewer
-      updates: docs/stories/{epic}.{story}.{title}.md
+      action: address PR feedback from code-reviewer
+      orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
       condition: code_reviewer_requested_changes
+      orchestrator_validates:
+        - changes_addressed
+        - updates_pushed_to_branch
+        - ready_for_re_review
+      on_validation_pass: return_to_qa_verify_pr_changes
+      next_step_automatic: qa_verify_pr_changes
       notes: |
-        Developer addresses code reviewer's feedback:
-
-        **REVIEW FEEDBACK:**
-        - Read code reviewer's comments carefully
-        - Understand requested changes by priority (Critical/Warning/Suggestion)
-        - Prioritize CRITICAL issues first
-        - Address WARNING issues
-        - Consider SUGGESTION improvements
-
-        **MAKE CHANGES:**
-        - Address all critical security issues
-        - Fix requested code quality issues
-        - Add missing tests if requested
-        - Improve documentation if requested
-        - Optimize performance if requested
-        - Fix any security vulnerabilities
-
-        **RESPOND TO COMMENTS:**
-        - Reply to each comment
-        - Explain changes made
-        - Ask clarifying questions if needed
-        - Provide justification for decisions
-
-        **UPDATE PR:**
-        - Commit changes to feature branch
-        - Push updates to update PR automatically
-        - Run tests locally before pushing (pytest + coverage)
-        - Request re-review from code-reviewer
+        ORCHESTRATOR CONTROL POINT (TRIGGERED BY CHANGES REQUESTED):
+        - Orchestrator activates Dev with specific feedback from code-reviewer
+        - Dev addresses: critical issues, warnings, suggestions
+        - Dev hands back: {changes_complete: true, addressed_issues: [...]}
+        - Orchestrator validates changes
+        - Orchestrator triggers qa_verify_pr_changes to ensure no breakage
 
     - step: qa_verify_pr_changes
       agent: qa
       action: verify PR changes don't break functionality
-      updates: docs/stories/{epic}.{story}.{title}.md
+      orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
       condition: pr_changes_made
+      orchestrator_validates:
+        - pr_changes_tested
+        - no_regressions_introduced
+        - all_tests_still_passing
+      on_validation_pass: return_to_code_reviewer_pr_review
+      next_step_automatic: code_reviewer_pr_review_rereview
       notes: |
-        QA verifies PR changes:
-
-        **TARGETED TESTING:**
-        - Test specific areas affected by PR changes
-        - Focus on modified acceptance criteria
-        - Test edge cases related to changes
-
-        **REGRESSION TESTING:**
-        - Run full test suite to ensure no breakage
-        - Test integration with other components
-        - Verify previously passing tests still pass
-
-        **EVIDENCE COLLECTION:**
-        - Capture test logs and results
-        - Take screenshots (for UI changes)
-        - Document any new issues found
-
-        **UPDATE STATUS:**
-        - Update test results in story document
-        - Confirm to SM that changes are tested
-        - Flag any new issues found (return to dev if needed)
+        ORCHESTRATOR CONTROL POINT:
+        - Orchestrator activates QA to verify PR changes
+        - QA tests: modified areas, regression tests, full test suite
+        - QA hands back: {changes_verified: boolean, new_issues: [...]}
+        - Orchestrator validates QA results
+        - Orchestrator returns to code_reviewer_pr_review for re-review
+        - Loop continues until PR approved
 
     - step: bmad_pr_approval
       agent: bmad-master
-      action: final oversight and merge PR
+      action: final oversight and merge PR to main
+      orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
+      condition: code_reviewer_approved_and_all_checks_pass
+      orchestrator_validates:
+        - pr_merged_successfully
+        - feature_branch_deleted
+        - main_branch_updated
+      on_validation_pass: proceed_to_story_retrospective
+      next_step_automatic: story_retrospective
       merges: pull_request
-      requires:
-        - code_reviewer_approved
-        - all_tests_passing
-      condition: pr_not_yet_merged
       notes: |
-        BMad Master final oversight and merge:
-
-        **FINAL VERIFICATION:**
-        - Verify code-reviewer approval completed
-        - Verify all critical issues resolved
-        - Confirm all tests passing
-        - Check CI/CD pipeline (if configured)
-        - Review final diff
-
-        **PROJECT OVERSIGHT:**
-        - Assess alignment with overall project architecture
-        - Verify story contributes to epic goals
-        - Note any outstanding items for future stories
-        - Document any cross-story dependencies
-
-        **MERGE PR:**
-        - Merge to main branch (squash or merge commit)
-        - Delete feature branch after merge
-        - Tag commit with story ID (optional)
-
-        **NOTIFY TEAM:**
-        - Announce successful merge
-        - Update story tracking
-        - Celebrate completion
-
-        **NOTE:** If code-reviewer already merged the PR (has merge authority),
-        this step validates the merge was correct and updates tracking.
+        ORCHESTRATOR CONTROL POINT:
+        - Orchestrator activates BMad Master for final oversight
+        - BMad Master verifies: code-reviewer approval, tests pass, ready to merge
+        - BMad Master merges PR to main, deletes feature branch
+        - BMad Master hands back: {merged: true, commit_sha: "...", story_complete: true}
+        - Orchestrator validates merge success
+        - Orchestrator IMMEDIATELY proceeds to story_retrospective
+        - NO USER CELEBRATION PAUSE - Continuous execution
 
     - step: story_retrospective
       agent: sm
-      action: document story completion and learnings
-      updates: docs/stories/{epic}.{story}.{title}.md
-      condition: story_merged
+      action: document story completion, metrics, and learnings
+      orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
+      orchestrator_validates:
+        - retrospective_documented
+        - metrics_recorded
+        - lessons_learned_captured
+      on_validation_pass: proceed_to_next_story_decision
+      next_step_automatic: next_story_decision
       notes: |
-        Scrum Master documents story completion:
-
-        **UPDATE STORY STATUS:**
-        - Mark story as "Completed" in story document
-        - Update story status in workflow tracking (this file)
-        - Record completion timestamp
-
-        **RETROSPECTIVE NOTES:**
-        - Record actual vs estimated time
-        - Document lessons learned:
-          * What went well
-          * What could be improved
-          * Blockers encountered
-          * Knowledge gaps identified
-        - Note any technical debt created
-        - Document reusable patterns discovered
-
-        **METRICS UPDATE:**
-        - Update team velocity metrics
-        - Track story cycle time
-        - Record test pass rates
-        - Note bug escape rate
-
-        **PREPARE FOR NEXT:**
-        - Archive story document (keep in docs/stories/)
-        - Update epic progress tracking
-        - Check remaining stories in epic
-        - Prepare team for next story
+        ORCHESTRATOR CONTROL POINT:
+        - Orchestrator activates SM to document retrospective
+        - SM records: completion time, lessons learned, velocity, technical debt
+        - SM updates: story document with retrospective section
+        - SM hands back: {
+            retrospective_complete: true,
+            story_duration: "...",
+            velocity_metrics: {...},
+            next_story_ready: true
+          }
+        - Orchestrator validates retrospective completion
+        - Orchestrator IMMEDIATELY proceeds to next_story_decision
+        - 🚨 CRITICAL: NO "Would you like to continue?" prompt here
 
     - step: next_story_decision
-      agent: sm
-      action: check backlog and automatically select next story
+      agent: orchestrator-self
+      action: autonomous decision on next story or epic transition
       orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
+      orchestrator_validates:
+        - backlog_reviewed
+        - next_action_determined
+        - no_user_input_requested
+      on_more_stories_in_epic: return_to_story_selection
+      on_epic_complete: proceed_to_epic_completion
+      on_all_complete: proceed_to_project_completion
+      next_step_automatic: story_selection_or_epic_completion_or_project_completion
       notes: |
-        ORCHESTRATOR-CONTROLLED: bmad-orchestrator automatically directs the next action based on backlog status.
+        🚨 CRITICAL ORCHESTRATOR CONTROL POINT - AUTONOMOUS DECISION:
 
-        🚨 CRITICAL: DO NOT ASK USER FOR PERMISSION. This is a fully autonomous decision point.
+        Orchestrator makes decision autonomously (NO agent activation needed):
 
-        Scrum Master autonomously checks backlog:
+        1. Orchestrator checks: remaining stories in current epic
+        2. Orchestrator checks: remaining epics in project
 
-        **AUTONOMOUS BACKLOG REVIEW:**
-        - Count remaining stories in current epic (check docs/prd/epic-{epic}.md)
-        - Verify dependencies met for next story (review prerequisite completions)
-        - Check system capacity (always proceed unless critical failure)
+        DECISION LOGIC (FULLY AUTONOMOUS):
 
-        **AUTOMATED DECISION FLOW (NO USER INPUT REQUIRED):**
-        - If more stories in current epic → bmad-orchestrator AUTOMATICALLY returns to story_selection step
-          * Simply report: "Story X.Y complete. Proceeding to Story X.(Y+1) implementation."
-          * DO NOT ask: "Would you like me to continue?" or present options
-          * IMMEDIATELY proceed to story_selection
+        IF more stories in current epic:
+          - Orchestrator logs: "Story X.Y complete. Proceeding to Story X.(Y+1)"
+          - Orchestrator IMMEDIATELY returns to story_selection step
+          - NO USER PROMPT: "Continue to next story?"
+          - NO OPTIONS PRESENTED
+          - IMMEDIATE CONTINUATION
 
-        - If current epic complete AND more epics remaining → bmad-orchestrator proceeds to epic_completion, then returns to story_selection
-          * Simply report: "Epic X complete (all stories merged). Starting Epic X+1."
-          * DO NOT ask for user approval to start next epic
-          * IMMEDIATELY proceed to epic_completion → story_selection
+        IF current epic complete AND more epics remaining:
+          - Orchestrator logs: "Epic X complete (Z/Z stories). Starting Epic X+1"
+          - Orchestrator proceeds to epic_completion step
+          - Then IMMEDIATELY to story_selection for next epic
+          - NO USER PROMPT: "Start next epic?"
+          - AUTOMATIC EPIC TRANSITION
 
-        - If all 6 epics complete (all 28 MVP stories done) → bmad-orchestrator proceeds to project_completion
-          * Report: "All 28 stories complete across 6 epics. Performing project completion review."
-          * This is the ONLY termination point
+        IF all 6 epics complete (28 stories total):
+          - Orchestrator logs: "All epics complete. Performing project completion."
+          - Orchestrator proceeds to project_completion step
+          - This is the ONLY termination point
 
-        **REPORTING STYLE (Examples):**
-        ✅ CORRECT: "Story 1.5 merged successfully. Epic 1 complete (5/5 stories). Proceeding to Epic 2, Story 2.1 (Agent Base Class)."
-        ❌ WRONG: "Epic 1 complete! Would you like me to: A) Continue to Epic 2 B) Stop here C) Review what was built?"
+        Orchestrator hands back to self: {
+          decision: "next_story" | "epic_transition" | "project_complete",
+          next_epic: int | null,
+          next_story: int | null
+        }
 
-        ✅ CORRECT: "Story 2.7 complete. Proceeding to Story 2.8 (Checkpoint System) - final story in Epic 2."
-        ❌ WRONG: "Great work on Story 2.7! Should I proceed to Story 2.8 or would you like to review?"
-
-        CONTINUOUS EXECUTION: The workflow loops automatically through all stories until complete.
-        bmad-orchestrator tracks progress: Epic X of 6, Story Y of Z completed.
-
-        REMEMBER: The user is an OBSERVER, not a director of story sequencing. They watch
-        autonomous progress. Your job is to INFORM them of actions, NOT ask permission.
+        🚨 REMEMBER: Orchestrator INFORMS user of actions, NEVER asks permission
+        ✅ "Proceeding to Story 2.1" (correct)
+        ❌ "Continue to Story 2.1? Y/N" (wrong - never ask)
 
     - step: epic_completion
       agent: pm
-      action: review and document epic completion
+      action: document epic completion and achievements
       orchestrated_by: bmad-orchestrator
-      creates: epic_summary.md
-      condition: epic_complete
+      handback_to_orchestrator: true
+      condition: all_stories_in_epic_complete
+      orchestrator_validates:
+        - epic_summary_created
+        - all_epic_stories_verified_complete
+        - epic_metrics_recorded
+      on_validation_pass: proceed_to_story_selection_next_epic
+      next_step_automatic: story_selection
+      creates: docs/epics/epic-{epic}-summary.md
       notes: |
-        ORCHESTRATOR-CONTROLLED: bmad-orchestrator triggers epic completion review when all stories in epic are merged.
-
-        Product Manager autonomously reviews epic completion:
-
-        **AUTOMATED EPIC REVIEW:**
-        - Verify all stories in epic completed (check story_progress_tracking section)
-        - Review epic deliverable achieved against PRD
-        - Assess epic value delivered
-
-        **EPIC SUMMARY (AUTO-GENERATED):**
-        - Create epic summary document at docs/epics/epic-{epic}-summary.md
-        - Document key achievements from story implementations
-        - Note technical innovations and patterns established
-        - Record challenges overcome during epic
-
-        **METRICS COLLECTION:**
-        - Calculate epic completion time
-        - Average test coverage across epic stories
-        - Total LOC added in epic
-        - Velocity metrics for epic
-
-        **AUTONOMOUS NEXT EPIC TRANSITION:**
-        - Review next epic in roadmap (Epic 1→2→3→4→5→6)
-        - Verify readiness: prerequisites met, architecture established
-        - bmad-orchestrator automatically initiates story_selection for next epic
-        - NO USER APPROVAL REQUIRED: Continuous flow to next epic
+        ORCHESTRATOR CONTROL POINT (EPIC TRANSITION):
+        - Orchestrator activates PM when all stories in epic are merged
+        - PM creates epic summary: achievements, metrics, challenges
+        - PM hands back: {
+            epic_complete: true,
+            epic_number: int,
+            stories_completed: int,
+            next_epic_ready: boolean
+          }
+        - Orchestrator validates epic completion
+        - Orchestrator IMMEDIATELY proceeds to story_selection for NEXT epic
+        - 🚨 CRITICAL: NO "Start next epic?" prompt
+        - Orchestrator logs: "Epic X complete. Starting Epic X+1"
+        - AUTOMATIC CONTINUATION WITHOUT USER INPUT
 
     - step: project_completion
       agent: bmad-master
       action: final project review and documentation
-      creates: project_summary.md
-      condition: all_stories_complete
+      orchestrated_by: bmad-orchestrator
+      handback_to_orchestrator: true
+      condition: all_28_stories_complete
+      orchestrator_validates:
+        - all_epics_verified_complete
+        - project_summary_created
+        - final_deliverables_documented
+      on_validation_pass: terminate_workflow_with_success
+      creates: docs/project-summary.md
       notes: |
-        BMad Master project completion:
+        ORCHESTRATOR CONTROL POINT (FINAL):
+        - Orchestrator activates BMad Master when all 6 epics complete (28 stories)
+        - BMad Master creates: comprehensive project summary, metrics, deliverables
+        - BMad Master hands back: {
+            project_complete: true,
+            all_stories_merged: true,
+            system_operational: boolean
+          }
+        - Orchestrator validates project completion
+        - Orchestrator terminates workflow with success status
+        - This is the ONLY stopping point in the entire workflow
 
-        **PROJECT REVIEW:**
-        - Review all completed stories across all epics
-        - Verify all PRD requirements implemented
-        - Create comprehensive project summary report
+  orchestrator_state_machine:
+    state_tracking: |
+      The bmad-orchestrator maintains persistent state throughout execution:
 
-        **FINAL DELIVERABLES:**
-        - Working job application automation system
-        - LinkedIn job discovery operational
-        - 7-agent pipeline fully functional
-        - DuckDB database with job tracking
-        - Gradio UI for monitoring and control
-        - Automated application submission
-        - Comprehensive test suite (≥90% coverage)
-        - Full documentation
+      STATE STRUCTURE:
+        {
+          current_epic: int (1-6),
+          current_story: int (varies per epic),
+          current_step: string (workflow step id),
+          total_stories_completed: int (0-28),
+          epics_completed: int (0-6),
+          current_story_status: {
+            step_completed: [...],
+            step_in_progress: string,
+            quality_gates_passed: [...],
+            retry_count: int
+          },
+          workflow_status: "active" | "paused" | "complete" | "error"
+        }
 
-        **METRICS SUMMARY:**
-        - Total stories completed
-        - Total development time
-        - Team velocity trends
-        - Test coverage achieved
-        - Bug escape rate
+      STATE TRANSITIONS (ALL AUTOMATIC):
+        - Story complete → Increment total_stories_completed
+        - Epic complete → Increment epics_completed, reset current_story to 1
+        - Quality gate fail → Increment retry_count, activate fix step
+        - Quality gate pass → Mark step complete, activate next step
+        - All epics complete → Set workflow_status: "complete"
 
-        **DEPLOYMENT PREPARATION:**
-        - Prepare production deployment checklist
-        - Document deployment procedures
-        - Create user manual
-        - Plan ongoing maintenance
+      DECISION POINTS (Based on state):
+        - If current_story < epic_total → Next story in epic
+        - If current_story == epic_total → Epic complete, proceed to next epic
+        - If epics_completed == 6 → Project complete
 
-        **HANDOFF:**
-        - Transfer to operations
-        - Schedule training sessions
-        - Establish support procedures
+      NO USER INPUT AFFECTS STATE - All transitions are orchestrator-controlled
 
-  flow_diagram: |
-    ```mermaid
-    graph TD
-        A[Start: Prerequisites Check] --> B[sm: Select Next Story]
-        B --> C[sm: Plan Story Implementation]
-        C --> D{Complex Story?}
-        D -->|Yes| E[analyst: Clarify Requirements]
-        D -->|No| F{Architectural Changes?}
-        E --> F
-        F -->|Yes| G[architect: Review Design]
-        F -->|No| H[dev: TDD - Write Tests First]
-        G --> H
+  agent_handback_protocol:
+    standard_handback_format: |
+      Every agent must hand back control using this format:
 
-        H --> I[dev: Implement Code to Pass Tests]
-        I --> J[dev: Refactor & Achieve 90% Coverage]
-        J --> K[dev: Code Quality Validation]
-        K --> K1{Quality Gates Pass?}
-        K1 -->|No| H
-        K1 -->|Yes| L[qa: Verify Coverage & Test Implementation]
+      {
+        agent_id: "string (sm|dev|qa|architect|code-reviewer|pm|bmad-master)",
+        step_id: "string (workflow step identifier)",
+        step_status: "completed" | "failed" | "blocked",
+        quality_gates_status: {
+          gate_name: boolean,
+          ...
+        },
+        output_data: {
+          ... (step-specific data for next steps)
+        },
+        issues_found: [...] or null,
+        recommended_next_step: "string (step id)",
+        handback_timestamp: "ISO8601 datetime"
+      }
 
-        L --> M{Unit Tests Adequate?}
-        M -->|No| H
-        M -->|Yes| N{All Tests Pass?}
-        N -->|No| O[dev: Fix Failing Tests]
-        O --> P[qa: Retest Fixes]
-        P --> N
+      AGENT RESPONSIBILITY:
+        - Complete assigned task
+        - Validate own work against quality criteria
+        - Package results in handback format
+        - Signal completion to orchestrator
+        - STOP and wait for next activation
+        - NEVER proceed to next step independently
+        - NEVER ask user for direction
 
-        N -->|Yes| Q[architect: Final Review]
-        Q --> R{Architect Approves?}
-        R -->|No| O
-        R -->|Yes| S[sm: Story Approval]
-        S --> T[sm: Create Pull Request]
-        T --> U[bmad-master: Review PR]
-
-        U --> V{PR Approved?}
-        V -->|Changes Requested| W[dev: Address PR Feedback]
-        W --> X[qa: Verify PR Changes]
-        X --> U
-
-        V -->|Approved| Y[bmad-master: Merge to Main]
-        Y --> Z[sm: Story Retrospective]
-        Z --> AA{More Stories?}
-
-        AA -->|Yes, Same Epic| B
-        AA -->|Yes, Next Epic| AB[pm: Epic Completion]
-        AB --> B
-        AA -->|No| AC[bmad-master: Project Completion]
-
-        style A fill:#FFE4B5
-        style B fill:#87CEEB
-        style C fill:#87CEEB
-        style E fill:#DDA0DD
-        style G fill:#98FB98
-        style H fill:#FF6B6B
-        style I fill:#51CF66
-        style J fill:#4C6EF5
-        style K fill:#FFA94D
-        style L fill:#F0E68C
-        style O fill:#ADD8E6
-        style P fill:#F0E68C
-        style Q fill:#98FB98
-        style S fill:#87CEEB
-        style T fill:#87CEEB
-        style U fill:#FFB6C1
-        style W fill:#ADD8E6
-        style X fill:#F0E68C
-        style Y fill:#FFB6C1
-        style Z fill:#87CEEB
-        style AB fill:#DDA0DD
-        style AC fill:#90EE90
-    ```
-
-  agent_responsibilities:
-    orchestration_control: |
-      The bmad-orchestrator controls agent activation and manages all handoffs:
-
-      AGENT ACTIVATION SEQUENCE (per story):
-        1. Scrum Master (SM) - Prerequisites, Selection, Planning, Approval, PR Creation, Retrospective
-        2. Business Analyst (Analyst) - Requirements Clarification [CONDITIONAL]
-        3. Technical Architect (Architect) - Architecture Review [CONDITIONAL], Final Review
-        4. Developer (Dev) - TDD Implementation, Quality Validation, Fixes
-        5. Code Reviewer (code-reviewer) - Security Scan, Code Quality Review (after Dev)
-        6. QA Tester (QA) - Testing Cycle, Retesting, PR Verification
-        7. Code Reviewer (code-reviewer) - PR Review, Approval, Potential Merge
-        8. BMad Master - Final Oversight, Merge Validation, Project Completion
-
-      AUTOMATIC HANDOFF PROTOCOL:
-        - Agents complete their task and signal completion to orchestrator
-        - bmad-orchestrator validates completion criteria
-        - bmad-orchestrator activates next agent in sequence
-        - No user confirmation required for any handoff
-        - Failed quality gates trigger automatic retry with previous agent
-        - All agents operate autonomously within their scope
-
-      CONDITIONAL AGENT ACTIVATION:
-        - Analyst: Triggered if story complexity threshold exceeded
-        - Architect: Triggered if architectural changes detected
-        - Dev Fixes: Triggered automatically if code-reviewer or QA finds issues
-        - PR Changes: Triggered automatically if code-reviewer requests changes
-
-      CODE-REVIEWER DUAL ROLE:
-        - First Review: After code quality validation, before QA (security & quality scan)
-        - Second Review: After PR creation (comprehensive PR review with approval authority)
-        - Has authority to approve, request changes, and merge PRs
-        - Enforces security-first principles and quality standards
-
-      PARALLEL OPERATIONS (where applicable):
-        - None: This workflow is strictly sequential per story
-        - However, multiple agents may prepare for their steps concurrently
-
-    scrum_master:
-      - Select next story from PRD epics
-      - Review story acceptance criteria from PRD
-      - Create feature branches for stories
-      - Create detailed user stories in docs/stories/
-      - Create pull requests to main branch
-      - Story completion tracking and retrospectives
-      - Velocity monitoring across all epics
-      - Team coordination and blocker removal
-
-    product_manager:
-      - Epic completion reviews and summaries
-      - Stakeholder demo preparation
-      - Epic kickoff planning
-      - Value delivery assessment
-
-    business_analyst:
-      - Requirements clarification for complex stories
-      - Edge case identification
-      - Business logic validation
-      - Integration point analysis
-      - Risk analysis for complex features
-
-    developer:
-      - Follow Test-Driven Development (TDD) methodology
-      - Achieve minimum 90% code coverage
-      - Implement all acceptance criteria from PRD
-      - Python 3.11+ development (FastAPI, pytest)
-      - Database operations (DuckDB)
-      - Redis queue integration (RQ workers)
-      - Agent implementation (BaseAgent, 7 agents)
-      - Claude API integration
-      - LinkedIn MCP server integration
-      - Document generation (python-docx)
-      - Code quality validation (ruff, black, mypy)
-      - Unit and integration testing
-      - Fix issues from QA feedback
-      - Address PR review comments
-
-    technical_architect:
-      - Review technical design and architecture
-      - System design and component architecture
-      - Database schema validation
-      - API design review (FastAPI patterns)
-      - Integration patterns (MCP, Redis, Claude)
-      - Performance considerations
-      - Security review
-      - Final implementation review
-      - Technical debt assessment
-
-    qa_tester:
-      - Verify unit test coverage from Dev (≥90%)
-      - Validate all acceptance criteria from PRD
-      - Integration testing:
-        * FastAPI endpoint testing
-        * Database operations (DuckDB)
-        * Redis queue operations
-        * Agent pipeline execution
-        * LinkedIn job discovery
-        * CV/CL document generation
-        * Duplicate detection algorithms
-        * Form submission automation
-        * Gradio UI functionality
-      - Document criterion-by-criterion results
-      - Regression testing for existing features
-      - Performance validation
-      - Retest fixes after dev changes
-      - Verify PR changes don't break functionality
-
-    code_reviewer:
-      - Security scan after code implementation (first checkpoint)
-      - Code quality review before QA testing
-      - Comprehensive PR review (second checkpoint)
-      - Vulnerability detection (secrets, injection, XSS)
-      - Performance analysis (algorithmic complexity, N+1 queries)
-      - Test coverage validation
-      - Documentation completeness check
-      - PR approval authority
-      - Request changes with actionable feedback
-      - Merge authority (can merge approved PRs)
-      - Constructive feedback with code examples
-      - Risk-based prioritization (Critical/Warning/Suggestion)
-
-    bmad_master:
-      - Final project oversight
-      - Cross-story architecture alignment
-      - Epic-level quality assurance
-      - PR merge validation (if code-reviewer merged)
-      - Final merge authority (if not yet merged)
-      - Project completion review
-      - Epic completion coordination
-      - Strategic technical direction
+      ORCHESTRATOR RESPONSIBILITY:
+        - Receive handback
+        - Validate against quality gates
+        - Make decision on next step
+        - Activate next agent/step
+        - Update workflow state
+        - Log progression
+        - NEVER ask user for continuation approval
 
   quality_gates:
-    before_code_review:
-      - All unit tests written using TDD approach
-      - Unit test coverage ≥90% verified
-      - Coverage report generated and documented
-      - All acceptance criteria have corresponding tests
-      - Code quality validation passed (ruff, black, mypy)
-      - Code committed with descriptive messages
-
-    before_qa_handoff:
-      - Code review security scan passed
-      - No critical security issues (secrets, injection risks)
-      - Code quality review completed
-      - Performance concerns addressed
-      - Code-reviewer approved for QA testing
-
-    before_pr_creation:
-      - All acceptance criteria met and tested
-      - All unit tests passing (100% pass rate)
-      - Code coverage ≥90% maintained
-      - Integration tests passing
-      - Code follows Python best practices
-      - Architect final review approved
-      - Story marked as Done by SM
-      - All tasks marked complete [x] in docs/stories/{epic}.{story}.{title}.md
-
-    before_pr_merge:
-      - BMad Master approval received
-      - All CI/CD checks pass (if configured)
-      - No merge conflicts with main
-      - All requested changes addressed
-      - QA verification complete for PR changes
-      - Documentation updated
-
-    before_next_story:
-      - Previous story fully merged to main
-      - Retrospective documented
-      - No blocking issues
-      - Team capacity available
-      - Dependencies for next story met
-
-  handoff_prompts:
-    sm_to_analyst: |
-      Story {{epic}}.{{story}} selected for implementation.
-      Story appears complex and needs requirements clarification.
-      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
-      PRD reference: docs/prd/epic-{{epic}}.md
-      Please review and clarify requirements, edge cases, and business logic.
-
-    analyst_to_architect: |
-      Story {{epic}}.{{story}} requirements clarified.
-      Architectural changes needed for this story.
-      Please review technical design and provide architecture guidance.
-      Updated story: docs/stories/{{epic}}.{{story}}.{{title}}.md
-
-    sm_to_dev: |
-      Story {{epic}}.{{story}} ready for implementation.
-      PRD: docs/prd/epic-{{epic}}.md
-      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
-      Acceptance criteria: {{criteria_count}} items
-      Feature branch: feature/story-{{epic}}-{{story}}
-
-      Please implement using Test-Driven Development (TDD):
-      1. Write tests first (RED phase)
-      2. Implement code to pass tests (GREEN phase)
-      3. Refactor for quality (REFACTOR phase)
-      4. Achieve ≥90% code coverage
-
-      Technology focus:
-      {{#if foundation_epic}}
-      - FastAPI application structure
-      - DuckDB database setup
-      - Redis + RQ queue system
-      - Configuration loading (YAML)
-      - LinkedIn MCP integration
-      {{/if}}
-      {{#if agent_epic}}
-      - BaseAgent abstract class
-      - Agent-specific implementations
-      - Claude API integration
-      - Checkpoint/resume system
-      - Document generation (CV/CL)
-      {{/if}}
-      {{#if duplicate_epic}}
-      - Similarity algorithms
-      - Duplicate detection logic
-      - Database duplicate tracking
-      {{/if}}
-      {{#if submission_epic}}
-      - Email submission
-      - Playwright form automation
-      - Application tracking
-      {{/if}}
-      {{#if ui_epic}}
-      - Gradio dashboard components
-      - Real-time data display
-      - User controls and filters
-      {{/if}}
-
-    dev_to_code_reviewer: |
-      Story {{epic}}.{{story}} implementation complete with TDD and code quality validation passed.
-
-      **Test Coverage:**
-      - Unit test coverage: {{coverage_percentage}}%
-      - Test files created: {{test_file_count}}
-      - All unit tests passing: {{unit_test_status}}
-
-      **Code Quality:**
-      - Linter (ruff): Passed
-      - Formatter (black): Passed
-      - Type checker (mypy): Passed
-
-      **Implementation:**
-      - Changed files: {{file_list}}
-      - Acceptance criteria implemented: {{criteria_count}}
-      - Database schema changes: {{schema_changes}}
-      - API endpoints added/modified: {{api_endpoints}}
-
-      **Ready for Code Review:**
-      Please perform security scan and code quality review before QA testing.
-      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
-
-    code_reviewer_to_qa: |
-      Story {{epic}}.{{story}} code review and security scan complete - APPROVED for QA testing.
-
-      **Security Scan Results:**
-      - No exposed secrets/API keys found ✅
-      - No SQL injection vulnerabilities ✅
-      - No command injection risks ✅
-      - Input validation implemented ✅
-
-      **Code Quality:**
-      - Code readability: Excellent
-      - Error handling: Proper
-      - Performance: Acceptable
-      - Test coverage: {{coverage_percentage}}% ✅
-
-      **Warnings/Suggestions (if any):**
-      {{warnings_list}}
-
-      **Ready for QA Testing:**
-      Please verify unit test coverage first, then perform integration and acceptance testing.
-      Test each acceptance criterion from PRD.
-      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
-
-    code_reviewer_to_dev: |
-      Story {{epic}}.{{story}} code review found CRITICAL issues - returning to Dev.
-
-      **🚨 CRITICAL Issues (Must Fix Before QA):**
-      {{critical_issues_list}}
-
-      **⚠️ Warnings (Should Fix):**
-      {{warning_issues_list}}
-
-      **💡 Suggestions (Consider):**
-      {{suggestion_list}}
-
-      **Action Required:**
-      - Fix all critical security and quality issues
-      - Address warning items
-      - Consider suggested improvements
-      - Re-run tests locally
-      - Request code review again when ready
-
-      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
-
-    qa_to_dev_fixes: |
-      Testing found {{failure_count}} failing tests for story {{epic}}.{{story}}.
-
-      **Failed Acceptance Criteria:**
-      {{failure_summary}}
-
-      **Details:**
-      See full test results in docs/stories/{{epic}}.{{story}}.{{title}}.md
-
-      **Action Required:**
-      - Fix failing tests and issues
-      - Re-run unit tests locally
-      - Update story document with fix notes
-      - Notify QA when ready for retest
-
-    qa_to_architect: |
-      All tests passing for story {{epic}}.{{story}}.
-
-      **Test Summary:**
-      - Unit tests: {{unit_test_count}} passing
-      - Integration tests: {{integration_test_count}} passing
-      - Coverage: {{coverage_percentage}}%
-      - All acceptance criteria validated
-
-      Ready for architecture final review.
-      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
-
-    architect_to_sm: |
-      Architecture review complete for story {{epic}}.{{story}}.
-
-      **Review Status:** {{approval_status}}
-
-      {{#if approved}}
-      - Code quality: Excellent
-      - Architecture compliance: Verified
-      - Performance: Acceptable
-      - Security: No issues found
-      - Technical debt: {{technical_debt_notes}}
-
-      Ready for SM approval and PR creation.
-      {{/if}}
-
-      {{#if changes_requested}}
-      - Changes required: {{change_summary}}
-      - Return to Dev for modifications
-      {{/if}}
-
-    sm_to_code_reviewer_pr: |
-      Pull Request created for story {{epic}}.{{story}}.
-
-      **PR Details:**
-      - PR #: {{pr_number}}
-      - Branch: feature/story-{{epic}}.{{story}} → main
-      - Title: Story {{epic}}.{{story}}: {{story_title}}
-
-      **Summary:**
-      - Acceptance criteria: {{criteria_count}} completed
-      - Test status: All passing
-      - Coverage: {{coverage_percentage}}%
-      - Files changed: {{files_changed_count}}
-      - Security scan: Passed (pre-QA review)
-      - QA testing: All acceptance criteria validated
-
-      **Ready for PR Review:**
-      Please conduct comprehensive PR review following 8-step workflow:
-      1. Understand context (read story, PRD, business logic)
-      2. Analyze changes (git diff, check for unintended changes)
-      3. Security scan (secrets, injection, sanitization)
-      4. Quality check (readability, error handling, DRY)
-      5. Testing validation (coverage, edge cases)
-      6. Performance review (complexity, queries, resources)
-      7. Documentation check (docstrings, README)
-      8. Approval decision (approve/request changes/comment)
-
-      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
-
-    code_reviewer_to_dev_pr_changes: |
-      PR #{{pr_number}} requires changes for story {{epic}}.{{story}}.
-
-      **🚨 CRITICAL Issues (Block Merge):**
-      {{critical_issues_list}}
-
-      **⚠️ WARNING Issues (Should Fix):**
-      {{warning_issues_list}}
-
-      **💡 SUGGESTIONS (Consider):**
-      {{suggestion_list}}
-
-      **Priority:** {{priority}}
-
-      **Action Required:**
-      - Fix all CRITICAL issues (security, breaking changes, tests)
-      - Address WARNING issues (code quality, performance)
-      - Consider SUGGESTION improvements
-      - Reply to each review comment with explanations
-      - Push updates to feature branch
-      - Request re-review from code-reviewer when complete
-
-      Branch: feature/story-{{epic}}.{{story}}
-
-    code_reviewer_to_bmad_approved: |
-      ✅ PR #{{pr_number}} APPROVED for story {{epic}}.{{story}}.
-
-      **Code Review Summary:**
-      - Security scan: ✅ No critical vulnerabilities
-      - Code quality: ✅ Meets standards
-      - Test coverage: ✅ {{coverage_percentage}}%
-      - Performance: ✅ Acceptable
-      - Documentation: ✅ Complete
-
-      **Warnings Documented (if any):**
-      {{warnings_summary}}
-
-      **Approval Status:** APPROVED
-      - All critical issues resolved
-      - Quality standards met
-      - Ready for merge
-
-      **Next Step:**
-      BMad Master for final oversight and merge to main.
-
-      Story document: docs/stories/{{epic}}.{{story}}.{{title}}.md
-
-    bmad_to_team_merged: |
-      ✅ PR #{{pr_number}} merged to main!
-
-      **Story Complete:** {{epic}}.{{story}} - {{story_title}}
-
-      **Highlights:**
-      - Coverage achieved: {{coverage_percentage}}%
-      - Test pass rate: 100%
-      - Feature branch deleted
-
-      **Next Steps:**
-      - Story retrospective by SM
-      - Prepare for next story
-
-      Great work team! 🎉
-
-    sm_to_team_next: |
-      Story {{epic}}.{{story}} retrospective complete.
-
-      **Lessons Learned:**
-      - What went well: {{went_well}}
-      - What to improve: {{to_improve}}
-      - Velocity: {{velocity_metrics}}
-
-      **Progress Tracking:**
-      - Epic {{epic}} Progress: {{completed_in_epic}}/{{total_in_epic}} stories complete
-      - Overall Progress: {{total_completed}}/28 stories complete
-
-      ---
-
-      🚀 AUTONOMOUS CONTINUATION: Proceeding to Story {{next_epic}}.{{next_story}} ({{next_story_title}})
-
-      🚨 DO NOT ASK USER: "Would you like me to continue?" or present options A/B/C.
-      ✅ JUST CONTINUE: Immediately activating story_selection for next story.
-
-      Workflow state: ACTIVE - Continuing autonomous execution until all 28 stories complete.
-
-    pm_epic_complete: |
-      🎯 Epic {{epic}} Complete!
-
-      **Epic:** {{epic_title}}
-      **Stories Completed:** {{story_count}}/{{story_count}} (100%)
-      **Epic Value:** {{epic_value_delivered}}
-
-      **Key Achievements:**
-      {{achievements_summary}}
-
-      **Overall Progress:** {{total_completed}}/28 stories complete across all epics ({{completion_percentage}}%)
-
-      ---
-
-      🚀 AUTONOMOUS EPIC TRANSITION: Starting Epic {{next_epic}} ({{next_epic_title}})
-
-      🚨 DO NOT ASK USER: "Would you like me to continue to Epic {{next_epic}}?" or present options.
-      ✅ JUST CONTINUE: Immediately proceeding to story_selection for Story {{next_epic}}.1
-
-      Workflow state: ACTIVE - Continuous execution to project completion ({{remaining_stories}} stories remaining).
-
-    project_complete: |
-      🎊 PROJECT COMPLETE! 🎊
-
-      **Job Application Automation System - Fully Implemented**
-
-      **All Epics Completed:**
-      - Epic 1: Foundation ✅
-      - Epic 2: Core Agents (7 agents) ✅
-      - Epic 3: Duplicate Detection ✅
-      - Epic 4: Application Submission ✅
-      - Epic 5: Gradio UI ✅
-      - Epic 6: Testing & Refinement ✅
-
-      **Final Metrics:**
-      - Total stories completed: {{story_count}}
-      - Average coverage: {{avg_coverage}}%
-      - Project velocity: {{velocity_metrics}}
-      - Development time: {{total_time}}
-
-      **Deliverables Ready:**
-      - ✅ LinkedIn job discovery operational
-      - ✅ 7-agent pipeline fully functional
-      - ✅ DuckDB database with job tracking
-      - ✅ Automated CV/CL generation
-      - ✅ Duplicate detection system
-      - ✅ Application submission automation
-      - ✅ Gradio monitoring UI
-      - ✅ Comprehensive test suite (≥90%)
-      - ✅ Full documentation
-
-      **Ready for Production Deployment! 🚀**
-
-  decision_guidance:
-    orchestration_flow_control: |
-      BMAD-ORCHESTRATOR CONTINUOUS EXECUTION MODEL:
-
-      The bmad-orchestrator maintains a persistent execution loop that continues
-      until all 6 epics (28 total stories) are complete. No user interaction is
-      required at any point in the workflow.
-
-      EXECUTION STATE MACHINE:
-        State: {current_epic: int, current_story: int, total_completed: int}
-        Initial: {current_epic: 1, current_story: 1, total_completed: 0}
-        Final: {current_epic: 6, current_story: 4, total_completed: 28}
-
-      LOOPING MECHANISM:
-        OUTER LOOP (Epic Level):
-          FOR epic IN [1, 2, 3, 4, 5, 6]:
-            INNER LOOP (Story Level):
-              FOR story IN epic.stories:
-                EXECUTE story_workflow_cycle(epic, story)
-                IF story_workflow_cycle.status == MERGED:
-                  total_completed += 1
-                  CONTINUE to next story
-                ELSE:
-                  RETRY story_workflow_cycle until MERGED
-              END FOR
-            EXECUTE epic_completion_review(epic)
-            IF epic < 6:
-              CONTINUE to next epic (NO USER APPROVAL)
-          END FOR
-        EXECUTE project_completion_review()
-        TERMINATE with success
-
-      STORY WORKFLOW CYCLE (Executed for each story):
-        1. prerequisites_check → 2. story_selection → 3. story_planning →
-        4. [conditional: requirements_clarification] →
-        5. [conditional: architecture_review] → 6. story_implementation →
-        7. code_quality_validation → 8. code_review_security_scan →
-        9. [conditional loop: dev_fixes if code review fails] →
-        10. qa_testing_cycle →
-        11. [conditional loop: dev_fixes → qa_retest until pass] →
-        12. architect_final_review → 13. sm_story_approval →
-        14. create_pull_request → 15. code_reviewer_pr_review →
-        16. [conditional loop: pr_changes_requested → qa_verify_pr_changes until approved] →
-        17. bmad_pr_approval → 18. story_retrospective →
-        19. next_story_decision → RETURN to step 2 OR proceed to epic_completion
-
-      AUTONOMOUS DECISION LOGIC:
-        - All conditionals are evaluated automatically by bmad-orchestrator
-        - No user prompts or confirmations at any decision point
-        - Failed quality gates trigger automatic retry loops
-        - Story sequence is strictly ordered (1.1 → 1.2 → ... → 6.4)
-        - Epic transitions happen automatically when all stories complete
-        - Workflow only terminates when all 28 stories are merged to main
-
-    when_to_use:
-      - Multiple stories across 6 epics need sequential development
-      - Python/FastAPI backend development with LLM integration
-      - Multi-agent system requiring careful testing
-      - Quality gates are critical for production readiness
-      - Team requires clear handoffs between specialists
-      - PR review process is mandatory
-      - Story-by-story tracking needed for complex system
-      - FULLY AUTONOMOUS execution required without user intervention
-
-    benefits:
-      - Clear accountability at each step
-      - No story left incomplete
-      - Continuous quality validation with 90% coverage
-      - Clean git history with feature branches
-      - Predictable velocity across epics
-      - Reduced merge conflicts
-      - Specialist expertise applied at right time
-      - Architecture compliance enforced
-      - High-quality automated job application system
-      - ZERO MANUAL INTERVENTION: Runs until all epics complete
-      - CONTINUOUS PROGRESS: 24/7 development cycle capability
-
-    prerequisites:
-      - Python 3.11+ development environment
-      - Git repository with main branch
-      - All BMad agents available (sm, dev, qa, architect, analyst, pm)
-      - PRD epics in docs/prd/ directory
-      - Architecture docs in docs/architecture/
-      - Clear acceptance criteria per story
-      - Testing framework: pytest with coverage
-      - Code quality tools: ruff, black, mypy
-      - Redis server for job queue
-      - DuckDB for database
-      - LinkedIn MCP server configured
-      - Anthropic Claude API access
-
-  automation_opportunities:
-    ci_cd_integration:
-      - Automated pytest runs on PR creation
-      - Coverage report generation and validation
-      - Code quality checks (ruff, black, mypy)
-      - Security scanning for dependencies
-      - Automated deployment to staging
-      - Integration testing with test jobs
-      - Performance testing for agent pipeline
-      - Database migration testing
-
-    notification_system:
-      - PR status updates
-      - Test result summaries
-      - Coverage threshold alerts
-      - Merge notifications
-      - Blocker alerts
-      - Story completion celebrations
-
-    metrics_tracking:
-      - Story cycle time per epic
-      - Test pass rates over time
-      - PR review time
-      - Bug escape rate
-      - Team velocity trends
-      - Agent performance metrics
-      - Test coverage trends
-      - Code quality scores
+    orchestrator_enforced_gates:
+      before_code_review:
+        - unit_tests_passing: true
+        - code_coverage_minimum: 90
+        - quality_tools_passed: [ruff, black, mypy]
+        - all_files_committed: true
+        enforced_by: orchestrator
+        on_fail: return_to_dev_with_issues
+
+      before_qa_handoff:
+        - security_scan_passed: true
+        - no_critical_security_issues: true
+        - code_review_approved: true
+        enforced_by: orchestrator
+        on_fail: return_to_dev_fixes
+
+      before_pr_creation:
+        - all_acceptance_criteria_met: true
+        - all_tests_passing: true
+        - code_coverage_maintained: 90
+        - architect_approved: true
+        - sm_approved: true
+        enforced_by: orchestrator
+        on_fail: return_to_failing_step
+
+      before_pr_merge:
+        - code_reviewer_approved: true
+        - all_ci_checks_passed: true
+        - no_merge_conflicts: true
+        - qa_verified_pr_changes: true
+        enforced_by: orchestrator
+        on_fail: return_to_pr_changes
+
+      before_next_story:
+        - previous_story_merged: true
+        - retrospective_documented: true
+        - no_blocking_issues: true
+        enforced_by: orchestrator
+        on_fail: resolve_blockers_before_proceeding
+
+  continuous_execution_guarantees:
+    no_pause_points: |
+      The following are NOT pause points (workflow continues automatically):
+
+      1. After story planning → IMMEDIATE implementation start
+      2. After code implementation → IMMEDIATE code review
+      3. After code review approval → IMMEDIATE QA testing
+      4. After QA pass → IMMEDIATE architect review
+      5. After architect approval → IMMEDIATE SM approval
+      6. After SM approval → IMMEDIATE PR creation
+      7. After PR approval → IMMEDIATE merge
+      8. After merge → IMMEDIATE retrospective
+      9. After retrospective → IMMEDIATE next story selection ← CRITICAL
+      10. After epic complete → IMMEDIATE next epic start ← CRITICAL
+
+      The orchestrator NEVER pauses to ask:
+      - "Ready to implement?"
+      - "Should I create PR?"
+      - "Continue to next story?"
+      - "Start next epic?"
+      - "Would you like me to..."
+      - Any variation of asking for permission to proceed
+
+    continuous_loop_structure: |
+      OUTER LOOP (Epic level):
+        FOR epic IN 1..6:
+          INNER LOOP (Story level):
+            FOR story IN epic.stories:
+              EXECUTE story_workflow_cycle(epic, story)
+              WAIT FOR merge_complete
+              EXECUTE retrospective
+              # 🚨 NO USER PROMPT HERE - IMMEDIATE CONTINUATION
+              IF more_stories_in_epic:
+                CONTINUE (loop to next story)
+              ELSE:
+                BREAK (exit to epic completion)
+          EXECUTE epic_completion
+          # 🚨 NO USER PROMPT HERE - IMMEDIATE CONTINUATION
+          IF epic < 6:
+            CONTINUE (loop to next epic)
+        EXECUTE project_completion
+        TERMINATE
+
+      GUARANTEES:
+        - Zero manual intervention points
+        - Zero "continue?" prompts
+        - Zero option menus presented
+        - Continuous execution until complete
+        - Orchestrator makes ALL decisions
+        - User observes, does not direct
+
+  agent_responsibilities:
+    scrum_master:
+      - Story selection (hands back: selected story)
+      - Story planning (hands back: story document)
+      - Story approval (hands back: approval status)
+      - PR creation (hands back: PR number and URL)
+      - Retrospective (hands back: completion confirmation)
+      - ALWAYS hands back control to orchestrator
+      - NEVER asks user "continue?"
+
+    developer:
+      - TDD implementation (hands back: code + tests + coverage)
+      - Code quality validation (hands back: validation results)
+      - Issue fixes (hands back: fixes complete status)
+      - PR changes (hands back: changes addressed)
+      - ALWAYS hands back control to orchestrator
+      - NEVER proceeds to next step independently
+
+    code_reviewer:
+      - Security scan (hands back: scan results + approval/denial)
+      - Code quality review (hands back: review decision)
+      - PR review (hands back: approve/request changes/comment)
+      - ALWAYS hands back control to orchestrator
+      - NEVER asks user for merge approval
+
+    qa_tester:
+      - Acceptance testing (hands back: test results + pass/fail per criterion)
+      - Regression testing (hands back: regression status)
+      - PR change verification (hands back: verification status)
+      - ALWAYS hands back control to orchestrator
+      - NEVER asks user if tests are sufficient
+
+    technical_architect:
+      - Architecture review (hands back: approval + notes)
+      - Final implementation review (hands back: approval status)
+      - ALWAYS hands back control to orchestrator
+      - NEVER asks user for architecture decisions
+
+    product_manager:
+      - Epic completion (hands back: epic summary + next epic readiness)
+      - ALWAYS hands back control to orchestrator
+      - NEVER asks user "start next epic?"
+
+    bmad_master:
+      - PR merge (hands back: merge success + commit SHA)
+      - Project completion (hands back: final summary)
+      - ALWAYS hands back control to orchestrator
+      - NEVER asks user for merge confirmation
 
   story_progress_tracking:
     epic_1_foundation:
@@ -1780,35 +955,51 @@ workflow:
         - "6.4: Documentation Finalization"
 
     total_mvp_stories: 28
-    completion_tracking: "Track in this file as stories complete"
+    completion_tracking: "Orchestrator maintains state automatically"
 
-  configuration_files:
-    - config/search.yaml
-    - config/agents.yaml
-    - config/platforms.yaml
-    - config/similarity.yaml
-    - .mcp.json
-    - requirements.txt
-    - .env.example
+  execution_examples:
+    correct_autonomous_flow: |
+      ✅ CORRECT ORCHESTRATOR BEHAVIOR:
 
-  testing_strategy:
-    unit_testing:
-      - Framework: pytest
-      - Coverage minimum: 90%
-      - Mocking: unittest.mock or pytest-mock
-      - Fixtures: pytest fixtures for common test data
-      - Test structure: Arrange-Act-Assert pattern
+      [Story 1.5 retrospective complete]
+      Orchestrator: "Story 1.5 complete. Epic 1 Foundation: 5/5 stories merged."
+      Orchestrator: "Proceeding to Epic 2: Core Agents, Story 2.1 (Agent Base Class)"
+      Orchestrator: [Activates SM for story_selection with epic=2, story=1]
+      SM: [Selects Story 2.1, creates plan, hands back to orchestrator]
+      Orchestrator: "Story 2.1 selected. Proceeding to implementation."
+      Orchestrator: [Activates Dev for story_implementation]
+      ... (workflow continues)
 
-    integration_testing:
-      - FastAPI TestClient for endpoint testing
-      - DuckDB in-memory database for testing
-      - Mock Redis for queue testing
-      - Mock Claude API responses
-      - Mock LinkedIn MCP responses
+      Note: Zero user prompts, continuous execution, orchestrator always in control
 
-    end_to_end_testing:
-      - Full agent pipeline execution
-      - Real job data processing (test set)
-      - Document generation validation
-      - Gradio UI interaction testing
-      - Submission workflow testing (test mode)
+    incorrect_user_prompting: |
+      ❌ WRONG BEHAVIOR (Never do this):
+
+      [Story 1.5 retrospective complete]
+      Agent: "Epic 1 is now complete! Great work! 🎉"
+      Agent: "We have several options for what to do next:"
+      Agent: "A) Continue to Epic 2 (Core Agents)"
+      Agent: "B) Review what we built so far"
+      Agent: "C) Take a break and continue later"
+      Agent: "What would you like to do?"
+
+      This is WRONG because:
+      - Presents options to user (orchestrator decides, not user)
+      - Asks for user input (fully autonomous means no user input)
+      - Pauses execution waiting for response (should continue immediately)
+      - Agent making decisions instead of orchestrator
+
+    correct_epic_transition: |
+      ✅ CORRECT EPIC TRANSITION:
+
+      [Story 1.5 merged and retrospective complete]
+      Orchestrator: [Checks: more stories in Epic 1? No. More epics? Yes.]
+      Orchestrator: [Activates PM for epic_completion with epic=1]
+      PM: [Creates epic summary, hands back: epic_complete=true, next_epic_ready=true]
+      Orchestrator: "Epic 1 complete (5/5 stories). Starting Epic 2."
+      Orchestrator: [Immediately activates SM for story_selection with epic=2]
+      SM: [Selects Story 2.1, hands back]
+      Orchestrator: "Story 2.1 selected. Proceeding to planning."
+      ... (workflow continues)
+
+      Note: No pause, no user prompt, immediate transition
