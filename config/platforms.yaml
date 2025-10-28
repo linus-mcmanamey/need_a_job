@@ -3,9 +3,14 @@
 
 # LinkedIn - Primary job source (via MCP server)
 linkedin:
+  enabled: true
   mcp_server_path: linkedin-mcp-server  # Path to LinkedIn MCP server
   polling_interval_minutes: 60          # Poll every hour
-  rate_limit_requests_per_minute: 10    # Max requests per minute
+  max_results_per_search: 50            # Max results per search
+  rate_limit_requests_per_minute: 10    # Max requests per minute (converted to calls_per_hour)
+  rate_limit_calls_per_hour: 600        # Calculated: 10 * 60
+  retry_attempts: 3                     # Number of retry attempts
+  retry_backoff_seconds: [5, 15, 45]    # Exponential backoff for retries
   timeout_seconds: 30                   # Request timeout
 
   # LinkedIn search filters
