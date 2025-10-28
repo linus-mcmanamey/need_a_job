@@ -3,7 +3,7 @@
 # Supports both API and worker modes
 
 # Stage 1: Base image with system dependencies
-FROM python:3.11-slim as base
+FROM python:3.11-slim AS base
 
 # Prevent Python from writing pyc files and buffering stdout/stderr
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -35,7 +35,7 @@ RUN groupadd -r appuser && useradd -r -g appuser -u 1000 appuser
 WORKDIR /app
 
 # Stage 2: Poetry dependencies installation
-FROM base as builder
+FROM base AS builder
 
 # Install Poetry for dependency management
 ENV POETRY_VERSION=1.7.0 \
@@ -55,7 +55,7 @@ RUN --mount=type=cache,target=$POETRY_CACHE_DIR \
     poetry install --no-root --only main --no-interaction --no-ansi
 
 # Stage 3: Application runtime (FastAPI + Gradio)
-FROM base as app
+FROM base AS app
 
 # Copy installed dependencies from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
@@ -63,7 +63,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY --chown=appuser:appuser ./app /app/app
-COPY --chown=appuser:appuser ./config /app/config
+# Ensure /app/config exists in the image; do not require host ./config at build time
+RUN mkdir -p /app/config && chown -R appuser:appuser /app/config
 # Note: .mcp.json contains secrets and should not be in the image
 # Mount it at runtime via volume or use environment variables:
 # docker run -v $(pwd)/.mcp.json:/app/.mcp.json ...
@@ -86,7 +87,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 CMD ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
 
 # Stage 4: RQ Worker runtime
-FROM base as worker
+FROM base AS worker
 
 # Copy installed dependencies from builder
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
@@ -94,7 +95,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY --chown=appuser:appuser ./app /app/app
-COPY --chown=appuser:appuser ./config /app/config
+# Ensure /app/config exists in the image; do not require host ./config at build time
+RUN mkdir -p /app/config && chown -R appuser:appuser /app/config
 # Note: .mcp.json contains secrets and should not be in the image
 # Mount it at runtime via volume or use environment variables
 
@@ -110,7 +112,7 @@ USER appuser
 CMD ["rq", "worker", "--url", "redis://redis:6379", "discovery_queue", "pipeline_queue", "submission_queue"]
 
 # Stage 5: Development image (with dev dependencies and hot reload)
-FROM base as development
+FROM base AS development
 
 # Install Poetry
 ENV POETRY_VERSION=1.7.0 \
