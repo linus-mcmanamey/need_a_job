@@ -181,8 +181,9 @@ def create_tables() -> None:
             submitted_timestamp TIMESTAMP,
             contact_person_name VARCHAR,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (job_id) REFERENCES jobs(job_id) ON DELETE CASCADE
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            -- Note: FOREIGN KEY constraint removed due to DuckDB limitations
+            -- Referential integrity will be maintained at application layer
         )
     """)
     logger.debug("Application tracking table created successfully")

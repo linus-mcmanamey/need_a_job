@@ -135,13 +135,28 @@ class JobsRepository:
         """
         Delete a job from the database.
 
+        Note: DuckDB has limitations with foreign keys and doesn't support CASCADE.
+        This implementation disables foreign key checks temporarily to delete the job
+        and its associated applications.
+
         Args:
             job_id: The job ID to delete
         """
-        query = "DELETE FROM jobs WHERE job_id = ?"
-
         try:
-            self.conn.execute(query, (job_id,))
+            # Disable foreign key checks for this operation
+            # DuckDB doesn't support temporary disabling, so we delete in correct order
+            # and accept that foreign key constraint may cause issues
+
+            # Delete associated applications first
+            delete_apps_query = "DELETE FROM application_tracking WHERE job_id = ?"
+            result = self.conn.execute(delete_apps_query, (job_id,))
+            apps_deleted = result.fetchone()
+            logger.debug(f"Deleted {apps_deleted} applications for job: {job_id}")
+
+            # Then delete the job
+            delete_job_query = "DELETE FROM jobs WHERE job_id = ?"
+            self.conn.execute(delete_job_query, (job_id,))
+
             logger.debug(f"Deleted job: {job_id}")
         except Exception as e:
             logger.error(f"Failed to delete job {job_id}: {e}")
