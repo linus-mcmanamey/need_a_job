@@ -86,13 +86,13 @@ jobs:
       - name: Run tests
         run: |
           # Run pytest in container and extract coverage.xml
-          docker-compose run --rm -T app pytest tests/ -v --cov=app --cov-report=xml || EXIT_CODE=$?
-          # Try to copy coverage.xml from container/service to workspace (best-effort)
-          CONTAINER_ID=$(docker-compose ps -q app || true)
-          if [ -n "$CONTAINER_ID" ]; then
-            docker cp "$CONTAINER_ID":/app/coverage.xml ./coverage.xml || true
-          fi
-          exit ${EXIT_CODE:-0}
+          # Run without --rm so we can copy the file before cleanup
+          CONTAINER_ID=$(docker-compose run -d -T app pytest tests/ -v --cov=app --cov-report=xml)
+          docker wait "$CONTAINER_ID"
+          EXIT_CODE=$(docker inspect "$CONTAINER_ID" --format='{{.State.ExitCode}}')
+          docker cp "$CONTAINER_ID:/app/coverage.xml" ./coverage.xml || echo "Warning: Could not copy coverage.xml"
+          docker rm "$CONTAINER_ID" || true
+          exit $EXIT_CODE
 
       - name: Upload coverage reports
         if: always()
