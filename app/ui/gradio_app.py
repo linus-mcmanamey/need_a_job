@@ -13,11 +13,13 @@ from loguru import logger
 
 from app.repositories.database import DatabaseConnection
 from app.services.dashboard_metrics import DashboardMetricsService
+from app.services.pending_jobs import PendingJobsService
 from app.services.pipeline_metrics import PipelineMetricsService
 
 # Global service instances
 _metrics_service: DashboardMetricsService | None = None
 _pipeline_service: PipelineMetricsService | None = None
+_pending_service: PendingJobsService | None = None
 
 
 def get_metrics_service() -> DashboardMetricsService:
@@ -36,6 +38,15 @@ def get_pipeline_service() -> PipelineMetricsService:
         db = DatabaseConnection()
         _pipeline_service = PipelineMetricsService(db.get_connection())
     return _pipeline_service
+
+
+def get_pending_service() -> PendingJobsService:
+    """Get or create pending jobs service instance."""
+    global _pending_service
+    if _pending_service is None:
+        db = DatabaseConnection()
+        _pending_service = PendingJobsService(db.get_connection())
+    return _pending_service
 
 
 def load_dashboard_metrics() -> tuple[int, int, int, float, dict[str, Any], list[list[Any]]]:
@@ -175,6 +186,89 @@ def create_pipeline_tab() -> gr.Blocks:
     return pipeline
 
 
+def load_pending_jobs_metrics() -> tuple[list[list[Any]], dict[str, Any]]:
+    """
+    Load pending jobs metrics from database.
+
+    Returns:
+        Tuple of (pending_jobs_data, error_summary_data)
+    """
+    try:
+        service = get_pending_service()
+
+        # Get pending jobs
+        jobs = service.get_pending_jobs(limit=20)
+        pending_jobs_data = [[job.get("job_id", "N/A"), job.get("job_title", "N/A"), job.get("company_name", "N/A"), job.get("platform", "N/A"), job.get("error_type", "unknown"), job.get("error_message", "No error info")] for job in jobs]
+
+        # Get error summary
+        summary = service.get_error_summary()
+        error_summary_data = {"error_type": list(summary.keys()), "count": list(summary.values())}
+
+        logger.debug(f"[gradio_app] Pending jobs loaded: {len(pending_jobs_data)} jobs")
+        return (pending_jobs_data, error_summary_data)
+
+    except Exception as e:
+        logger.error(f"[gradio_app] Error loading pending jobs metrics: {e}")
+        return ([], {"error_type": [], "count": []})
+
+
+def handle_retry_job(job_id_input: str) -> str:
+    """Handle retry job action."""
+    try:
+        if not job_id_input or job_id_input.strip() == "":
+            return "❌ Please enter a Job ID"
+
+        service = get_pending_service()
+        result = service.retry_job(job_id_input.strip())
+
+        if result["success"]:
+            return f"✅ {result['message']}: {result['job_id']}"
+        else:
+            return f"❌ {result['message']}"
+    except Exception as e:
+        logger.error(f"[gradio_app] Error retrying job: {e}")
+        return f"❌ Error: {e!s}"
+
+
+def handle_skip_job(job_id_input: str, reason_input: str) -> str:
+    """Handle skip job action."""
+    try:
+        if not job_id_input or job_id_input.strip() == "":
+            return "❌ Please enter a Job ID"
+
+        if not reason_input or reason_input.strip() == "":
+            reason_input = "User skipped"
+
+        service = get_pending_service()
+        result = service.skip_job(job_id_input.strip(), reason_input.strip())
+
+        if result["success"]:
+            return f"✅ {result['message']}: {result['job_id']}"
+        else:
+            return f"❌ {result['message']}"
+    except Exception as e:
+        logger.error(f"[gradio_app] Error skipping job: {e}")
+        return f"❌ Error: {e!s}"
+
+
+def handle_manual_complete(job_id_input: str) -> str:
+    """Handle manual complete action."""
+    try:
+        if not job_id_input or job_id_input.strip() == "":
+            return "❌ Please enter a Job ID"
+
+        service = get_pending_service()
+        result = service.mark_manual_complete(job_id_input.strip())
+
+        if result["success"]:
+            return f"✅ {result['message']}: {result['job_id']}"
+        else:
+            return f"❌ {result['message']}"
+    except Exception as e:
+        logger.error(f"[gradio_app] Error marking job as complete: {e}")
+        return f"❌ Error: {e!s}"
+
+
 def create_pending_tab() -> gr.Blocks:
     """
     Create the pending jobs management tab.
@@ -186,15 +280,46 @@ def create_pending_tab() -> gr.Blocks:
         gr.Markdown("# ⏸️ Pending Jobs")
         gr.Markdown("Manage jobs requiring manual intervention")
 
-        gr.Dataframe(value=[], headers=["Job ID", "Title", "Company", "Error Type", "Error Message", "Actions"], label="Pending Jobs")
+        pending_jobs_table = gr.Dataframe(value=[], headers=["Job ID", "Title", "Company", "Platform", "Error Type", "Error Message"], label="Pending Jobs (Last 20)")
+
+        gr.Markdown("### Actions")
+        gr.Markdown("Copy a Job ID from the table above to perform an action")
 
         with gr.Row():
-            gr.Button("Retry Selected", variant="primary")
-            gr.Button("Skip Selected", variant="secondary")
-            gr.Button("Mark as Manual Complete")
+            job_id_input = gr.Textbox(label="Job ID", placeholder="Enter job ID from table above")
+
+        with gr.Row():
+            retry_btn = gr.Button("🔄 Retry", variant="primary", scale=1)
+            skip_btn = gr.Button("⏭️ Skip", variant="secondary", scale=1)
+            complete_btn = gr.Button("✅ Manual Complete", scale=1)
+
+        with gr.Row():
+            skip_reason_input = gr.Textbox(label="Skip Reason (optional)", placeholder="e.g., Not interested")
+
+        action_status = gr.Textbox(label="Action Status", value="", interactive=False)
 
         gr.Markdown("### Error Summary")
-        gr.BarPlot(value={"error_type": [], "count": []}, x="error_type", y="count", title="Errors by Type", height=250)
+        error_summary_chart = gr.BarPlot(value={"error_type": [], "count": []}, x="error_type", y="count", title="Errors by Type", height=250)
+
+        # Refresh button
+        refresh_btn = gr.Button("🔄 Refresh Pending Jobs", variant="secondary")
+
+        # Auto-refresh timer (every 30 seconds)
+        timer = gr.Timer(30)
+
+        # Wire up refresh logic
+        refresh_outputs = [pending_jobs_table, error_summary_chart]
+
+        refresh_btn.click(fn=load_pending_jobs_metrics, outputs=refresh_outputs)
+        timer.tick(fn=load_pending_jobs_metrics, outputs=refresh_outputs)
+
+        # Wire up action buttons
+        retry_btn.click(fn=handle_retry_job, inputs=[job_id_input], outputs=[action_status])
+        skip_btn.click(fn=handle_skip_job, inputs=[job_id_input, skip_reason_input], outputs=[action_status])
+        complete_btn.click(fn=handle_manual_complete, inputs=[job_id_input], outputs=[action_status])
+
+        # Load initial data
+        pending.load(fn=load_pending_jobs_metrics, outputs=refresh_outputs)
 
     return pending
 
