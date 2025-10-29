@@ -16,7 +16,15 @@ from loguru import logger
 
 # Configure logging
 log_level = os.getenv("LOG_LEVEL", "INFO")
-logger.add("logs/app.log", rotation="1 day", retention="30 days", format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {message}", level=log_level)
+app_env = os.getenv("APP_ENV", "development")
+
+# Only log to file in non-test environments to avoid permission issues in CI/CD
+if app_env != "test":
+    try:
+        logger.add("logs/app.log", rotation="1 day", retention="30 days", format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {message}", level=log_level)
+    except PermissionError:
+        # If we can't write to logs directory, just log to stderr
+        logger.warning("Cannot write to logs/app.log, logging to stderr only")
 
 
 @asynccontextmanager

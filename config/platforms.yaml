@@ -19,14 +19,18 @@ linkedin:
     job_type: Contract
     remote: true
 
-# SEEK - Australian job board (Phase 3 implementation)
+# SEEK - Australian job board
 seek:
+  enabled: true
   base_url: https://www.seek.com.au
-  polling_interval_minutes: 120   # Poll every 2 hours
-  timeout_seconds: 30             # Request timeout
-  # Phase 3: Add Playwright scraper configuration
-  # scraper_enabled: false
-  # max_pages: 5
+  polling_interval_minutes: 60            # Poll every hour (same as LinkedIn)
+  rate_limit_requests_per_hour: 50        # Conservative rate limit
+  delay_between_requests_seconds: [2, 5]  # Random delay range between requests
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+  max_pages_per_search: 5                 # Limit pagination depth
+  retry_attempts: 3                       # Number of retry attempts on failure
+  retry_backoff_seconds: [5, 15, 45]      # Exponential backoff for retries
+  timeout_seconds: 30                     # Request timeout
 
 # Indeed - Global job board (Phase 3 implementation)
 indeed:

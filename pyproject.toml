@@ -30,9 +30,9 @@ fuzzywuzzy = "^0.18.0"
 python-levenshtein = "^0.23.0"
 scikit-learn = "^1.3.2"
 
-# For web scraping (V2 - not needed for MVP with MCP)
-# playwright = "^1.40.0"
-# beautifulsoup4 = "^4.12.0"
+# For web scraping (SEEK poller in Epic 3)
+beautifulsoup4 = "^4.12.0"
+requests = "^2.31.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.3"

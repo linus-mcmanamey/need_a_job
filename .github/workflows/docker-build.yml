@@ -71,17 +71,50 @@ jobs:
           DUCKDB_PATH=data/test.duckdb
           EOF
 
+      - name: Create test MCP config
+        run: |
+          # Create a minimal .mcp.json for testing (based on template)
+          cat > .mcp.json << 'EOF'
+          {
+            "mcpServers": {
+              "memory": {
+                "command": "npx",
+                "args": [
+                  "-y",
+                  "@modelcontextprotocol/server-memory"
+                ]
+              }
+            }
+          }
+          EOF
+
       - name: Start test services
         run: |
           # Create required directories
-          mkdir -p data logs config current_cv_coverletter export_cv_cover_letter
+          mkdir -p data logs config current_cv_coverletter export_cv_cover_letter second_folder
 
           # Start Redis and app
           docker-compose up -d redis app
 
-          # Wait for services to be healthy
-          timeout 60 bash -c 'until docker-compose ps redis | grep -q "healthy"; do sleep 2; done'
-          timeout 60 bash -c 'until curl -f http://localhost:8000/health; do sleep 2; done'
+          # Wait for services to be healthy with better timeout
+          echo "Waiting for Redis to be healthy..."
+          if ! timeout 90 bash -c 'until docker-compose ps redis | grep -q "healthy"; do echo "Waiting for Redis..."; sleep 2; done'; then
+            echo "Redis failed to become healthy!"
+            docker-compose logs redis
+            exit 1
+          fi
+          echo "Redis is healthy!"
+
+          echo "Waiting for app to be healthy..."
+          if ! timeout 120 bash -c 'until curl -f http://localhost:8000/health; do echo "Waiting for app..."; sleep 3; done'; then
+            echo "App failed to become healthy!"
+            echo "=== App Container Status ==="
+            docker-compose ps app
+            echo "=== App Container Logs ==="
+            docker-compose logs app
+            exit 1
+          fi
+          echo "App is healthy!"
 
       - name: Run tests
         run: |
