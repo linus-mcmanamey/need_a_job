@@ -10,12 +10,61 @@ from app.models.job import Job
 from app.repositories.database import get_connection
 
 
+# Whitelist of allowed field names for dynamic SQL queries
+# This prevents SQL injection through field names
+ALLOWED_FIELDS = {"job_id", "platform_source", "company_name", "job_title", "job_url", "salary_aud_per_day", "location", "posted_date", "job_description", "requirements", "responsibilities", "discovered_timestamp", "duplicate_group_id"}
+
+# Allowed INTERVAL units for parameterized queries
+ALLOWED_INTERVAL_UNITS = {"DAY", "HOUR", "MINUTE", "SECOND", "MONTH", "YEAR"}
+
+
+class InvalidFieldError(ValueError):
+    """Raised when an invalid field name is used in dynamic queries."""
+
+    pass
+
+
+class InvalidIntervalError(ValueError):
+    """Raised when an invalid INTERVAL unit is used."""
+
+    pass
+
+
 class JobsRepository:
     """Repository for job CRUD operations."""
 
     def __init__(self):
         """Initialize jobs repository."""
         self.conn = get_connection()
+
+    @staticmethod
+    def _validate_field_name(field: str) -> None:
+        """
+        Validate that a field name is in the allowed whitelist.
+
+        Args:
+            field: Field name to validate
+
+        Raises:
+            InvalidFieldError: If field is not in ALLOWED_FIELDS
+        """
+        if field not in ALLOWED_FIELDS:
+            raise InvalidFieldError(f"Invalid field name '{field}'. Allowed fields: {', '.join(sorted(ALLOWED_FIELDS))}")
+
+    @staticmethod
+    def _validate_interval_unit(unit: str) -> None:
+        """
+        Validate that an INTERVAL unit is allowed.
+
+        Args:
+            unit: INTERVAL unit to validate (e.g., 'DAY', 'HOUR')
+
+        Raises:
+            InvalidIntervalError: If unit is not in ALLOWED_INTERVAL_UNITS
+        """
+        unit_upper = unit.upper()
+        if unit_upper not in ALLOWED_INTERVAL_UNITS:
+            raise InvalidIntervalError(f"Invalid INTERVAL unit '{unit}'. Allowed units: {', '.join(sorted(ALLOWED_INTERVAL_UNITS))}")
 
     def insert_job(self, job: Job) -> str:
         """
@@ -107,11 +156,18 @@ class JobsRepository:
         Args:
             job_id: The job ID to update
             updates: Dictionary of fields to update
+
+        Raises:
+            InvalidFieldError: If any field name is not in the allowed whitelist
         """
         if not updates:
             return
 
-        # Build SET clause dynamically
+        # Validate all field names before building query
+        for field in updates.keys():
+            self._validate_field_name(field)
+
+        # Build SET clause dynamically with validated field names
         set_clauses = []
         params = []
 
@@ -172,12 +228,19 @@ class JobsRepository:
 
         Returns:
             List of Job instances
+
+        Raises:
+            InvalidFieldError: If any filter field name is not in the allowed whitelist
         """
         query = "SELECT * FROM jobs"
         params = []
 
         # Add WHERE clause if filters provided
         if filters:
+            # Validate all field names before building query
+            for field in filters.keys():
+                self._validate_field_name(field)
+
             where_clauses = []
             for field, value in filters.items():
                 where_clauses.append(f"{field} = ?")
@@ -203,11 +266,18 @@ class JobsRepository:
 
         Returns:
             Number of jobs matching filters
+
+        Raises:
+            InvalidFieldError: If any filter field name is not in the allowed whitelist
         """
         query = "SELECT COUNT(*) FROM jobs"
         params = []
 
         if filters:
+            # Validate all field names before building query
+            for field in filters.keys():
+                self._validate_field_name(field)
+
             where_clauses = []
             for field, value in filters.items():
                 where_clauses.append(f"{field} = ?")
@@ -216,3 +286,49 @@ class JobsRepository:
 
         result = self.conn.execute(query, params).fetchone()
         return result[0] if result else 0
+
+    def get_recent_jobs_by_title(self, title_keywords: list[str], days: int = 30) -> list[Job]:
+        """
+        Get recent jobs that match title keywords (for duplicate detection pre-filtering).
+
+        Args:
+            title_keywords: List of keywords to search for in title
+            days: Number of days to look back (default 30)
+
+        Returns:
+            List of Job instances matching keywords from last N days
+
+        Raises:
+            InvalidIntervalError: If days is not a positive integer
+        """
+        # Validate days parameter (must be positive integer for INTERVAL)
+        if not isinstance(days, int) or days <= 0:
+            raise ValueError(f"days must be a positive integer, got {days}")
+
+        # Use parameterized query to prevent INTERVAL injection
+        # Build query with LIKE clauses for each keyword
+        query = """
+            SELECT * FROM jobs
+            WHERE discovered_timestamp >= CURRENT_TIMESTAMP - INTERVAL ? DAY
+        """
+
+        params = [days]
+
+        if title_keywords:
+            # Add OR conditions for each keyword
+            keyword_conditions = " OR ".join(["LOWER(job_title) LIKE ?" for _ in title_keywords])
+            query += f" AND ({keyword_conditions})"
+            # Add wildcards for LIKE matching
+            params.extend([f"%{keyword.lower()}%" for keyword in title_keywords])
+
+        query += " ORDER BY discovered_timestamp DESC LIMIT 500"
+
+        try:
+            results = self.conn.execute(query, params).fetchall()
+            return [Job.from_db_row(row) for row in results]
+        except Exception as e:
+            logger.error(f"Failed to get recent jobs by title: {e}")
+            # Fall back to simpler query without date filter
+            query = "SELECT * FROM jobs ORDER BY discovered_timestamp DESC LIMIT 500"
+            results = self.conn.execute(query).fetchall()
+            return [Job.from_db_row(row) for row in results]

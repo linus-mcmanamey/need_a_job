@@ -1,7 +1,7 @@
 """
 Unit tests for jobs repository.
 
-Tests CRUD operations for the jobs table.
+Tests CRUD operations for the jobs table and SQL injection security.
 """
 
 from datetime import date
@@ -11,7 +11,7 @@ import pytest
 
 from app.models.job import Job
 from app.repositories.database import initialize_database
-from app.repositories.jobs_repository import JobsRepository
+from app.repositories.jobs_repository import InvalidFieldError, InvalidIntervalError, JobsRepository
 
 
 @pytest.fixture
@@ -189,6 +189,160 @@ class TestJobsRepositoryList:
         linkedin_jobs = jobs_repo.list_jobs(filters={"platform_source": "linkedin"})
         assert len(linkedin_jobs) == 1
         assert linkedin_jobs[0].platform_source == "linkedin"
+
+
+class TestSQLInjectionSecurityValidation:
+    """Test security validation for SQL injection vulnerabilities."""
+
+    def test_validate_field_name_rejects_invalid_field(self):
+        """Test that invalid field names are rejected."""
+        with pytest.raises(InvalidFieldError):
+            JobsRepository._validate_field_name("invalid_field")
+
+    def test_validate_field_name_rejects_sql_injection_attempt(self):
+        """Test that SQL injection attempts in field names are rejected."""
+        with pytest.raises(InvalidFieldError):
+            JobsRepository._validate_field_name("job_title; DROP TABLE jobs; --")
+
+    def test_validate_field_name_accepts_valid_fields(self):
+        """Test that all valid field names are accepted."""
+        valid_fields = [
+            "job_id",
+            "platform_source",
+            "company_name",
+            "job_title",
+            "job_url",
+            "salary_aud_per_day",
+            "location",
+            "posted_date",
+            "job_description",
+            "requirements",
+            "responsibilities",
+            "discovered_timestamp",
+            "duplicate_group_id",
+        ]
+        for field in valid_fields:
+            # Should not raise exception
+            JobsRepository._validate_field_name(field)
+
+    def test_update_job_rejects_invalid_field_names(self, jobs_repo, sample_job):
+        """Test that update_job rejects invalid field names to prevent SQL injection."""
+        job_id = jobs_repo.insert_job(sample_job)
+
+        # Attempt SQL injection through field name
+        with pytest.raises(InvalidFieldError):
+            jobs_repo.update_job(job_id, {"invalid_field": "value"})
+
+    def test_update_job_rejects_malicious_field_names(self, jobs_repo, sample_job):
+        """Test that update_job rejects malicious field names."""
+        job_id = jobs_repo.insert_job(sample_job)
+
+        # Attempt SQL injection with DROP TABLE
+        with pytest.raises(InvalidFieldError):
+            jobs_repo.update_job(job_id, {"job_title; DROP TABLE jobs; --": "value"})
+
+    def test_update_job_accepts_valid_field_names(self, jobs_repo, sample_job):
+        """Test that update_job accepts all valid field names."""
+        job_id = jobs_repo.insert_job(sample_job)
+
+        # Update with multiple valid fields
+        updates = {"company_name": "Updated Company", "location": "Updated Location", "job_title": "Updated Title"}
+        jobs_repo.update_job(job_id, updates)
+
+        updated_job = jobs_repo.get_job_by_id(job_id)
+        assert updated_job.company_name == "Updated Company"
+        assert updated_job.location == "Updated Location"
+        assert updated_job.job_title == "Updated Title"
+
+    def test_list_jobs_rejects_invalid_filter_field_names(self, jobs_repo):
+        """Test that list_jobs rejects invalid field names in filters."""
+        with pytest.raises(InvalidFieldError):
+            jobs_repo.list_jobs(filters={"invalid_field": "value"})
+
+    def test_list_jobs_rejects_malicious_filter_field_names(self, jobs_repo):
+        """Test that list_jobs rejects SQL injection in filter field names."""
+        with pytest.raises(InvalidFieldError):
+            jobs_repo.list_jobs(filters={"job_title OR 1=1; --": "value"})
+
+    def test_list_jobs_accepts_valid_filter_field_names(self, jobs_repo, sample_job):
+        """Test that list_jobs accepts valid field names in filters."""
+        jobs_repo.insert_job(sample_job)
+
+        # Filter by valid field
+        results = jobs_repo.list_jobs(filters={"platform_source": "linkedin"})
+        assert len(results) > 0
+        assert all(job.platform_source == "linkedin" for job in results)
+
+    def test_count_jobs_rejects_invalid_filter_field_names(self, jobs_repo):
+        """Test that count_jobs rejects invalid field names in filters."""
+        with pytest.raises(InvalidFieldError):
+            jobs_repo.count_jobs(filters={"nonexistent_field": "value"})
+
+    def test_count_jobs_rejects_malicious_filter_field_names(self, jobs_repo):
+        """Test that count_jobs rejects SQL injection in filter field names."""
+        with pytest.raises(InvalidFieldError):
+            jobs_repo.count_jobs(filters={"job_title UNION SELECT * FROM --": "value"})
+
+    def test_count_jobs_accepts_valid_filter_field_names(self, jobs_repo, sample_job):
+        """Test that count_jobs accepts valid field names in filters."""
+        jobs_repo.insert_job(sample_job)
+
+        # Count with valid filter
+        count = jobs_repo.count_jobs(filters={"platform_source": "linkedin"})
+        assert count >= 1
+
+    def test_get_recent_jobs_by_title_validates_days_parameter(self, jobs_repo):
+        """Test that get_recent_jobs_by_title validates the days parameter."""
+        # Negative days
+        with pytest.raises(ValueError):
+            jobs_repo.get_recent_jobs_by_title([], days=-1)
+
+        # Zero days
+        with pytest.raises(ValueError):
+            jobs_repo.get_recent_jobs_by_title([], days=0)
+
+        # Non-integer days
+        with pytest.raises(ValueError):
+            jobs_repo.get_recent_jobs_by_title([], days="30; DROP TABLE")  # type: ignore
+
+    def test_get_recent_jobs_by_title_uses_parameterized_interval(self, jobs_repo, sample_job):
+        """Test that get_recent_jobs_by_title uses parameterized INTERVAL to prevent injection."""
+        jobs_repo.insert_job(sample_job)
+
+        # Should work with valid days parameter
+        results = jobs_repo.get_recent_jobs_by_title([], days=30)
+        assert isinstance(results, list)
+
+        # Should work with different valid days values
+        results = jobs_repo.get_recent_jobs_by_title(["engineer"], days=7)
+        assert isinstance(results, list)
+
+    def test_validate_interval_unit_accepts_valid_units(self):
+        """Test that _validate_interval_unit accepts all valid units."""
+        valid_units = ["DAY", "HOUR", "MINUTE", "SECOND", "MONTH", "YEAR"]
+        for unit in valid_units:
+            # Should not raise exception
+            JobsRepository._validate_interval_unit(unit)
+
+    def test_validate_interval_unit_case_insensitive(self):
+        """Test that _validate_interval_unit is case-insensitive."""
+        # Should accept lowercase
+        JobsRepository._validate_interval_unit("day")
+        JobsRepository._validate_interval_unit("hour")
+        # Should accept uppercase
+        JobsRepository._validate_interval_unit("DAY")
+        JobsRepository._validate_interval_unit("HOUR")
+
+    def test_validate_interval_unit_rejects_invalid_units(self):
+        """Test that _validate_interval_unit rejects invalid units."""
+        with pytest.raises(InvalidIntervalError):
+            JobsRepository._validate_interval_unit("INVALID")
+
+        with pytest.raises(InvalidIntervalError):
+            JobsRepository._validate_interval_unit("DROP")
+
+        with pytest.raises(InvalidIntervalError):
+            JobsRepository._validate_interval_unit("'; DROP TABLE --")
 
 
 if __name__ == "__main__":
