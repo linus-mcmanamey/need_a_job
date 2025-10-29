@@ -169,7 +169,8 @@ def create_tables() -> None:
             job_id VARCHAR NOT NULL,
             status VARCHAR CHECK(status IN (
                 'discovered', 'matched', 'documents_generated', 'ready_to_send',
-                'sending', 'completed', 'pending', 'failed', 'rejected', 'duplicate'
+                'sending', 'completed', 'pending', 'failed', 'rejected', 'duplicate',
+                'approved', 'dry_run_complete'
             )),
             current_stage VARCHAR,
             completed_stages JSON,
