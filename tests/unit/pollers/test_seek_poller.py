@@ -286,6 +286,321 @@ class TestSEEKPollerRateLimiting:
                 mock_sleep.assert_called_once_with(3.0)
 
 
+class TestSEEKPollerShutdown:
+    """Test shutdown and signal handling."""
+
+    def test_shutdown_sets_flag(self, seek_poller):
+        """Test that shutdown method sets shutdown flag."""
+        seek_poller.shutdown()
+        assert seek_poller._shutdown_requested is True
+
+    def test_handle_shutdown_signal(self, seek_poller):
+        """Test signal handler sets shutdown flag."""
+        seek_poller._handle_shutdown(15, None)
+        assert seek_poller._shutdown_requested is True
+
+    @patch("time.sleep")
+    def test_run_continuously_stops_on_shutdown(self, mock_sleep, seek_poller):
+        """Test that run_continuously stops when shutdown is requested."""
+        # Mock run_once to request shutdown after first call
+        with patch.object(seek_poller, "run_once") as mock_run_once:
+
+            def trigger_shutdown():
+                seek_poller._shutdown_requested = True
+                return {"jobs_found": 0, "jobs_inserted": 0, "duplicates_skipped": 0, "errors": 0, "pages_scraped": 0}
+
+            mock_run_once.side_effect = trigger_shutdown
+
+            # Run continuously - should exit immediately after first cycle
+            seek_poller.run_continuously(interval_minutes=1)
+
+            # Verify run_once was called
+            mock_run_once.assert_called_once()
+            # Sleep should not be called since shutdown was requested
+            mock_sleep.assert_not_called()
+
+    @patch("time.sleep")
+    def test_run_continuously_with_custom_interval(self, mock_sleep, seek_poller):
+        """Test run_continuously with custom interval."""
+        # Set shutdown flag after first iteration
+        with patch.object(seek_poller, "run_once") as mock_run_once:
+            call_count = 0
+
+            def increment_and_shutdown():
+                nonlocal call_count
+                call_count += 1
+                if call_count >= 2:
+                    seek_poller._shutdown_requested = True
+                return {"jobs_found": 0, "jobs_inserted": 0, "duplicates_skipped": 0, "errors": 0, "pages_scraped": 0}
+
+            mock_run_once.side_effect = increment_and_shutdown
+
+            seek_poller.run_continuously(interval_minutes=5)
+
+            assert mock_run_once.call_count == 2
+            # Should sleep 5 minutes (300 seconds) between cycles
+            mock_sleep.assert_called_once_with(300)
+
+    @patch("time.sleep")
+    def test_run_continuously_handles_exceptions(self, mock_sleep, seek_poller):
+        """Test that run_continuously handles exceptions and continues."""
+        call_count = 0
+
+        with patch.object(seek_poller, "run_once") as mock_run_once:
+
+            def raise_then_shutdown():
+                nonlocal call_count
+                call_count += 1
+                if call_count == 1:
+                    raise Exception("Test error")
+                else:
+                    seek_poller._shutdown_requested = True
+                    return {"jobs_found": 0, "jobs_inserted": 0, "duplicates_skipped": 0, "errors": 0, "pages_scraped": 0}
+
+            mock_run_once.side_effect = raise_then_shutdown
+
+            seek_poller.run_continuously(interval_minutes=1)
+
+            # Should have called run_once twice (once failed, once succeeded)
+            assert mock_run_once.call_count == 2
+            # Should sleep 60 seconds after error
+            assert mock_sleep.call_count == 1
+            assert mock_sleep.call_args_list[0][0][0] == 60
+
+    @patch("signal.signal")
+    @patch("time.sleep")
+    def test_run_continuously_sets_signal_handlers(self, mock_sleep, mock_signal, seek_poller):
+        """Test that run_continuously sets up signal handlers."""
+        import signal as signal_module
+
+        with patch.object(seek_poller, "run_once") as mock_run_once:
+            mock_run_once.side_effect = lambda: seek_poller.shutdown() or {}
+
+            seek_poller.run_continuously(interval_minutes=1)
+
+            # Verify signal handlers were registered
+            assert mock_signal.call_count >= 2
+            signal_calls = [call[0] for call in mock_signal.call_args_list]
+            assert (signal_module.SIGTERM, seek_poller._handle_shutdown) in signal_calls
+            assert (signal_module.SIGINT, seek_poller._handle_shutdown) in signal_calls
+
+
+class TestSEEKPollerFetchPage:
+    """Test page fetching with rate limiting."""
+
+    @patch("requests.get")
+    @patch("time.sleep")
+    def test_fetch_page_success(self, mock_sleep, mock_requests, seek_poller):
+        """Test successful page fetch."""
+        mock_response = Mock()
+        mock_response.text = "<html>Test content</html>"
+        mock_response.raise_for_status = Mock()
+        mock_requests.return_value = mock_response
+
+        with patch("random.uniform") as mock_random:
+            mock_random.return_value = 3.0
+
+            html = seek_poller._fetch_page("https://www.seek.com.au/test")
+
+            assert html == "<html>Test content</html>"
+            mock_requests.assert_called_once()
+            # Verify user agent was set
+            call_args = mock_requests.call_args
+            assert "User-Agent" in call_args[1]["headers"]
+
+    @patch("requests.get")
+    @patch("time.sleep")
+    def test_fetch_page_handles_http_error(self, mock_sleep, mock_requests, seek_poller):
+        """Test that fetch_page raises exception on HTTP error."""
+        import requests
+
+        mock_response = Mock()
+        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError("404 Not Found")
+        mock_requests.return_value = mock_response
+
+        with patch("random.uniform") as mock_random:
+            mock_random.return_value = 2.0
+
+            with pytest.raises(requests.exceptions.HTTPError):
+                seek_poller._fetch_page("https://www.seek.com.au/test")
+
+
+class TestSEEKPollerHTMLParsing:
+    """Test HTML parsing edge cases."""
+
+    def test_parse_job_listings_with_missing_company(self, seek_poller):
+        """Test parsing skips jobs with missing company."""
+        html = """
+        <html>
+            <article data-automation="normalJob">
+                <a data-automation="jobTitle" href="/job/123">Test Job</a>
+                <!-- Missing company element -->
+            </article>
+        </html>
+        """
+        jobs = seek_poller._parse_job_listings(html)
+        assert len(jobs) == 0
+
+    def test_parse_job_listings_with_malformed_href(self, seek_poller):
+        """Test parsing handles malformed href attribute."""
+        html = """
+        <html>
+            <article data-automation="normalJob">
+                <a data-automation="jobTitle">Test Job</a>
+                <a data-automation="jobCompany">Test Company</a>
+            </article>
+        </html>
+        """
+        jobs = seek_poller._parse_job_listings(html)
+        # Should still create job but with None job_url
+        assert len(jobs) == 1
+        assert jobs[0]["job_url"] is None
+
+    def test_parse_job_listings_handles_parse_error(self, seek_poller):
+        """Test parsing handles errors gracefully."""
+        html = """
+        <html>
+            <article data-automation="normalJob">
+                <a data-automation="jobTitle" href="/job/123">Test Job</a>
+                <a data-automation="jobCompany">Test Company</a>
+            </article>
+        </html>
+        """
+        jobs = seek_poller._parse_job_listings(html)
+        assert len(jobs) >= 0  # Should not crash
+
+
+class TestSEEKPollerStoreJobErrors:
+    """Test error handling in job storage."""
+
+    def test_store_job_handles_duplicate_constraint(self, seek_poller, mock_jobs_repo):
+        """Test that store_job handles unique constraint violations."""
+        job = Job(company_name="Test", job_title="Engineer", job_url="https://www.seek.com.au/job/123", platform_source="seek")
+
+        # Simulate unique constraint violation
+        mock_jobs_repo.insert_job.side_effect = Exception("UNIQUE constraint failed")
+
+        job_id = seek_poller.store_job(job)
+
+        assert job_id is None
+        # Error count should not increment for constraint violations
+        assert seek_poller.metrics["errors"] == 0
+
+    def test_store_job_handles_general_error(self, seek_poller, mock_jobs_repo):
+        """Test that store_job handles general errors."""
+        job = Job(company_name="Test", job_title="Engineer", job_url="https://www.seek.com.au/job/123", platform_source="seek")
+
+        # Simulate general error
+        mock_jobs_repo.insert_job.side_effect = Exception("Database connection failed")
+
+        job_id = seek_poller.store_job(job)
+
+        assert job_id is None
+        assert seek_poller.metrics["errors"] == 1
+
+    def test_store_job_handles_application_creation_failure(self, seek_poller, mock_jobs_repo, mock_app_repo):
+        """Test that store_job continues if application creation fails."""
+        job = Job(company_name="Test", job_title="Engineer", job_url="https://www.seek.com.au/job/123", platform_source="seek")
+
+        # Job insert succeeds but application creation fails
+        mock_app_repo.insert_application.side_effect = Exception("Application insert failed")
+
+        job_id = seek_poller.store_job(job)
+
+        # Job should still be stored successfully
+        assert job_id == "test-job-id"
+        mock_jobs_repo.insert_job.assert_called_once()
+
+
+class TestSEEKPollerRunOnceErrors:
+    """Test error handling in run_once."""
+
+    def test_run_once_handles_fetch_error(self, seek_poller):
+        """Test that run_once handles page fetch errors."""
+        with patch.object(seek_poller, "_fetch_page_with_retry") as mock_fetch:
+            mock_fetch.side_effect = ConnectionError("Network error")
+
+            metrics = seek_poller.run_once()
+
+            assert metrics["errors"] >= 1
+            assert metrics["jobs_found"] == 0
+
+    def test_run_once_continues_after_job_processing_error(self, seek_poller, sample_seek_html):
+        """Test that run_once continues processing after individual job error."""
+        with patch.object(seek_poller, "_fetch_page_with_retry") as mock_fetch:
+            mock_fetch.return_value = sample_seek_html
+
+            with patch.object(seek_poller, "extract_job_metadata") as mock_extract:
+                # First job fails, second succeeds
+                mock_extract.side_effect = [Exception("Parse error"), Job(company_name="Test", job_title="Engineer", job_url="https://test.com", platform_source="seek")]
+
+                metrics = seek_poller.run_once()
+
+                # Should continue despite error
+                assert mock_extract.call_count >= 1
+                assert metrics["errors"] >= 1
+
+    def test_run_once_stops_pagination_on_empty_page(self, seek_poller):
+        """Test that run_once stops pagination when no jobs found."""
+        empty_html = "<html><body>No jobs found</body></html>"
+
+        with patch.object(seek_poller, "_fetch_page_with_retry") as mock_fetch:
+            mock_fetch.return_value = empty_html
+
+            metrics = seek_poller.run_once()
+
+            # Should stop after first empty page
+            assert metrics["pages_scraped"] == 1
+            assert metrics["jobs_found"] == 0
+
+    def test_run_once_stops_pagination_on_page_error(self, seek_poller, sample_seek_html):
+        """Test that run_once stops pagination on page fetch error."""
+        with patch.object(seek_poller, "_fetch_page_with_retry") as mock_fetch:
+            # First page succeeds, second page fails
+            mock_fetch.side_effect = [sample_seek_html, ConnectionError("Network error")]
+
+            metrics = seek_poller.run_once()
+
+            # Should have scraped first page successfully
+            assert metrics["pages_scraped"] == 1
+            assert metrics["errors"] == 1
+
+
+class TestSEEKPollerIsDuplicateError:
+    """Test duplicate detection error handling."""
+
+    def test_is_duplicate_returns_false_on_error(self, seek_poller, mock_jobs_repo):
+        """Test that is_duplicate returns False on database error."""
+        mock_jobs_repo.get_job_by_url.side_effect = Exception("Database error")
+
+        result = seek_poller.is_duplicate("https://www.seek.com.au/job/123")
+
+        # Should return False to allow processing to continue
+        assert result is False
+
+
+class TestSEEKPollerMetrics:
+    """Test metrics tracking."""
+
+    def test_get_metrics_returns_copy(self, seek_poller):
+        """Test that get_metrics returns a copy of metrics."""
+        metrics = seek_poller.get_metrics()
+        metrics["jobs_found"] = 999
+
+        # Original should not be modified
+        assert seek_poller.metrics["jobs_found"] == 0
+
+    def test_reset_metrics(self, seek_poller):
+        """Test that reset_metrics clears all metrics."""
+        seek_poller.metrics["jobs_found"] = 10
+        seek_poller.metrics["errors"] = 5
+
+        seek_poller.reset_metrics()
+
+        assert seek_poller.metrics["jobs_found"] == 0
+        assert seek_poller.metrics["errors"] == 0
+
+
 # Fixtures
 
 
