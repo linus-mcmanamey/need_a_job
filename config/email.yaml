@@ -1,0 +1,63 @@
+# Email Configuration for Job Application Submissions
+#
+# This file configures SMTP email sending for automated job applications.
+# Email credentials are stored in .env file for security.
+
+smtp:
+  # SMTP server settings (Gmail configuration)
+  host: smtp.gmail.com
+  port: 587
+  use_tls: true
+
+  # Authentication credentials (loaded from .env)
+  username: ${EMAIL_USERNAME}  # Your Gmail address
+  password: ${EMAIL_PASSWORD}  # Gmail App Password (NOT your actual password)
+
+sender:
+  # Sender information (appears in "From" field)
+  name: "Linus McManamey"
+  email: ${EMAIL_USERNAME}  # Must match SMTP username
+
+rate_limiting:
+  # Maximum emails per hour (to avoid spam detection)
+  max_per_hour: 10
+
+  # Delay between emails in seconds (360s = 6 minutes)
+  # Calculation: 3600 seconds / 10 emails = 360 seconds
+  delay_between_emails: 360
+
+attachments:
+  # Maximum attachment size in MB
+  # Gmail limit is 25 MB, we use 20 MB to be safe
+  max_size_mb: 20
+
+# Email template (optional - uses default if not specified)
+# Template variables: {job_title}, {company_name}, {candidate_name}
+email_template: |
+  Dear Hiring Manager,
+
+  I am writing to express my interest in the {job_title} position at {company_name}.
+
+  Please find attached my CV and cover letter for your consideration.
+
+  I look forward to hearing from you.
+
+  Best regards,
+  {candidate_name}
+
+# Notes:
+# - To set up Gmail App Password:
+#   1. Enable 2FA on your Gmail account
+#   2. Go to Google Account → Security → App Passwords
+#   3. Generate App Password for "Mail"
+#   4. Add to .env file as EMAIL_PASSWORD
+#
+# - Alternative SMTP servers:
+#   - Outlook: smtp-mail.outlook.com:587
+#   - Yahoo: smtp.mail.yahoo.com:587
+#   - SendGrid: smtp.sendgrid.net:587 (requires API key)
+#
+# - Rate limiting rationale:
+#   - Gmail free tier allows ~500 emails/day
+#   - 10 emails/hour = 240 emails/day (safe limit)
+#   - 6 minute delay prevents spam detection
