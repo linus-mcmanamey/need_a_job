@@ -11,7 +11,7 @@ from typing import Any
 import gradio as gr
 from loguru import logger
 
-from app.repositories.database import Database
+from app.repositories.database import DatabaseConnection
 from app.services.dashboard_metrics import DashboardMetricsService
 
 # Global metrics service instance
@@ -22,12 +22,12 @@ def get_metrics_service() -> DashboardMetricsService:
     """Get or create metrics service instance."""
     global _metrics_service
     if _metrics_service is None:
-        db = Database()
+        db = DatabaseConnection()
         _metrics_service = DashboardMetricsService(db.get_connection())
     return _metrics_service
 
 
-async def load_dashboard_metrics() -> tuple[int, int, int, float, dict[str, Any], list[list[Any]]]:
+def load_dashboard_metrics() -> tuple[int, int, int, float, dict[str, Any], list[list[Any]]]:
     """
     Load all dashboard metrics from database.
 
@@ -36,7 +36,7 @@ async def load_dashboard_metrics() -> tuple[int, int, int, float, dict[str, Any]
     """
     try:
         service = get_metrics_service()
-        metrics = await service.get_all_metrics()
+        metrics = service.get_all_metrics()
 
         # Format status breakdown for bar plot
         status_data = {"status": list(metrics["status_breakdown"].keys()), "count": list(metrics["status_breakdown"].values())}

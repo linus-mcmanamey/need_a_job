@@ -43,7 +43,7 @@ class DashboardMetricsService:
             query = """
                 SELECT COUNT(*) as count
                 FROM jobs
-                WHERE DATE(created_at) = CURRENT_DATE
+                WHERE DATE(discovered_timestamp) = CURRENT_DATE
             """
             result = self._db.execute(query)
             row = result.fetchone()
