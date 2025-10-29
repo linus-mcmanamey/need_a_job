@@ -13,9 +13,11 @@ from loguru import logger
 
 from app.repositories.database import DatabaseConnection
 from app.services.dashboard_metrics import DashboardMetricsService
+from app.services.pipeline_metrics import PipelineMetricsService
 
-# Global metrics service instance
+# Global service instances
 _metrics_service: DashboardMetricsService | None = None
+_pipeline_service: PipelineMetricsService | None = None
 
 
 def get_metrics_service() -> DashboardMetricsService:
@@ -25,6 +27,15 @@ def get_metrics_service() -> DashboardMetricsService:
         db = DatabaseConnection()
         _metrics_service = DashboardMetricsService(db.get_connection())
     return _metrics_service
+
+
+def get_pipeline_service() -> PipelineMetricsService:
+    """Get or create pipeline metrics service instance."""
+    global _pipeline_service
+    if _pipeline_service is None:
+        db = DatabaseConnection()
+        _pipeline_service = PipelineMetricsService(db.get_connection())
+    return _pipeline_service
 
 
 def load_dashboard_metrics() -> tuple[int, int, int, float, dict[str, Any], list[list[Any]]]:
@@ -95,6 +106,41 @@ def create_dashboard_tab() -> gr.Blocks:
     return dashboard
 
 
+def load_pipeline_metrics() -> tuple[list[list[Any]], dict[str, Any]]:
+    """
+    Load pipeline metrics from database.
+
+    Returns:
+        Tuple of (active_jobs_data, agent_performance_data)
+    """
+    try:
+        service = get_pipeline_service()
+        metrics = service.get_all_pipeline_metrics()
+
+        # Format active jobs for dataframe
+        active_jobs_data = [
+            [job.get("job_id", "N/A"), job.get("job_title", "N/A"), job.get("company_name", "N/A"), job.get("current_stage", "N/A"), job.get("status", "N/A"), job.get("time_in_stage", "N/A")] for job in metrics["active_jobs"]
+        ]
+
+        # Format agent metrics for bar plot
+        agent_names = []
+        avg_times = []
+        for agent_name, metrics_data in metrics["agent_metrics"].items():
+            # Use friendly agent names
+            friendly_name = service.AGENT_STAGE_NAMES.get(agent_name, agent_name)
+            agent_names.append(friendly_name)
+            avg_times.append(metrics_data.get("avg_execution_time", 0.0))
+
+        agent_performance_data = {"agent": agent_names, "avg_time_sec": avg_times}
+
+        logger.debug(f"[gradio_app] Pipeline metrics loaded: {len(active_jobs_data)} active jobs")
+        return (active_jobs_data, agent_performance_data)
+
+    except Exception as e:
+        logger.error(f"[gradio_app] Error loading pipeline metrics: {e}")
+        return ([], {"agent": [], "avg_time_sec": []})
+
+
 def create_pipeline_tab() -> gr.Blocks:
     """
     Create the pipeline view tab showing real-time agent flow.
@@ -106,16 +152,25 @@ def create_pipeline_tab() -> gr.Blocks:
         gr.Markdown("# 🔄 Job Pipeline")
         gr.Markdown("Watch jobs flow through the agent pipeline in real-time")
 
-        gr.Dataframe(value=[], headers=["Job ID", "Title", "Company", "Current Stage", "Status", "Time in Stage"], label="Active Jobs in Pipeline")
+        active_jobs_table = gr.Dataframe(value=[], headers=["Job ID", "Title", "Company", "Current Stage", "Status", "Time in Stage"], label="Active Jobs in Pipeline")
 
         gr.Markdown("### Agent Performance")
-        gr.BarPlot(
-            value={"agent": ["Job Matcher", "Salary Validator", "CV Tailor", "CL Writer", "QA", "Orchestrator", "Form Handler"], "avg_time_sec": [0, 0, 0, 0, 0, 0, 0]},
-            x="agent",
-            y="avg_time_sec",
-            title="Average Execution Time per Agent",
-            height=300,
-        )
+        agent_performance_chart = gr.BarPlot(value={"agent": [], "avg_time_sec": []}, x="agent", y="avg_time_sec", title="Average Execution Time per Agent (seconds)", height=300)
+
+        # Refresh button
+        refresh_btn = gr.Button("🔄 Refresh Pipeline", variant="secondary")
+
+        # Auto-refresh timer (every 30 seconds)
+        timer = gr.Timer(30)
+
+        # Wire up refresh logic
+        refresh_outputs = [active_jobs_table, agent_performance_chart]
+
+        refresh_btn.click(fn=load_pipeline_metrics, outputs=refresh_outputs)
+        timer.tick(fn=load_pipeline_metrics, outputs=refresh_outputs)
+
+        # Load initial data
+        pipeline.load(fn=load_pipeline_metrics, outputs=refresh_outputs)
 
     return pipeline
 
