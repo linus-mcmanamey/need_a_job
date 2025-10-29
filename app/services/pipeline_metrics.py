@@ -75,7 +75,8 @@ class PipelineMetricsService:
 
             jobs = []
             for row in rows:
-                jobs.append({"job_id": row[0], "job_title": row[1], "company_name": row[2], "current_stage": row[3], "status": row[4], "updated_at": row[5], "time_in_stage": self.format_time_in_stage(row[6] if row[6] else 0)})
+                job_record = {"job_id": row[0], "job_title": row[1], "company_name": row[2], "current_stage": row[3], "status": row[4], "updated_at": row[5], "time_in_stage": self.format_time_in_stage(row[6] if row[6] else 0)}
+                jobs.append(job_record)
 
             logger.debug(f"[pipeline_metrics] Active jobs in pipeline: {len(jobs)}")
             return jobs
@@ -151,7 +152,8 @@ class PipelineMetricsService:
 
             bottlenecks = []
             for row in rows:
-                bottlenecks.append({"stage": row[0], "job_count": row[1], "avg_wait_time": self.format_time_in_stage(row[2] if row[2] else 0)})
+                bottleneck = {"stage": row[0], "job_count": row[1], "avg_wait_time": self.format_time_in_stage(row[2] if row[2] else 0)}
+                bottlenecks.append(bottleneck)
 
             logger.debug(f"[pipeline_metrics] Identified {len(bottlenecks)} stage bottlenecks")
             return bottlenecks
