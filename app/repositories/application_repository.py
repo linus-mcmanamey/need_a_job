@@ -234,6 +234,66 @@ class ApplicationRepository:
             logger.error(f"Failed to update document paths: {e}")
             raise
 
+    def update_submission_method(self, application_id: str, submission_method: str) -> None:
+        """
+        Update submission method for an application.
+
+        Args:
+            application_id: The application ID to update
+            submission_method: Submission method (email, web_form, etc.)
+        """
+        query = """
+            UPDATE application_tracking
+            SET submission_method = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE application_id = ?
+        """
+
+        try:
+            self.conn.execute(query, (submission_method, application_id))
+            logger.debug(f"Updated submission_method to {submission_method} for {application_id}")
+        except Exception as e:
+            logger.error(f"Failed to update submission method: {e}")
+            raise
+
+    def update_application_url(self, application_id: str, application_url: str) -> None:
+        """
+        Update application URL for an application.
+
+        Note: This requires adding an application_url column to the database.
+        For now, this is stored in stage_outputs.
+
+        Args:
+            application_id: The application ID to update
+            application_url: URL for application submission
+        """
+        # Get current application to update stage_outputs
+        app = self.get_application_by_id(application_id)
+        if not app:
+            logger.warning(f"Application {application_id} not found for URL update")
+            return
+
+        # Store in stage_outputs for now
+        if "application_form_handler" not in app.stage_outputs:
+            app.stage_outputs["application_form_handler"] = {}
+
+        app.stage_outputs["application_form_handler"]["application_url"] = application_url
+
+        # Update in database
+        query = """
+            UPDATE application_tracking
+            SET stage_outputs = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE application_id = ?
+        """
+
+        import json
+
+        try:
+            self.conn.execute(query, (json.dumps(app.stage_outputs), application_id))
+            logger.debug(f"Updated application_url for {application_id}")
+        except Exception as e:
+            logger.error(f"Failed to update application URL: {e}")
+            raise
+
     def list_applications(self, filters: dict | None = None, limit: int = 100, offset: int = 0) -> list[Application]:
         """
         List applications with optional filtering and pagination.
