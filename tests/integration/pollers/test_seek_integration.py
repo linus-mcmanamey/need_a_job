@@ -87,10 +87,20 @@ class TestSEEKPollerIntegration:
     def test_end_to_end_job_discovery(self, seek_poller, jobs_repo, app_repo, sample_seek_html_page):
         """Test complete job discovery flow from scraping to database."""
         with patch("requests.get") as mock_get:
-            # Mock HTTP response
-            mock_response = mock_get.return_value
-            mock_response.text = sample_seek_html_page
-            mock_response.raise_for_status.return_value = None
+            # Mock HTTP response - return empty page for page 2 to avoid duplicates
+            def side_effect(*args, **kwargs):
+                url = args[0]
+                mock_response = mock_get.return_value
+                if "page=2" in url:
+                    # Empty page for page 2
+                    mock_response.text = "<html><body>No more jobs</body></html>"
+                else:
+                    # Jobs on page 1
+                    mock_response.text = sample_seek_html_page
+                mock_response.raise_for_status.return_value = None
+                return mock_response
+
+            mock_get.side_effect = side_effect
 
             # Run one poll cycle
             metrics = seek_poller.run_once()
@@ -129,9 +139,18 @@ class TestSEEKPollerIntegration:
     def test_duplicate_detection_with_real_database(self, seek_poller, jobs_repo, sample_seek_html_page):
         """Test that duplicate jobs are detected using real database."""
         with patch("requests.get") as mock_get:
-            mock_response = mock_get.return_value
-            mock_response.text = sample_seek_html_page
-            mock_response.raise_for_status.return_value = None
+            # Mock to return jobs on page 1, empty on page 2
+            def side_effect(*args, **kwargs):
+                url = args[0]
+                mock_response = mock_get.return_value
+                if "page=2" in url:
+                    mock_response.text = "<html><body>No more jobs</body></html>"
+                else:
+                    mock_response.text = sample_seek_html_page
+                mock_response.raise_for_status.return_value = None
+                return mock_response
+
+            mock_get.side_effect = side_effect
 
             # First run - should insert jobs
             metrics1 = seek_poller.run_once()
@@ -206,9 +225,18 @@ class TestSEEKPollerIntegration:
         """
 
         with patch("requests.get") as mock_get:
-            mock_response = mock_get.return_value
-            mock_response.text = valid_html
-            mock_response.raise_for_status.return_value = None
+            # Mock to return jobs on page 1, empty on page 2
+            def side_effect(*args, **kwargs):
+                url = args[0]
+                mock_response = mock_get.return_value
+                if "page=2" in url:
+                    mock_response.text = "<html><body>No more jobs</body></html>"
+                else:
+                    mock_response.text = valid_html
+                mock_response.raise_for_status.return_value = None
+                return mock_response
+
+            mock_get.side_effect = side_effect
 
             # First insert should work
             metrics = seek_poller.run_once()
@@ -276,11 +304,12 @@ class TestSEEKPollerIntegration:
             # Fail twice, then succeed
             import requests
 
-            mock_get.side_effect = [
-                requests.exceptions.ConnectionError("Network error"),
-                requests.exceptions.Timeout("Timeout"),
-                type("MockResponse", (), {"text": '<html><article data-automation="normalJob"><a data-automation="jobTitle" href="/job/1">Job</a><a data-automation="jobCompany">Co</a></article></html>', "raise_for_status": lambda: None})(),
-            ]
+            # Create mock response with proper lambda signature
+            success_response = type(
+                "MockResponse", (), {"text": '<html><article data-automation="normalJob"><a data-automation="jobTitle" href="/job/1">Job</a><a data-automation="jobCompany">Co</a></article></html>', "raise_for_status": lambda self: None}
+            )()
+
+            mock_get.side_effect = [requests.exceptions.ConnectionError("Network error"), requests.exceptions.Timeout("Timeout"), success_response]
 
             # Should succeed after retries
             metrics = seek_poller.run_once()
