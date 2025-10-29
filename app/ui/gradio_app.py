@@ -12,6 +12,7 @@ import gradio as gr
 from loguru import logger
 
 from app.repositories.database import DatabaseConnection
+from app.services.approval_mode import ApprovalModeService
 from app.services.dashboard_metrics import DashboardMetricsService
 from app.services.pending_jobs import PendingJobsService
 from app.services.pipeline_metrics import PipelineMetricsService
@@ -20,6 +21,7 @@ from app.services.pipeline_metrics import PipelineMetricsService
 _metrics_service: DashboardMetricsService | None = None
 _pipeline_service: PipelineMetricsService | None = None
 _pending_service: PendingJobsService | None = None
+_approval_service: ApprovalModeService | None = None
 
 
 def get_metrics_service() -> DashboardMetricsService:
@@ -47,6 +49,15 @@ def get_pending_service() -> PendingJobsService:
         db = DatabaseConnection()
         _pending_service = PendingJobsService(db.get_connection())
     return _pending_service
+
+
+def get_approval_service() -> ApprovalModeService:
+    """Get or create approval mode service instance."""
+    global _approval_service
+    if _approval_service is None:
+        db = DatabaseConnection()
+        _approval_service = ApprovalModeService(db.get_connection())
+    return _approval_service
 
 
 def load_dashboard_metrics() -> tuple[int, int, int, float, dict[str, Any], list[list[Any]]]:
@@ -324,6 +335,164 @@ def create_pending_tab() -> gr.Blocks:
     return pending
 
 
+def load_approval_metrics() -> tuple[bool, int, float, int, list[list[Any]]]:
+    """
+    Load approval mode metrics and pending approvals.
+
+    Returns:
+        Tuple of (enabled, pending_count, avg_match_score, oldest_job_days, approvals_data)
+    """
+    try:
+        service = get_approval_service()
+        summary = service.get_approval_summary()
+        approvals = service.get_pending_approvals()
+
+        # Format pending approvals for dataframe
+        approvals_data = [
+            [
+                approval.get("job_id", ""),
+                approval.get("job_title", "N/A"),
+                approval.get("company_name", "N/A"),
+                approval.get("platform", "N/A"),
+                f"{approval.get('match_score', 0.0):.2f}",
+                approval.get("created_at").strftime("%Y-%m-%d %H:%M") if approval.get("created_at") else "N/A",
+            ]
+            for approval in approvals
+        ]
+
+        return (summary["approval_mode_enabled"], summary["pending_count"], summary["avg_match_score"], summary["oldest_job_days"], approvals_data)
+
+    except Exception as e:
+        logger.error(f"[gradio_app] Error loading approval metrics: {e}")
+        return (False, 0, 0.0, 0, [])
+
+
+def handle_toggle_approval_mode(enabled: bool) -> str:
+    """Handle approval mode toggle action."""
+    try:
+        service = get_approval_service()
+        success = service.set_approval_mode(enabled)
+
+        if success:
+            mode = "enabled" if enabled else "disabled"
+            return f"✅ Approval mode {mode}"
+        else:
+            return "❌ Failed to update approval mode"
+
+    except Exception as e:
+        logger.error(f"[gradio_app] Error toggling approval mode: {e}")
+        return f"❌ Error: {e!s}"
+
+
+def handle_approve_job(job_id_input: str) -> str:
+    """Handle approve job action."""
+    try:
+        if not job_id_input or job_id_input.strip() == "":
+            return "❌ Please enter a Job ID"
+
+        service = get_approval_service()
+        result = service.approve_job(job_id_input.strip())
+
+        if result["success"]:
+            return f"✅ {result['message']}: {result['job_id']}"
+        else:
+            return f"❌ {result['message']}"
+
+    except Exception as e:
+        logger.error(f"[gradio_app] Error approving job: {e}")
+        return f"❌ Error: {e!s}"
+
+
+def handle_reject_job_approval(job_id_input: str, reason: str) -> str:
+    """Handle reject job action."""
+    try:
+        if not job_id_input or job_id_input.strip() == "":
+            return "❌ Please enter a Job ID"
+
+        if not reason or reason.strip() == "":
+            return "❌ Please enter a rejection reason"
+
+        service = get_approval_service()
+        result = service.reject_job(job_id_input.strip(), reason.strip())
+
+        if result["success"]:
+            return f"✅ {result['message']}: {result['job_id']}"
+        else:
+            return f"❌ {result['message']}"
+
+    except Exception as e:
+        logger.error(f"[gradio_app] Error rejecting job: {e}")
+        return f"❌ Error: {e!s}"
+
+
+def create_approval_tab() -> gr.Blocks:
+    """
+    Create the approval mode tab.
+
+    Returns:
+        Gradio Blocks component
+    """
+    with gr.Column() as approval:
+        gr.Markdown("# ✅ Approval Mode")
+        gr.Markdown("Review and approve applications before submission")
+
+        # Approval mode toggle
+        gr.Markdown("### Approval Mode Settings")
+        with gr.Row():
+            approval_toggle = gr.Checkbox(label="Require approval before sending applications", value=False, interactive=True)
+            toggle_status = gr.Textbox(label="Status", value="", interactive=False, scale=2)
+
+        # Summary metrics
+        gr.Markdown("### Approval Summary")
+        with gr.Row():
+            pending_count_metric = gr.Number(label="Pending Approvals", value=0, interactive=False)
+            avg_score_metric = gr.Number(label="Avg Match Score", value=0.0, interactive=False)
+            oldest_days_metric = gr.Number(label="Oldest Job (Days)", value=0, interactive=False)
+
+        # Pending approvals list
+        gr.Markdown("### Pending Approvals")
+        approvals_table = gr.Dataframe(value=[], headers=["Job ID", "Title", "Company", "Platform", "Match Score", "Created"], label="Jobs Awaiting Approval (Max 20)")
+
+        # Action buttons
+        gr.Markdown("### Actions")
+        with gr.Row():
+            job_id_input = gr.Textbox(label="Job ID", placeholder="Enter job ID...", scale=2)
+
+        with gr.Row():
+            approve_btn = gr.Button("✅ Approve", variant="primary")
+            reject_btn = gr.Button("❌ Reject", variant="secondary")
+
+        with gr.Row():
+            rejection_reason = gr.Textbox(label="Rejection Reason", placeholder="Enter reason for rejection...", scale=2)
+
+        action_status = gr.Textbox(label="Action Status", value="", interactive=False)
+
+        # Refresh controls
+        with gr.Row():
+            refresh_btn = gr.Button("🔄 Refresh", variant="secondary")
+
+        # Auto-refresh timer (30 seconds)
+        timer = gr.Timer(30)
+
+        # Wire up toggle logic
+        approval_toggle.change(fn=handle_toggle_approval_mode, inputs=[approval_toggle], outputs=[toggle_status])
+
+        # Wire up refresh logic
+        refresh_outputs = [approval_toggle, pending_count_metric, avg_score_metric, oldest_days_metric, approvals_table]
+
+        refresh_btn.click(fn=load_approval_metrics, outputs=refresh_outputs)
+        timer.tick(fn=load_approval_metrics, outputs=refresh_outputs)
+
+        # Wire up action buttons
+        approve_btn.click(fn=handle_approve_job, inputs=[job_id_input], outputs=[action_status])
+        reject_btn.click(fn=handle_reject_job_approval, inputs=[job_id_input, rejection_reason], outputs=[action_status])
+
+        # Load initial data
+        approval.load(fn=load_approval_metrics, outputs=refresh_outputs)
+
+    return approval
+
+
 def create_settings_tab() -> gr.Blocks:
     """
     Create the settings and control tab.
@@ -379,6 +548,9 @@ def create_ui() -> gr.Blocks:
 
             with gr.Tab("Pending Jobs"):
                 create_pending_tab()
+
+            with gr.Tab("Approval Mode"):
+                create_approval_tab()
 
             with gr.Tab("Settings"):
                 create_settings_tab()
