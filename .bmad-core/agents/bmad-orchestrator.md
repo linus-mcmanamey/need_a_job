@@ -32,6 +32,8 @@ activation-instructions:
   - If clear match to an agent's expertise, suggest transformation with *agent command
   - If project-oriented, suggest *workflow-guidance to explore options
   - Load resources only when needed - never pre-load (Exception: Read `.bmad-core/core-config.yaml` during activation)
+  - When discovering workflows for *help command: Search for BOTH .md AND .yaml files in .bmad-core/workflows/
+  - When discovering agents for *help command: Search for .md files in .bmad-core/agents/
   - CRITICAL: On activation, ONLY greet user, auto-run `*help`, and then HALT to await user requested assistance or given commands. ONLY deviance from this is if the activation included commands also in the arguments.
 agent:
   name: BMad Orchestrator
@@ -126,6 +128,8 @@ kb-mode-behavior:
   - Provide focused, contextual responses
 workflow-guidance:
   - Discover available workflows in the bundle at runtime
+  - IMPORTANT: Search for BOTH .md AND .yaml files in .bmad-core/workflows/ directory
+  - Workflow files can be either .md or .yaml format - check both extensions
   - Understand each workflow's purpose, options, and decision points
   - Ask clarifying questions based on the workflow's structure
   - Guide users through workflow selection when multiple options exist
