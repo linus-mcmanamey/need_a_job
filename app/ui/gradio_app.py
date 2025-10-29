@@ -14,6 +14,7 @@ from loguru import logger
 from app.repositories.database import DatabaseConnection
 from app.services.approval_mode import ApprovalModeService
 from app.services.dashboard_metrics import DashboardMetricsService
+from app.services.dry_run_mode import DryRunModeService
 from app.services.pending_jobs import PendingJobsService
 from app.services.pipeline_metrics import PipelineMetricsService
 
@@ -22,6 +23,7 @@ _metrics_service: DashboardMetricsService | None = None
 _pipeline_service: PipelineMetricsService | None = None
 _pending_service: PendingJobsService | None = None
 _approval_service: ApprovalModeService | None = None
+_dry_run_service: DryRunModeService | None = None
 
 
 def get_metrics_service() -> DashboardMetricsService:
@@ -58,6 +60,15 @@ def get_approval_service() -> ApprovalModeService:
         db = DatabaseConnection()
         _approval_service = ApprovalModeService(db.get_connection())
     return _approval_service
+
+
+def get_dry_run_service() -> DryRunModeService:
+    """Get or create dry-run mode service instance."""
+    global _dry_run_service
+    if _dry_run_service is None:
+        db = DatabaseConnection()
+        _dry_run_service = DryRunModeService(db.get_connection())
+    return _dry_run_service
 
 
 def load_dashboard_metrics() -> tuple[int, int, int, float, dict[str, Any], list[list[Any]]]:
@@ -493,6 +504,137 @@ def create_approval_tab() -> gr.Blocks:
     return approval
 
 
+def load_dry_run_metrics() -> tuple[bool, int, float, int, list[list[Any]]]:
+    """
+    Load dry-run mode metrics and dry-run results.
+
+    Returns:
+        Tuple of (enabled, dry_run_count, avg_match_score, newest_job_hours, results_data)
+    """
+    try:
+        service = get_dry_run_service()
+        analytics = service.get_dry_run_analytics()
+        results = service.get_dry_run_results()
+
+        # Format dry-run results for dataframe
+        results_data = [
+            [
+                result.get("job_id", ""),
+                result.get("job_title", "N/A"),
+                result.get("company_name", "N/A"),
+                result.get("platform", "N/A"),
+                f"{result.get('match_score', 0.0):.2f}",
+                result.get("created_at").strftime("%Y-%m-%d %H:%M") if result.get("created_at") else "N/A",
+            ]
+            for result in results
+        ]
+
+        return (analytics["dry_run_mode_enabled"], analytics["dry_run_count"], analytics["avg_match_score"], analytics["newest_job_hours"], results_data)
+
+    except Exception as e:
+        logger.error(f"[gradio_app] Error loading dry-run metrics: {e}")
+        return (False, 0, 0.0, 0, [])
+
+
+def handle_toggle_dry_run_mode(enabled: bool) -> str:
+    """Handle dry-run mode toggle action."""
+    try:
+        service = get_dry_run_service()
+        success = service.set_dry_run_mode(enabled)
+
+        if success:
+            mode = "enabled" if enabled else "disabled"
+            return f"✅ Dry-run mode {mode}"
+        else:
+            return "❌ Failed to update dry-run mode"
+
+    except Exception as e:
+        logger.error(f"[gradio_app] Error toggling dry-run mode: {e}")
+        return f"❌ Error: {e!s}"
+
+
+def handle_send_now(job_id_input: str) -> str:
+    """Handle send now action."""
+    try:
+        if not job_id_input or job_id_input.strip() == "":
+            return "❌ Please enter a Job ID"
+
+        service = get_dry_run_service()
+        result = service.send_now(job_id_input.strip())
+
+        if result["success"]:
+            return f"✅ {result['message']}: {result['job_id']}"
+        else:
+            return f"❌ {result['message']}"
+
+    except Exception as e:
+        logger.error(f"[gradio_app] Error sending job: {e}")
+        return f"❌ Error: {e!s}"
+
+
+def create_dry_run_tab() -> gr.Blocks:
+    """
+    Create the dry-run mode tab.
+
+    Returns:
+        Gradio Blocks component
+    """
+    with gr.Column() as dry_run:
+        gr.Markdown("# 🧪 Dry-Run Mode")
+        gr.Markdown("Test the system without sending real applications")
+
+        # Dry-run mode toggle
+        gr.Markdown("### Dry-Run Mode Settings")
+        with gr.Row():
+            dry_run_toggle = gr.Checkbox(label="Dry-run mode (generate but don't send)", value=False, interactive=True)
+            toggle_status = gr.Textbox(label="Status", value="", interactive=False, scale=2)
+
+        # Analytics metrics
+        gr.Markdown("### Dry-Run Analytics")
+        with gr.Row():
+            dry_run_count_metric = gr.Number(label="Dry-Run Jobs", value=0, interactive=False)
+            avg_score_metric = gr.Number(label="Avg Match Score", value=0.0, interactive=False)
+            newest_hours_metric = gr.Number(label="Newest Job (Hours Ago)", value=0, interactive=False)
+
+        # Dry-run results list
+        gr.Markdown("### Dry-Run Results")
+        results_table = gr.Dataframe(value=[], headers=["Job ID", "Title", "Company", "Platform", "Match Score", "Created"], label="Dry-Run Jobs (Max 20)")
+
+        # Action button
+        gr.Markdown("### Actions")
+        with gr.Row():
+            job_id_input = gr.Textbox(label="Job ID", placeholder="Enter job ID to send...", scale=2)
+
+        with gr.Row():
+            send_now_btn = gr.Button("📤 Send Now", variant="primary")
+
+        action_status = gr.Textbox(label="Action Status", value="", interactive=False)
+
+        # Refresh controls
+        with gr.Row():
+            refresh_btn = gr.Button("🔄 Refresh", variant="secondary")
+
+        # Auto-refresh timer (30 seconds)
+        timer = gr.Timer(30)
+
+        # Wire up toggle logic
+        dry_run_toggle.change(fn=handle_toggle_dry_run_mode, inputs=[dry_run_toggle], outputs=[toggle_status])
+
+        # Wire up refresh logic
+        refresh_outputs = [dry_run_toggle, dry_run_count_metric, avg_score_metric, newest_hours_metric, results_table]
+
+        refresh_btn.click(fn=load_dry_run_metrics, outputs=refresh_outputs)
+        timer.tick(fn=load_dry_run_metrics, outputs=refresh_outputs)
+
+        # Wire up action button
+        send_now_btn.click(fn=handle_send_now, inputs=[job_id_input], outputs=[action_status])
+
+        # Load initial data
+        dry_run.load(fn=load_dry_run_metrics, outputs=refresh_outputs)
+
+    return dry_run
+
+
 def create_settings_tab() -> gr.Blocks:
     """
     Create the settings and control tab.
@@ -551,6 +693,9 @@ def create_ui() -> gr.Blocks:
 
             with gr.Tab("Approval Mode"):
                 create_approval_tab()
+
+            with gr.Tab("Dry-Run Mode"):
+                create_dry_run_tab()
 
             with gr.Tab("Settings"):
                 create_settings_tab()
