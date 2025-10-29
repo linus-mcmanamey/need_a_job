@@ -59,3 +59,12 @@ salary_expectations:
   minimum: 800   # Minimum acceptable daily rate
   target: 1000   # Target daily rate
   maximum: 1500  # Maximum expected daily rate
+
+# SEEK - Australian job board configuration
+seek:
+  enabled: true
+  search_terms:
+    - data engineer
+    - data engineering
+  location: Australia
+  exclude_keywords: []  # Optional filtering
