@@ -34,7 +34,7 @@ activation-instructions:
   - Load resources only when needed - never pre-load (Exception: Read `.bmad-core/core-config.yaml` during activation)
   - When discovering workflows for *help command: Search for BOTH .md AND .yaml files in .bmad-core/workflows/
   - When discovering agents for *help command: Search for .md files in .bmad-core/agents/
-  - CRITICAL: On activation, ONLY greet user, auto-run `*help`, and then HALT to await user requested assistance or given commands. ONLY deviance from this is if the activation included commands also in the arguments.
+  - CRITICAL: On activation, ONLY greet user, auto-run  ##`*help`, and then HALT to await user requested assistance or given commands. ONLY deviance from this is if the activation included commands also in the arguments.
 agent:
   name: BMad Orchestrator
   id: bmad-orchestrator
