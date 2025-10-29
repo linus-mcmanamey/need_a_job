@@ -1,0 +1,80 @@
+# Web Form Configuration for Job Application Submissions
+#
+# This file configures Playwright browser automation for web form submissions.
+# Applicant credentials are stored in .env file for security.
+
+browser:
+  # Browser automation settings
+  headless: true  # Set to false for debugging
+
+  # Timeout values (in seconds)
+  timeout_page_load: 30       # Maximum time to wait for page load
+  timeout_element_wait: 10    # Maximum time to wait for elements
+  timeout_file_upload: 15     # Maximum time for file uploads
+  timeout_submission: 120     # Maximum time for form submission
+
+applicant:
+  # Applicant information (appears in form fields)
+  name: "Linus McManamey"
+  email: ${EMAIL_USERNAME}  # Your email (from .env)
+  phone: "+61 XXX XXX XXX"  # Your phone number
+  linkedin_url: "https://linkedin.com/in/linusmcmanamey"  # Optional
+
+file_paths:
+  # CV/CL file paths (relative to project root)
+  cv_directory: "export_cv_cover_letter/{job_id}"
+  cv_pattern: "CV_*.docx"
+  cl_pattern: "CL_*.docx"
+
+screenshots:
+  # Screenshot configuration
+  directory: "export_cv_cover_letter/{job_id}"
+  filename_pattern: "confirmation_{timestamp}.png"
+
+field_detection:
+  # Form field detection patterns (case-insensitive)
+  # Used to automatically detect form fields on application pages
+
+  name_labels:
+    - "name"
+    - "full name"
+    - "first name"
+    - "last name"
+    - "applicant name"
+
+  email_labels:
+    - "email"
+    - "email address"
+    - "e-mail"
+
+  phone_labels:
+    - "phone"
+    - "mobile"
+    - "contact number"
+    - "telephone"
+
+  cv_labels:
+    - "resume"
+    - "cv"
+    - "curriculum vitae"
+
+  cl_labels:
+    - "cover letter"
+    - "covering letter"
+    - "letter"
+
+# Notes:
+# - Playwright must be installed: pip install playwright
+# - Browsers must be installed: playwright install chromium
+# - For debugging, set headless: false to see browser in action
+# - Timeouts can be adjusted based on connection speed and form complexity
+# - Field detection uses multiple patterns to maximize compatibility
+#
+# - Supported platforms:
+#   - SEEK (seek.com.au)
+#   - Indeed (indeed.com.au)
+#   - LinkedIn (some forms)
+#   - Company career pages (simple forms)
+#
+# - Complex forms (CAPTCHA, multi-step, video) will be marked as "pending"
+#   and require manual intervention (handled by Story 4.4)
