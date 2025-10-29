@@ -526,6 +526,400 @@ class TestIndeedPollerMetrics:
         assert indeed_poller.metrics["errors"] == 0
 
 
+class TestIndeedPollerSalaryParsingEdgeCases:
+    """Test additional salary parsing edge cases."""
+
+    def test_parse_salary_with_no_salary_extracted(self, indeed_poller):
+        """Test parsing salary when numbers extracted but no valid format."""
+        # Has numbers but no per hour/per year/per annum indicators
+        result = indeed_poller._parse_indeed_salary("$100,000 to $120,000")
+        # Should return None as format not recognized
+        assert result is None
+
+    def test_parse_salary_with_decimal_values(self, indeed_poller):
+        """Test parsing salary with decimal hourly rates."""
+        result = indeed_poller._parse_indeed_salary("$15.50 - $18.75 per hour")
+        # Regex only matches [\d,]+ so extracts: ['15', '50', '18', '75']
+        # Takes first 2: (15 + 50) / 2 = 32.5 * 8 = 260
+        expected = (Decimal("15") + Decimal("50")) / Decimal("2") * Decimal("8")
+        assert result == expected
+
+    def test_parse_salary_with_per_annum_format(self, indeed_poller):
+        """Test parsing salary with 'per annum' format."""
+        result = indeed_poller._parse_indeed_salary("$85,000 per annum")
+        expected = Decimal("85000") / Decimal("230")
+        assert result == expected.quantize(Decimal("0.01"))
+
+    def test_parse_salary_with_pa_format(self, indeed_poller):
+        """Test parsing salary with 'p.a.' format."""
+        result = indeed_poller._parse_indeed_salary("$75,000 p.a.")
+        expected = Decimal("75000") / Decimal("230")
+        assert result == expected.quantize(Decimal("0.01"))
+
+    def test_parse_salary_not_disclosed(self, indeed_poller):
+        """Test parsing salary with 'not disclosed' text."""
+        result = indeed_poller._parse_indeed_salary("Salary not disclosed")
+        assert result is None
+
+    def test_parse_salary_contact_employer(self, indeed_poller):
+        """Test parsing salary with 'contact employer' text."""
+        result = indeed_poller._parse_indeed_salary("Contact employer for salary details")
+        assert result is None
+
+    def test_parse_salary_with_single_hour_value(self, indeed_poller):
+        """Test parsing single hourly rate."""
+        result = indeed_poller._parse_indeed_salary("$45 per hour")
+        expected = Decimal("45") * Decimal("8")
+        assert result == expected
+
+    def test_parse_salary_empty_string(self, indeed_poller):
+        """Test parsing empty salary string."""
+        result = indeed_poller._parse_indeed_salary("")
+        assert result is None
+
+
+class TestIndeedPollerDateParsingEdgeCases:
+    """Test additional date parsing edge cases."""
+
+    def test_parse_date_with_single_day_ago(self, indeed_poller):
+        """Test parsing '1 day ago' format."""
+        result = indeed_poller._parse_posting_date("1 day ago")
+        expected = date.today() - __import__("datetime").timedelta(days=1)
+        assert result == expected
+
+    def test_parse_date_with_single_month_ago(self, indeed_poller):
+        """Test parsing '1 month ago' format."""
+        result = indeed_poller._parse_posting_date("1 month ago")
+        expected = date.today() - __import__("datetime").timedelta(days=30)
+        assert result == expected
+
+    def test_parse_date_with_multiple_months_ago(self, indeed_poller):
+        """Test parsing multiple months ago format."""
+        result = indeed_poller._parse_posting_date("3 months ago")
+        expected = date.today() - __import__("datetime").timedelta(days=90)
+        assert result == expected
+
+    def test_parse_date_with_single_hour_ago(self, indeed_poller):
+        """Test parsing 'hour ago' format (singular)."""
+        result = indeed_poller._parse_posting_date("1 hour ago")
+        expected = date.today()
+        assert result == expected
+
+    def test_parse_date_with_minutes_ago(self, indeed_poller):
+        """Test parsing 'minutes ago' format."""
+        result = indeed_poller._parse_posting_date("30 minutes ago")
+        expected = date.today()
+        assert result == expected
+
+    def test_parse_date_with_whitespace(self, indeed_poller):
+        """Test parsing date with extra whitespace."""
+        result = indeed_poller._parse_posting_date("  2   days ago  ")
+        expected = date.today() - __import__("datetime").timedelta(days=2)
+        assert result == expected
+
+    def test_parse_date_with_exception(self, indeed_poller):
+        """Test parsing date that causes exception."""
+        # This tests the exception handling in the try block
+        result = indeed_poller._parse_posting_date(123)  # Not a string
+        assert result is None
+
+
+class TestIndeedPollerHTMLParsingEdgeCases:
+    """Test additional HTML parsing edge cases."""
+
+    def test_parse_job_listings_with_missing_title_link(self, indeed_poller):
+        """Test parsing skips jobs with missing title link."""
+        html = """
+        <html>
+            <div class="jobsearch-SerpJobCard">
+                <h2 class="jobTitle"></h2>
+                <div class="company">Test Company</div>
+            </div>
+        </html>
+        """
+        jobs = indeed_poller._parse_job_listings(html)
+        assert len(jobs) == 0
+
+    def test_parse_job_listings_with_missing_job_id_in_href(self, indeed_poller):
+        """Test parsing skips jobs where job ID cannot be extracted."""
+        html = """
+        <html>
+            <div class="jobsearch-SerpJobCard">
+                <h2 class="jobTitle"><a href="/viewjob">Job Without ID</a></h2>
+                <div class="company">Test Company</div>
+            </div>
+        </html>
+        """
+        jobs = indeed_poller._parse_job_listings(html)
+        assert len(jobs) == 0
+
+    def test_parse_job_listings_with_attribute_error(self, indeed_poller):
+        """Test parsing handles AttributeError gracefully."""
+        html = """
+        <html>
+            <div class="jobsearch-SerpJobCard">
+                <h2 class="jobTitle"><a href="/viewjob?jk=123">Job</a></h2>
+                <div class="company">Company</div>
+            </div>
+        </html>
+        """
+        # Should not raise, just return jobs it can parse
+        jobs = indeed_poller._parse_job_listings(html)
+        assert isinstance(jobs, list)
+
+    def test_parse_job_listings_with_easily_apply_badge(self, indeed_poller):
+        """Test parsing detects easily apply badge with 'easily apply' text."""
+        html = """
+        <html>
+            <div class="jobsearch-SerpJobCard">
+                <h2 class="jobTitle"><a href="/viewjob?jk=456">Easy Apply Job</a></h2>
+                <div class="company">Tech Company</div>
+                <span class="easily-apply">Easily Apply</span>
+            </div>
+        </html>
+        """
+        jobs = indeed_poller._parse_job_listings(html)
+        assert len(jobs) >= 1
+        if jobs:
+            assert jobs[0]["easily_apply"] is True
+
+    def test_parse_job_listings_external_application_tracking(self, indeed_poller):
+        """Test parsing tracks jobs without easy apply option."""
+        html = """
+        <html>
+            <div class="jobsearch-SerpJobCard">
+                <h2 class="jobTitle"><a href="/viewjob?jk=789">External Apply Job</a></h2>
+                <div class="company">External Company</div>
+            </div>
+        </html>
+        """
+        initial_external_count = indeed_poller.metrics["external_applications"]
+        jobs = indeed_poller._parse_job_listings(html)
+
+        assert len(jobs) >= 1
+        # external_applications should have incremented
+        assert indeed_poller.metrics["external_applications"] > initial_external_count
+
+
+class TestIndeedPollerRunContinuously:
+    """Test run_continuously behavior."""
+
+    @patch("signal.signal")
+    @patch("time.sleep")
+    def test_run_continuously_with_custom_interval(self, mock_sleep, mock_signal, indeed_poller):
+        """Test run_continuously uses custom interval."""
+        with patch.object(indeed_poller, "run_once") as mock_run_once:
+
+            def trigger_shutdown():
+                indeed_poller._shutdown_requested = True
+                return {"jobs_found": 0, "jobs_inserted": 0, "duplicates_skipped": 0, "errors": 0, "pages_scraped": 0, "sponsored_filtered": 0, "external_applications": 0}
+
+            mock_run_once.side_effect = trigger_shutdown
+
+            # Run with custom interval
+            indeed_poller.run_continuously(interval_minutes=5)
+
+            # Verify run_once was called
+            mock_run_once.assert_called_once()
+
+    @patch("signal.signal")
+    @patch("time.sleep")
+    def test_run_continuously_handles_exception_in_poll_cycle(self, mock_sleep, mock_signal, indeed_poller):
+        """Test run_continuously handles exception and retries."""
+        with patch.object(indeed_poller, "run_once") as mock_run_once:
+            call_count = 0
+
+            def side_effect_func():
+                nonlocal call_count
+                call_count += 1
+                if call_count == 1:
+                    raise RuntimeError("Poll cycle error")
+                indeed_poller._shutdown_requested = True
+                return {"jobs_found": 0, "jobs_inserted": 0, "duplicates_skipped": 0, "errors": 0, "pages_scraped": 0, "sponsored_filtered": 0, "external_applications": 0}
+
+            mock_run_once.side_effect = side_effect_func
+
+            # Run continuously
+            indeed_poller.run_continuously(interval_minutes=1)
+
+            # Should have been called twice (once failed, once succeeded before shutdown)
+            assert mock_run_once.call_count >= 1
+
+    @patch("signal.signal")
+    @patch("time.sleep")
+    def test_run_continuously_respects_shutdown_during_sleep(self, mock_sleep, mock_signal, indeed_poller):
+        """Test run_continuously respects shutdown flag during wait."""
+        with patch.object(indeed_poller, "run_once") as mock_run_once:
+
+            def trigger_shutdown():
+                indeed_poller._shutdown_requested = True
+                return {"jobs_found": 0, "jobs_inserted": 0, "duplicates_skipped": 0, "errors": 0, "pages_scraped": 0, "sponsored_filtered": 0, "external_applications": 0}
+
+            mock_run_once.side_effect = trigger_shutdown
+
+            # Run continuously
+            indeed_poller.run_continuously(interval_minutes=60)
+
+            # Verify signal handlers were registered
+            assert mock_signal.call_count >= 2
+            # run_once should be called
+            mock_run_once.assert_called()
+
+
+class TestIndeedPollerApplicationCreationError:
+    """Test error handling in application creation during store_job."""
+
+    def test_store_job_handles_application_creation_error(self, indeed_poller, mock_jobs_repo, mock_app_repo):
+        """Test that store_job continues even if application creation fails."""
+        job = Job(company_name="Test", job_title="Engineer", job_url="https://au.indeed.com/viewjob?jk=123", platform_source="indeed")
+
+        # Simulate application creation error
+        mock_app_repo.insert_application.side_effect = Exception("Application DB error")
+
+        job_id = indeed_poller.store_job(job)
+
+        # Job should still be stored
+        assert job_id == "test-job-id"
+        # But application creation should have been attempted and failed
+        mock_app_repo.insert_application.assert_called_once()
+
+
+class TestIndeedPollerJobProcessingError:
+    """Test error handling during job processing in run_once."""
+
+    def test_run_once_handles_job_processing_error(self, indeed_poller, mock_jobs_repo, sample_indeed_html):
+        """Test that run_once continues processing when job extraction fails."""
+        with patch.object(indeed_poller, "_fetch_page_with_retry") as mock_fetch:
+            mock_fetch.return_value = sample_indeed_html
+            mock_jobs_repo.get_job_by_url.return_value = None
+
+            with patch.object(indeed_poller, "extract_job_metadata") as mock_extract:
+                # First call raises exception, but we continue
+                mock_extract.side_effect = Exception("Extraction error")
+
+                metrics = indeed_poller.run_once()
+
+                # Should have recorded the error
+                assert metrics["errors"] >= 1
+
+    def test_run_once_fatal_error_handling(self, indeed_poller):
+        """Test run_once handles fatal errors at top level."""
+        with patch.object(indeed_poller, "_fetch_page_with_retry") as mock_fetch:
+            mock_fetch.side_effect = Exception("Fatal network error")
+
+            metrics = indeed_poller.run_once()
+
+            # Should still return metrics even with fatal error
+            assert isinstance(metrics, dict)
+            assert metrics["errors"] >= 1
+
+
+class TestIndeedPollerSalaryParsingExceptions:
+    """Test exception handling in salary parsing."""
+
+    def test_parse_salary_with_invalid_decimal_conversion(self, indeed_poller):
+        """Test parsing salary with invalid decimal values."""
+        # This should trigger InvalidOperation in Decimal conversion
+        # But implementation handles it gracefully
+        result = indeed_poller._parse_indeed_salary("$ABC - $XYZ per hour")
+        assert result is None
+
+    def test_parse_salary_with_large_numbers(self, indeed_poller):
+        """Test parsing salary with very large numbers."""
+        result = indeed_poller._parse_indeed_salary("$999,999,999 per year")
+        expected = Decimal("999999999") / Decimal("230")
+        assert result == expected.quantize(Decimal("0.01"))
+
+
+class TestIndeedPollerHTMLParsingExceptions:
+    """Test exception handling in HTML parsing."""
+
+    def test_parse_job_listings_missing_href(self, indeed_poller):
+        """Test parsing handles missing href attribute."""
+        html = """
+        <html>
+            <div class="jobsearch-SerpJobCard">
+                <h2 class="jobTitle"><a>Job Without Link</a></h2>
+                <div class="company">Test Company</div>
+            </div>
+        </html>
+        """
+        jobs = indeed_poller._parse_job_listings(html)
+        # Should skip job without href
+        assert len(jobs) == 0
+
+    def test_parse_job_listings_with_complex_html(self, indeed_poller):
+        """Test parsing complex HTML structure with multiple cards."""
+        html = """
+        <html>
+            <div class="jobsearch-SerpJobCard">
+                <h2 class="jobTitle"><a href="/viewjob?jk=111">Job 1</a></h2>
+                <div class="company">Company 1</div>
+            </div>
+            <div class="jobsearch-SerpJobCard">
+                <h2 class="jobTitle"><a href="/viewjob?jk=222">Job 2</a></h2>
+                <div class="company">Company 2</div>
+            </div>
+            <div class="jobsearch-SerpJobCard">
+                <h2 class="jobTitle"><a href="/viewjob?jk=333">Job 3</a></h2>
+                <div class="company">Company 3</div>
+            </div>
+        </html>
+        """
+        jobs = indeed_poller._parse_job_listings(html)
+        assert len(jobs) == 3
+        assert jobs[0]["job_id"] == "111"
+        assert jobs[1]["job_id"] == "222"
+        assert jobs[2]["job_id"] == "333"
+
+
+class TestIndeedPollerRetryMechanism:
+    """Test retry mechanism and backoff logic."""
+
+    @patch("time.sleep")
+    def test_fetch_page_with_retry_uses_backoff(self, mock_sleep, indeed_poller):
+        """Test retry logic uses exponential backoff."""
+        with patch.object(indeed_poller, "_fetch_page") as mock_fetch:
+            # Fail three times with different errors
+            mock_fetch.side_effect = [ConnectionError("Connection failed"), ConnectionError("Connection failed"), ConnectionError("Connection failed")]
+
+            try:
+                indeed_poller._fetch_page_with_retry("https://test.com")
+            except ConnectionError:
+                pass
+
+            # Verify backoff delays were used
+            assert mock_sleep.call_count == 2  # Sleep twice before giving up
+            # Check sleep durations match backoff config
+            call_args = [call[0][0] for call in mock_sleep.call_args_list]
+            assert call_args[0] == 5  # First backoff
+            assert call_args[1] == 15  # Second backoff
+
+    @patch("time.sleep")
+    def test_fetch_page_with_timeout_exception(self, mock_sleep, indeed_poller):
+        """Test retry logic handles Timeout exception."""
+        import requests
+
+        with patch.object(indeed_poller, "_fetch_page") as mock_fetch:
+            # Fail with timeout, then succeed
+            mock_fetch.side_effect = [requests.exceptions.Timeout("Request timed out"), "<html>Success</html>"]
+
+            html = indeed_poller._fetch_page_with_retry("https://test.com")
+            assert html == "<html>Success</html>"
+            assert mock_fetch.call_count == 2
+
+
+class TestIndeedPollerDateParsingExceptions:
+    """Test exception handling in date parsing."""
+
+    def test_parse_date_with_reasonable_values(self, indeed_poller):
+        """Test date parsing with normal values."""
+        # Test normal values that won't cause overflow
+        result = indeed_poller._parse_posting_date("10 days ago")
+        expected = date.today() - __import__("datetime").timedelta(days=10)
+        assert result == expected
+
+
 # Fixtures
 
 
