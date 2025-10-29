@@ -68,3 +68,12 @@ seek:
     - data engineering
   location: Australia
   exclude_keywords: []  # Optional filtering
+
+# Indeed - Global job board configuration
+indeed:
+  enabled: true
+  search_terms:
+    - data engineer
+    - data engineering
+  location: Australia
+  exclude_keywords: []  # Optional filtering
