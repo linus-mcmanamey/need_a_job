@@ -6,9 +6,52 @@ the automated job application system.
 """
 
 import os
+from typing import Any
 
 import gradio as gr
 from loguru import logger
+
+from app.repositories.database import Database
+from app.services.dashboard_metrics import DashboardMetricsService
+
+# Global metrics service instance
+_metrics_service: DashboardMetricsService | None = None
+
+
+def get_metrics_service() -> DashboardMetricsService:
+    """Get or create metrics service instance."""
+    global _metrics_service
+    if _metrics_service is None:
+        db = Database()
+        _metrics_service = DashboardMetricsService(db.get_connection())
+    return _metrics_service
+
+
+async def load_dashboard_metrics() -> tuple[int, int, int, float, dict[str, Any], list[list[Any]]]:
+    """
+    Load all dashboard metrics from database.
+
+    Returns:
+        Tuple of (jobs_today, apps_sent, pending, success_rate, status_data, activity_data)
+    """
+    try:
+        service = get_metrics_service()
+        metrics = await service.get_all_metrics()
+
+        # Format status breakdown for bar plot
+        status_data = {"status": list(metrics["status_breakdown"].keys()), "count": list(metrics["status_breakdown"].values())}
+
+        # Format recent activity for dataframe
+        activity_data = [
+            [activity["updated_at"].strftime("%Y-%m-%d %H:%M") if activity.get("updated_at") else "N/A", activity.get("job_title", "N/A"), activity.get("company_name", "N/A"), activity.get("status", "N/A")]
+            for activity in metrics["recent_activity"]
+        ]
+
+        return (metrics["jobs_discovered_today"], metrics["applications_sent_all"], metrics["pending_count"], metrics["success_rate"], status_data, activity_data)
+
+    except Exception as e:
+        logger.error(f"[gradio_app] Error loading dashboard metrics: {e}")
+        return (0, 0, 0, 0.0, {"status": [], "count": []}, [])
 
 
 def create_dashboard_tab() -> gr.Blocks:
@@ -23,16 +66,31 @@ def create_dashboard_tab() -> gr.Blocks:
         gr.Markdown("Real-time metrics and system status")
 
         with gr.Row():
-            gr.Number(label="Jobs Discovered Today", value=0, interactive=False)
-            gr.Number(label="Applications Sent", value=0, interactive=False)
-            gr.Number(label="Pending Jobs", value=0, interactive=False)
-            gr.Number(label="Success Rate (%)", value=0.0, interactive=False)
+            jobs_today = gr.Number(label="Jobs Discovered Today", value=0, interactive=False)
+            apps_sent = gr.Number(label="Applications Sent", value=0, interactive=False)
+            pending = gr.Number(label="Pending Jobs", value=0, interactive=False)
+            success_rate = gr.Number(label="Success Rate (%)", value=0.0, interactive=False)
 
         gr.Markdown("### Status Breakdown")
-        gr.BarPlot(value={"status": ["discovered", "matched", "completed"], "count": [0, 0, 0]}, x="status", y="count", title="Jobs by Status", height=300)
+        status_chart = gr.BarPlot(value={"status": [], "count": []}, x="status", y="count", title="Jobs by Status", height=300)
 
         gr.Markdown("### Recent Activity")
-        gr.Dataframe(value=[], headers=["Time", "Job Title", "Company", "Status"], label="Last 10 Jobs")
+        activity_table = gr.Dataframe(value=[], headers=["Time", "Job Title", "Company", "Status"], label="Last 10 Jobs")
+
+        # Refresh button
+        refresh_btn = gr.Button("🔄 Refresh Metrics", variant="secondary")
+
+        # Auto-refresh timer (every 30 seconds)
+        timer = gr.Timer(30)
+
+        # Wire up refresh logic
+        refresh_outputs = [jobs_today, apps_sent, pending, success_rate, status_chart, activity_table]
+
+        refresh_btn.click(fn=load_dashboard_metrics, outputs=refresh_outputs)
+        timer.tick(fn=load_dashboard_metrics, outputs=refresh_outputs)
+
+        # Load initial data
+        dashboard.load(fn=load_dashboard_metrics, outputs=refresh_outputs)
 
     return dashboard
 
