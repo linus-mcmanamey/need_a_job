@@ -75,6 +75,20 @@ echo "alias la='ls -A'" >> ~/.bashrc
 echo "alias l='ls -CF'" >> ~/.bashrc
 echo "alias python=python3" >> ~/.bashrc
 echo "alias pip=pip3" >> ~/.bashrc
+
+echo "---------------------------------------------------------------------"
+echo "START - Install Make completion"
+# Add make completion to bashrc if not already present
+if ! grep -q "make-completion.sh" ~/.bashrc 2>/dev/null; then
+    echo "" >> ~/.bashrc
+    echo "# Make completion for project" >> ~/.bashrc
+    echo "[ -f \"/workspaces/need_a_job/.devcontainer/make-completion.sh\" ] && source \"/workspaces/need_a_job/.devcontainer/make-completion.sh\"" >> ~/.bashrc
+    echo "Make completion installed to ~/.bashrc"
+else
+    echo "Make completion already installed"
+fi
+echo "END - Install Make completion"
+
 source ~/.bashrc
 
 # ln -sf ~/.claude $(pwd)/.claude

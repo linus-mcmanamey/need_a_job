@@ -12,9 +12,8 @@ fastapi = "^0.104.0"
 uvicorn = {extras = ["standard"], version = "^0.24.0"}
 redis = "^5.0.0"
 rq = "^1.15.0"
-duckdb = "^0.9.0"
-gradio = "^4.7.0"
-anthropic = "^0.7.0"
+duckdb = "^1.0.0"
+anthropic = "^0.40.0"
 python-docx = "^1.1.0"
 pydantic = "^2.5.0"
 pydantic-settings = "^2.1.0"
@@ -23,11 +22,10 @@ python-dotenv = "^1.0.0"
 loguru = "^0.7.2"
 httpx = "^0.25.0"
 aiofiles = "^23.2.1"
-python-multipart = "^0.0.6"
+python-multipart = "^0.0.9"
 
 # For duplicate detection
-fuzzywuzzy = "^0.18.0"
-python-levenshtein = "^0.23.0"
+rapidfuzz = "^3.0.0"
 scikit-learn = "^1.3.2"
 
 # For web scraping (SEEK poller in Epic 3)
@@ -39,14 +37,14 @@ pytest = "^7.4.3"
 pytest-asyncio = "^0.21.1"
 pytest-cov = "^4.1.0"
 black = "^23.12.0"
-ruff = "^0.1.6"
+ruff = "^0.2.2"
 mypy = "^1.7.0"
 ipython = "^8.18.0"
+pytest-mock = "^3.15.1"
 
 [tool.poetry.scripts]
 start-api = "app.api.main:start"
 start-worker = "app.workers.cli:start_worker"
-start-ui = "app.ui.gradio_app:start"
 
 [tool.black]
 line-length = 100
@@ -76,7 +74,6 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = [
     "rq.*",
-    "gradio.*",
     "fuzzywuzzy.*",
 ]
 ignore_missing_imports = true

@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from fuzzywuzzy import fuzz
+from rapidfuzz import fuzz
 from loguru import logger
 
 from app.agents.base_agent import AgentResult, BaseAgent

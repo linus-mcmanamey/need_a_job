@@ -91,6 +91,9 @@ files:
   - path: .bmad-core/tasks/trace-requirements.md
     hash: cb3e06cc0b957948
     modified: false
+  - path: .bmad-core/tasks/self-healing-ui.md
+    hash: ab3e06cc0b987988
+    modified: false
   - path: .bmad-core/tasks/test-design.md
     hash: bcd13a95d296ce22
     modified: false
@@ -198,6 +201,9 @@ files:
     modified: false
   - path: .bmad-core/agents/qa.md
     hash: 4ad40f692ee9c9fe
+    modified: false
+  - path: .bmad-core/agents/frontend-developer.md
+    hash: 4cc10f699ee6c6fe
     modified: false
   - path: .bmad-core/agents/po.md
     hash: 02a321a754de36e3

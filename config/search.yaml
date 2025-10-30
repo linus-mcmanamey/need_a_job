@@ -1,79 +1,52 @@
-# Job Search Configuration
-# Configuration for automated job discovery and matching criteria
-# This file defines what types of jobs the system will discover and evaluate
-
-# Job type and duration preferences
-job_type: contract  # Options: contract, permanent, casual
-duration: 3-12+ months  # Preferred contract duration
-
-# Location preferences
+job_type: contract
+duration: 6-12+ months
 locations:
-  primary: Remote (Australia-wide)  # Preferred work arrangement
-  acceptable: Hybrid with >70% remote  # Acceptable alternative
+  primary: Remote (Australia-wide)
+  acceptable: Hybrid with >70% remote
   exclude:
-    - Full office-based  # Exclude fully on-site positions
-
-# Job title keywords for discovery
+  - Full office-based
 keywords:
-  # Primary keywords (highest priority match)
   primary:
-    - Data Engineer
-    - Senior Data Engineer
-    - Data Engineering
-
-  # Secondary keywords (acceptable alternatives)
+  - Data Engineer
+  - Senior Data Engineer
+  - Data Engineering
   secondary:
-    - Analytics Engineer
-    - Data Platform Engineer
-
-  # Exclude keywords (automatically reject)
+  - Analytics Engineer
+  - Data Platform Engineer
   exclude:
-    - Junior
-    - Graduate
-
-# Technology and skill requirements
+  - Junior
+  - Graduate
 technologies:
-  # Must-have skills (required for job matching)
   must_have:
-    - Python
-    - SQL
-    - Cloud Platform (Azure/AWS/GCP)
-
-  # Strong preference (significantly increases match score)
+  - Python
+  - SQL
+  - Cloud Platform (Azure/AWS/GCP)
   strong_preference:
-    - PySpark
-    - Azure Synapse
-    - Databricks
-    - Azure Data Factory
-    - dbt
-
-  # Nice to have (minor match score increase)
+  - PySpark
+  - Azure Synapse
+  - Databricks
+  - Azure Data Factory
+  - dbt
   nice_to_have:
-    - Airflow
-    - Kafka
-    - Docker/Kubernetes
-    - CI/CD
-
-# Salary expectations (AUD per day for contract roles)
+  - Airflow
+  - Kafka
+  - Docker/Kubernetes
+  - CI/CD
 salary_expectations:
-  minimum: 800   # Minimum acceptable daily rate
-  target: 1000   # Target daily rate
-  maximum: 1500  # Maximum expected daily rate
-
-# SEEK - Australian job board configuration
+  minimum: 800
+  target: 1000
+  maximum: 1500
 seek:
   enabled: true
   search_terms:
-    - data engineer
-    - data engineering
+  - data engineer
+  - data engineering
   location: Australia
-  exclude_keywords: []  # Optional filtering
-
-# Indeed - Global job board configuration
+  exclude_keywords: []
 indeed:
   enabled: true
   search_terms:
-    - data engineer
-    - data engineering
+  - data engineer
+  - data engineering
   location: Australia
-  exclude_keywords: []  # Optional filtering
+  exclude_keywords: []

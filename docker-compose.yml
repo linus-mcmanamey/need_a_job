@@ -1,10 +1,30 @@
-version: '3.8'
-
 # Job Application Automation System - Phase 1
 # Docker Compose configuration for local development and deployment
 # Follows Architecture Document Section 9.1
 
 services:
+  # Vue 3 Frontend (replaces Gradio UI)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000/api
+        VITE_WS_URL: ws://localhost:8000/ws/status
+    container_name: job_automation_frontend
+    ports:
+      - "5173:80"
+    volumes:
+      # Mount source for hot reload during development
+      - ./frontend:/app
+      # Exclude node_modules to use container's version
+      - /app/node_modules
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - job_automation_network
+
   # Redis service for RQ job queue and caching
   redis:
     image: redis:7-alpine
@@ -32,8 +52,9 @@ services:
     container_name: job_automation_app
     ports:
       - "8000:8000"  # FastAPI
-      - "7860:7860"  # Gradio UI
     environment:
+      # CORS for Vue 3 frontend
+      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:8000
       # Application settings
       - APP_ENV=${APP_ENV:-development}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
@@ -106,7 +127,6 @@ services:
       context: .
       dockerfile: Dockerfile
       target: worker
-    container_name: job_automation_worker
     environment:
       # Application settings
       - APP_ENV=${APP_ENV:-development}

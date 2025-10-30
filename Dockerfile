@@ -54,7 +54,7 @@ COPY pyproject.toml poetry.lock* ./
 RUN --mount=type=cache,target=$POETRY_CACHE_DIR \
     poetry install --no-root --only main --no-interaction --no-ansi
 
-# Stage 3: Application runtime (FastAPI + Gradio)
+# Stage 3: Application runtime (FastAPI only)
 FROM base AS app
 
 # Copy installed dependencies from builder
@@ -77,13 +77,13 @@ RUN mkdir -p /app/data /app/logs /app/current_cv_coverletter /app/export_cv_cove
 USER appuser
 
 # Expose ports
-EXPOSE 8000 7860
+EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Run FastAPI with uvicorn (Gradio UI embedded in FastAPI app)
+# Run FastAPI with WebSocket support (Vue 3 frontend runs separately)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
 
 # Stage 4: RQ Worker runtime
@@ -138,7 +138,7 @@ RUN mkdir -p /app/data /app/logs /app/current_cv_coverletter /app/export_cv_cove
 
 USER appuser
 
-EXPOSE 8000 7860
+EXPOSE 8000
 
 # Run with hot reload for development
-CMD ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

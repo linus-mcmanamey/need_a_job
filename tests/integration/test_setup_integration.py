@@ -110,18 +110,6 @@ class TestFastAPIIntegration:
 
 
 @pytest.mark.integration
-class TestGradioIntegration:
-    """Integration tests for Gradio UI."""
-
-    def test_gradio_ui_creation(self) -> None:
-        """Test Gradio UI can be created."""
-        from app.ui.gradio_app import create_ui
-
-        app = create_ui()
-        assert app is not None
-
-
-@pytest.mark.integration
 class TestEnvironmentConfiguration:
     """Integration tests for environment configuration."""
 

@@ -91,6 +91,51 @@ class Config:
             logger.error(error_msg)
             raise
 
+    def save_yaml(self, filename: str, data: dict[str, Any]) -> None:
+        """
+        Save configuration data to a YAML file.
+
+        Args:
+            filename: Name of the YAML file to save
+            data: Dictionary containing configuration data to save
+
+        Raises:
+            PermissionError: If unable to write to config file
+            yaml.YAMLError: If data cannot be serialized to YAML
+        """
+        file_path = self._config_path / filename
+
+        try:
+            with open(file_path, "w") as f:
+                yaml.safe_dump(data, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+
+            logger.info(f"Saved configuration to {filename}")
+
+            # Update the in-memory config
+            if filename == "search.yaml":
+                self.search = data
+            elif filename == "agents.yaml":
+                self.agents = data
+            elif filename == "platforms.yaml":
+                self.platforms = data
+            elif filename == "similarity.yaml":
+                self.similarity = data
+
+        except PermissionError as e:
+            error_msg = f"Permission denied writing to {filename}: {e}"
+            logger.error(error_msg)
+            raise
+
+        except yaml.YAMLError as e:
+            error_msg = f"Error serializing data to YAML for {filename}: {e}"
+            logger.error(error_msg)
+            raise
+
+        except Exception as e:
+            error_msg = f"Error saving {filename}: {e}"
+            logger.error(error_msg)
+            raise
+
     def reload(self) -> None:
         """
         Reload all configuration files.

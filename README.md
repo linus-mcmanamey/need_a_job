@@ -4,7 +4,7 @@
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
-[![Gradio](https://img.shields.io/badge/Gradio-4.0+-orange.svg)](https://gradio.app/)
+[![Vue 3](https://img.shields.io/badge/Vue-3.5+-4FC08D.svg)](https://vuejs.org/)
 [![DuckDB](https://img.shields.io/badge/DuckDB-0.9+-yellow.svg)](https://duckdb.org/)
 
 ## 📋 Overview
@@ -16,55 +16,89 @@ This system automates the entire job application workflow:
 - **Submits** applications via email or web forms
 - **Tracks** all applications in a DuckDB database
 
-Built with Python, FastAPI, Gradio, DuckDB, and Claude AI.
+Built with Python, FastAPI, Vue 3, DuckDB, and Claude AI.
+
+> **New in v2.0**: The legacy Gradio UI has been replaced with a modern Vue 3 frontend with real-time WebSocket updates, providing a responsive and interactive user experience.
 
 ---
 
-## 🚀 Quick Start (5 Steps)
+## 📋 Requirements
 
-### Option A: Docker Compose (Recommended)
+**Only Docker is required!** Everything else runs in containers:
+
+- **Docker Desktop** (or Docker Engine + Docker Compose)
+  - macOS: [Download Docker Desktop](https://www.docker.com/products/docker-desktop)
+  - Windows: [Download Docker Desktop](https://www.docker.com/products/docker-desktop)
+  - Linux: Install `docker` and `docker-compose` via your package manager
+
+**That's it!** No Python, no dependencies, no configuration hassles.
+
+---
+
+## 🚀 Quick Start (2 Commands!)
+
+### First Time Setup (Recommended)
+
+Get started in minutes with these two simple commands:
 
 ```bash
-# 1. Clone and navigate to the project
-cd job-automation
+# 1. Clone the repository
+git clone <repository-url>
+cd need_a_job
 
-# 2. Copy environment template and configure
-cp .env.example .env
-# Edit .env with your API keys and settings
+# 2. Run the setup wizard (Docker required)
+make setup
 
-# 3. Start all services
-docker-compose up -d
-
-# 4. Access the UI
-open http://localhost:7860
-
-# 5. View API docs
-open http://localhost:8000/api/docs
+# 3. Start the system
+make start
 ```
 
-### Option B: Local Development (No Docker)
+That's it! The system will:
+- ✅ Collect your API keys and credentials (setup)
+- ✅ Validate your configuration (setup)
+- ✅ Create all necessary directories (start)
+- ✅ Build and start all Docker services (start)
+- ✅ Run health checks and show status (start)
 
+**Access the application:**
+- 🎨 **Vue 3 Frontend**: http://localhost:5173 ← **Start here!**
+- ⚡ **Backend API**: http://localhost:8000
+- 📚 **API Docs**: http://localhost:8000/docs
+- 🔍 **Health Check**: http://localhost:8000/health
+
+**Common Commands:**
 ```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-# OR with Poetry
-poetry install
+make start     # Start the entire system
+make stop      # Stop all services
+make restart   # Restart everything
+make status    # Check service health
+make logs      # View real-time logs
+make help      # Show all commands
+```
 
-# 2. Set up environment variables
-cp .env.example .env
-# Edit .env with your configuration
+> 💡 **Tip**: Run `make help` to see all available commands, or check `MAKEFILE_GUIDE.md` for detailed documentation.
 
-# 3. Start Redis (Terminal 1)
-redis-server
+### Alternative Setup Options
 
-# 4. Start FastAPI (Terminal 2)
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+**Quick Setup** (essential variables only):
+```bash
+make quick-setup  # Minimal configuration
+make start        # Start the system
+```
 
-# 5. Start Gradio UI (Terminal 3)
-python app/ui/gradio_app.py
+**Manual Setup** (if you prefer):
+```bash
+# 1. Copy and edit environment file
+cp .env.template .env
+# Edit .env with your API keys
 
-# 6. Start RQ Worker (Terminal 4)
-rq worker discovery_queue pipeline_queue --url redis://localhost:6379
+# 2. Start the system (creates dirs automatically)
+make start
+```
+
+**Validate Configuration**:
+```bash
+make validate-setup  # Check your .env file
 ```
 
 ---
@@ -80,8 +114,15 @@ job-automation/
 │   ├── services/            # Business logic
 │   ├── repositories/        # Database access
 │   ├── models/              # Data models
-│   └── ui/                  # Gradio web interface
-│       └── gradio_app.py
+│   └── ui/                  # WebSocket connection manager
+│       └── websocket.py
+├── frontend/                # Vue 3 frontend application
+│   ├── src/                 # Vue source code
+│   │   ├── components/      # Vue components
+│   │   ├── services/        # API & WebSocket clients
+│   │   └── stores/          # Pinia state management
+│   ├── package.json         # Node dependencies
+│   └── Dockerfile           # Frontend container
 ├── config/                  # YAML configuration files
 │   ├── search.yaml          # Job search criteria
 │   ├── agents.yaml          # Agent settings
@@ -129,6 +170,11 @@ DUCKDB_PATH=data/job_applications.duckdb
 # Application
 APP_ENV=development
 LOG_LEVEL=INFO
+
+# Frontend (Vue 3) - Set in docker-compose.yml
+VITE_API_URL=http://localhost:8000/api
+VITE_WS_URL=ws://localhost:8000/ws/status
+ALLOWED_ORIGINS=http://localhost:5173,http://localhost:8000
 ```
 
 ### Configuration Files
@@ -156,18 +202,74 @@ Edit YAML files in `config/` directory:
    - Orchestrator: Makes final decision
    - Application Handler: Submits applications
 3. **Storage Layer**: DuckDB database tracks all jobs and applications
-4. **UI Layer**: Gradio web interface for monitoring and control
-5. **API Layer**: FastAPI REST API for integrations
+4. **Frontend Layer**: Vue 3 web interface with real-time WebSocket updates
+5. **API Layer**: FastAPI REST API with WebSocket support
 
 ### Technology Stack
 
+**Backend:**
 - **Python 3.11+**: Modern async/await support
-- **FastAPI**: High-performance async web framework
-- **Gradio 4.0+**: Interactive web UI
+- **FastAPI**: High-performance async web framework with WebSocket support
 - **DuckDB**: Embedded analytics database
 - **Redis + RQ**: Background job processing
 - **Claude AI**: LLM-powered agents
+
+**Frontend:**
+- **Vue 3**: Progressive JavaScript framework with Composition API
+- **Vite**: Fast build tool and dev server
+- **Pinia**: State management
+- **Tailwind CSS**: Utility-first styling
+- **Axios**: HTTP client
+- **WebSocket**: Real-time bidirectional communication
+
+**Deployment:**
 - **Docker**: Containerized deployment
+- **Docker Compose**: Multi-container orchestration
+
+---
+
+## 🎨 Vue 3 Frontend Features
+
+The Vue 3 frontend provides a modern, responsive interface for managing job applications:
+
+### Key Features
+
+- **Real-Time Updates**: WebSocket connection provides instant updates without page refresh
+- **Dashboard Metrics**: Live stats showing total, pending, applied, and rejected jobs
+- **Job Management**: Browse all jobs with status filtering and retry functionality
+- **Pipeline View**: Monitor active jobs flowing through the agent pipeline
+- **Pending Jobs**: Review and approve/reject applications requiring manual intervention
+- **Responsive Design**: Fully responsive layout works on desktop, tablet, and mobile
+- **Modern UI**: Clean, professional interface built with Tailwind CSS
+
+### Components
+
+1. **Dashboard.vue**: Main container with stats cards and tab navigation
+2. **JobTable.vue**: Complete job listing with status badges and retry actions
+3. **PipelineView.vue**: Real-time pipeline metrics and active job monitoring
+4. **PendingJobs.vue**: Manual review interface with approve/reject actions
+
+### Development
+
+**Frontend Development Server:**
+```bash
+# Start frontend in development mode (with HMR)
+cd frontend
+npm run dev
+```
+
+**Build for Production:**
+```bash
+cd frontend
+npm run build
+```
+
+**Frontend Testing:**
+```bash
+# Open browser to http://localhost:5173
+# Check browser console for errors
+# Test WebSocket connection in Network tab
+```
 
 ---
 
@@ -217,14 +319,14 @@ SELECT status, COUNT(*) FROM application_tracking GROUP BY status;
 
 ## 📊 Usage
 
-### Web UI (Gradio)
+### Vue 3 Frontend
 
-Access at `http://localhost:7860`:
+Access at `http://localhost:5173`:
 
-- **Dashboard**: View metrics and status
-- **Pipeline**: Watch jobs flow through agents
-- **Pending Jobs**: Manage jobs needing intervention
-- **Settings**: Configure thresholds and modes
+- **Dashboard**: View real-time metrics and stats (Total, Pending, Applied, Rejected)
+- **Jobs Tab**: Browse all jobs with status badges and retry functionality
+- **Pipeline Tab**: Monitor active jobs flowing through the agent pipeline
+- **Pending Jobs Tab**: Review and approve/reject applications requiring manual intervention
 
 ### API Endpoints
 
@@ -235,6 +337,9 @@ Access API docs at `http://localhost:8000/api/docs`:
 - `GET /api/pipeline` - Current pipeline status
 - `GET /api/pending` - Pending jobs
 - `POST /api/jobs/{id}/retry` - Retry failed job
+- `POST /api/pending/{id}/approve` - Approve pending job
+- `POST /api/pending/{id}/reject` - Reject pending job
+- `WS /ws/status` - Real-time WebSocket updates
 
 ### Control Modes
 
@@ -258,8 +363,9 @@ APPROVAL_MODE=true
 
 The `docker-compose.yml` defines:
 
-- **redis**: Job queue and caching
-- **app**: FastAPI + Gradio
+- **frontend**: Vue 3 frontend with Vite dev server (port 5173)
+- **app**: FastAPI backend with WebSocket support (port 8000)
+- **redis**: Job queue and caching (port 6379)
 - **worker**: RQ background workers (3 replicas)
 - **rq-dashboard** (optional): Monitor queues at `http://localhost:9181`
 
@@ -331,47 +437,120 @@ job_matcher_agent:
 
 ## 🔍 Troubleshooting
 
-### Common Issues
+### Setup Issues
+
+**Docker not found**
+```bash
+# Install Docker Desktop from: https://www.docker.com/products/docker-desktop
+# Verify installation:
+docker --version
+docker-compose --version
+```
+
+**Setup wizard fails**
+```bash
+# Verify Docker is running:
+docker ps
+
+# Try pulling Python image manually:
+docker pull python:3.11-slim
+
+# Re-run setup:
+make first-time-setup
+```
+
+**Invalid API key**
+- Get a new key from https://console.anthropic.com/
+- Verify the key starts with `sk-ant-api`
+- Run `make validate-setup` to test your configuration
+
+### Runtime Issues
+
+**Services not starting**
+```bash
+# Check container status:
+make docker-ps
+
+# View logs:
+make docker-logs
+
+# Restart services:
+make docker-restart
+```
 
 **Redis connection refused**
 ```bash
-# Check Redis is running
-redis-cli ping
-# Should return: PONG
+# Check Redis container:
+docker-compose ps redis
 
-# Start Redis if not running
-redis-server
-```
-
-**Import errors**
-```bash
-# Ensure dependencies are installed
-pip install -r requirements.txt
-# OR
-poetry install
+# Restart Redis:
+docker-compose restart redis
 ```
 
 **DuckDB file locked**
 ```bash
-# Stop all workers and API
+# Stop all containers:
 docker-compose down
-# OR kill Python processes
-pkill -f "python app"
+
+# Clean up:
+make docker-clean
+
+# Restart:
+make docker-up
 ```
 
-**Claude API errors**
+**Port already in use**
 ```bash
-# Check API key is set
-echo $ANTHROPIC_API_KEY
-# Verify key is valid at https://console.anthropic.com/
+# Check what's using the ports:
+lsof -i :5173  # Vue 3 Frontend
+lsof -i :8000  # FastAPI Backend
+lsof -i :6379  # Redis
+
+# Stop conflicting services or change ports in docker-compose.yml
+```
+
+### Frontend Issues
+
+**Frontend not loading:**
+- Check logs: `docker-compose logs frontend`
+- Verify environment variables in docker-compose.yml
+- Ensure port 5173 is not in use
+- Check browser console for errors
+
+**WebSocket connection fails:**
+- Verify backend is running: `curl http://localhost:8000/health`
+- Check CORS configuration in app/main.py
+- Inspect Network tab in browser DevTools
+- Look for WebSocket connection to `ws://localhost:8000/ws/status`
+
+**Real-time updates not working:**
+- Check WebSocket connection in browser Network tab
+- Verify backend logs for WebSocket errors
+- Check Redis connection: `docker-compose ps redis`
+
+### Configuration Issues
+
+**Want to change settings?**
+```bash
+# Edit .env file directly:
+nano .env
+
+# Or re-run setup wizard:
+make first-time-setup
+
+# Validate changes:
+make validate-setup
+
+# Restart services:
+make docker-restart
 ```
 
 ### Logs
 
 View logs in:
 - `logs/app.log` - FastAPI application logs
-- `logs/gradio_app.log` - Gradio UI logs
 - Docker logs: `docker-compose logs -f`
+- Specific service: `docker-compose logs -f [frontend|app|worker|redis]`
 
 ---
 
@@ -398,11 +577,11 @@ View logs in:
 - Duplicate detection (Tier 1 + Tier 2)
 - Web form submission
 
-### Phase 3: UI & Control (Weeks 5-6)
-- Gradio dashboard
-- Job pipeline view
-- Pending jobs management
-- Approval mode
+### Phase 3: UI & Control (Weeks 5-6) - ✅ COMPLETED
+- ✅ Vue 3 frontend with real-time updates
+- ✅ Job pipeline view with WebSocket support
+- ✅ Pending jobs management
+- ✅ Approval mode
 
 ### Phase 4: Testing & Production (Weeks 6-7)
 - Integration testing
@@ -422,7 +601,7 @@ This project is for personal use only.
 
 Built with:
 - [FastAPI](https://fastapi.tiangolo.com/)
-- [Gradio](https://gradio.app/)
+- [Vue 3](https://vuejs.org/)
 - [DuckDB](https://duckdb.org/)
 - [Anthropic Claude](https://www.anthropic.com/)
 - [Redis](https://redis.io/)

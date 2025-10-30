@@ -10,6 +10,11 @@ agents:
   - ux-expert
   - architect
   - po
+  - dev
+  - frontend-developer
+  - qa
+  - sm
+  - code-reviewer
 workflows:
   - brownfield-fullstack.yaml
   - brownfield-service.yaml
@@ -17,3 +22,4 @@ workflows:
   - greenfield-fullstack.yaml
   - greenfield-service.yaml
   - greenfield-ui.yaml
+  - iterative-workflow.yaml

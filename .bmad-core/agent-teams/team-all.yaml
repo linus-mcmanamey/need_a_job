@@ -13,3 +13,4 @@ workflows:
   - greenfield-fullstack.yaml
   - greenfield-service.yaml
   - greenfield-ui.yaml
+  - iterative-workflow.yaml

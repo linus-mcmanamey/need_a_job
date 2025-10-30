@@ -20,12 +20,6 @@ class TestDependencyImports:
 
         assert hasattr(fastapi, "FastAPI")
 
-    def test_import_gradio(self) -> None:
-        """Test Gradio import."""
-        import gradio
-
-        assert hasattr(gradio, "Blocks")
-
     def test_import_duckdb(self) -> None:
         """Test DuckDB import."""
         import duckdb
@@ -119,12 +113,6 @@ class TestCoreFiles:
         assert db_file.exists()
         assert db_file.is_file()
 
-    def test_gradio_app_exists(self) -> None:
-        """Test that app/ui/gradio_app.py exists."""
-        gradio_file = Path("app/ui/gradio_app.py")
-        assert gradio_file.exists()
-        assert gradio_file.is_file()
-
     def test_pyproject_toml_exists(self) -> None:
         """Test that pyproject.toml exists."""
         pyproject = Path("pyproject.toml")
@@ -172,13 +160,6 @@ class TestApplicationImports:
 
         assert hasattr(database, "DatabaseConnection")
         assert hasattr(database, "initialize_database")
-
-    def test_import_gradio_app(self) -> None:
-        """Test importing Gradio app module."""
-        from app.ui import gradio_app
-
-        assert hasattr(gradio_app, "create_ui")
-        assert hasattr(gradio_app, "start")
 
 
 class TestPythonVersion:
