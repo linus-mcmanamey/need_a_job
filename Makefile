@@ -285,6 +285,42 @@ check-env: ## 🔍 Check environment variables
 urls: ## 🌐 Show all access URLs
 	@make --no-print-directory _show-urls
 
+install-completion: ## ⚡ Install shell completion for make targets (bash/zsh)
+	@echo "⚡ Installing make completion..."
+	@echo ""
+	@SHELL_RC=""; \
+	if [ -n "$$BASH_VERSION" ]; then \
+		if [ -f ~/.bashrc ]; then SHELL_RC=~/.bashrc; \
+		elif [ -f ~/.bash_profile ]; then SHELL_RC=~/.bash_profile; \
+		else SHELL_RC=~/.bashrc; fi; \
+	elif [ -n "$$ZSH_VERSION" ]; then \
+		SHELL_RC=~/.zshrc; \
+	else \
+		echo "❌ Unsupported shell. Please use bash or zsh."; \
+		exit 1; \
+	fi; \
+	if grep -q ".make-completion.sh" $$SHELL_RC 2>/dev/null; then \
+		echo "✅ Completion already installed in $$SHELL_RC"; \
+	else \
+		echo "" >> $$SHELL_RC; \
+		echo "# Make completion for $(PWD)" >> $$SHELL_RC; \
+		echo "[ -f \"$(PWD)/.make-completion.sh\" ] && source \"$(PWD)/.make-completion.sh\"" >> $$SHELL_RC; \
+		echo "✅ Completion installed to $$SHELL_RC"; \
+		echo ""; \
+		echo "Run this to activate now:"; \
+		echo "  source $$SHELL_RC"; \
+	fi
+
+uninstall-completion: ## 🗑️  Remove shell completion
+	@echo "🗑️  Removing make completion..."
+	@for rc in ~/.bashrc ~/.bash_profile ~/.zshrc; do \
+		if [ -f $$rc ]; then \
+			sed -i.bak '/\.make-completion\.sh/d' $$rc 2>/dev/null || \
+			sed -i '' '/\.make-completion\.sh/d' $$rc 2>/dev/null; \
+		fi; \
+	done
+	@echo "✅ Completion removed from shell config files"
+
 # =============================================================================
 # 🎓 Claude Code Commands (AI Development)
 # =============================================================================
