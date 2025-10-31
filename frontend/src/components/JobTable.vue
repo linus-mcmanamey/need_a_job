@@ -48,6 +48,46 @@ async function handleRetry(jobId) {
 function canRetry(status) {
   return status === 'failed' || status === 'rejected' || status === 'pending'
 }
+
+/**
+ * Calculate days since job was posted on the platform
+ * Uses posted_date from the job site if available, otherwise falls back to discovered_timestamp
+ */
+function getDaysAdvertised(postedDate, discoveredTimestamp) {
+  // Try to use posted_date first
+  if (postedDate) {
+    const posted = new Date(postedDate)
+    const now = new Date()
+    const diffMs = now - posted
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 0) return 'Today'
+    if (diffDays === 1) return '1 day'
+    return `${diffDays} days`
+  }
+
+  // Fallback to discovered_timestamp
+  if (!discoveredTimestamp) return 'N/A'
+
+  const discovered = new Date(discoveredTimestamp)
+  const now = new Date()
+  const diffMs = now - discovered
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) return 'Today'
+  if (diffDays === 1) return '1 day'
+  return `${diffDays} days`
+}
+
+/**
+ * Get match score color
+ */
+function getScoreColor(score) {
+  if (!score || score === 0) return 'text-gray-400'
+  if (score >= 80) return 'text-green-600'
+  if (score >= 60) return 'text-yellow-600'
+  return 'text-red-600'
+}
 </script>
 
 <template>
@@ -77,6 +117,12 @@ function canRetry(status) {
               <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Company
               </th>
+              <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
+                Match Score
+              </th>
+              <th class="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
+                Days Advertised
+              </th>
               <th class="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                 Status
               </th>
@@ -96,9 +142,22 @@ function canRetry(status) {
                 <div class="text-sm font-bold text-gray-900">
                   {{ job.job_title || 'Untitled Job' }}
                 </div>
-                <div v-if="job.platform_source" class="flex items-center mt-1">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200">
-                    <span class="mr-1">🔗</span>
+                <div v-if="job.platform_source" class="flex items-center mt-2">
+                  <a
+                    v-if="job.job_url"
+                    :href="job.job_url"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white border-2 border-blue-700 hover:bg-blue-700 hover:shadow-lg hover:scale-105 transition-all duration-200 active:scale-95 cursor-pointer shadow-md"
+                  >
+                    <span class="mr-2 text-base">🔗</span>
+                    <span class="uppercase">{{ job.platform_source }}</span>
+                  </a>
+                  <span
+                    v-else
+                    class="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-600 border border-gray-200"
+                  >
+                    <span class="mr-2">🔗</span>
                     {{ job.platform_source }}
                   </span>
                 </div>
@@ -108,6 +167,29 @@ function canRetry(status) {
               <td class="px-6 py-4">
                 <div class="text-sm font-semibold text-gray-900">
                   {{ job.company_name || 'Unknown Company' }}
+                </div>
+              </td>
+
+              <!-- Match Score -->
+              <td class="px-6 py-4">
+                <div class="flex items-center justify-center">
+                  <span
+                    :class="[
+                      'text-2xl font-bold',
+                      getScoreColor(job.match_score)
+                    ]"
+                  >
+                    {{ job.match_score ? `${job.match_score}%` : 'N/A' }}
+                  </span>
+                </div>
+              </td>
+
+              <!-- Days Advertised -->
+              <td class="px-6 py-4">
+                <div class="text-center">
+                  <span class="text-sm font-semibold text-gray-700">
+                    {{ getDaysAdvertised(job.posted_date, job.discovered_timestamp) }}
+                  </span>
                 </div>
               </td>
 

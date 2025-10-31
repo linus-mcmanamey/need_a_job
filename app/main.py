@@ -10,7 +10,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from loguru import logger
@@ -558,6 +558,79 @@ async def discover_jobs() -> dict:
     except Exception as e:
         logger.error(f"Error during job discovery: {e}")
         raise HTTPException(status_code=500, detail=f"Job discovery failed: {str(e)}")
+
+
+@app.get("/api/history", tags=["Applications"])
+async def get_application_history(
+    platform: list[str] | None = Query(None),
+    date_from: str | None = None,
+    date_to: str | None = None,
+    min_score: int | None = None,
+    max_score: int | None = None,
+    status: list[str] | None = Query(None),
+    page: int = 1,
+    page_size: int = 25,
+    sort_by: str = "applied_date",
+    sort_order: str = "desc",
+) -> dict:
+    """
+    Get application history with filtering, sorting, and pagination.
+
+    This endpoint returns a paginated list of completed applications with
+    associated job details. Supports filtering by platform, date range,
+    match score, and status. Results can be sorted by various columns.
+
+    Args:
+        platform: Filter by platforms (can be multiple, e.g., ?platform=linkedin&platform=seek)
+        date_from: Start date (ISO format: YYYY-MM-DD)
+        date_to: End date (ISO format: YYYY-MM-DD)
+        min_score: Minimum match score (0-100)
+        max_score: Maximum match score (0-100)
+        status: Filter by status (can be multiple)
+        page: Page number (starts at 1)
+        page_size: Items per page (max 100)
+        sort_by: Column to sort by (title, company, platform, applied_date, match_score, status)
+        sort_order: Sort order (asc or desc)
+
+    Returns:
+        Paginated application history with job details
+    """
+    from fastapi import HTTPException
+    from app.repositories.application_repository import ApplicationRepository
+
+    try:
+        # Validate parameters using Pydantic model
+        from app.models.api_requests import HistoryFilterParams
+
+        # FastAPI will automatically validate query params, but we instantiate
+        # the model for additional validation
+        params = HistoryFilterParams(platform=platform, date_from=date_from, date_to=date_to, min_score=min_score, max_score=max_score, status=status, page=page, page_size=page_size, sort_by=sort_by, sort_order=sort_order)
+
+        # Get application history from repository
+        repo = ApplicationRepository()
+        applications, total = repo.get_application_history(
+            platforms=params.platform,
+            date_from=params.date_from,
+            date_to=params.date_to,
+            min_score=params.min_score,
+            max_score=params.max_score,
+            statuses=params.status,
+            sort_by=params.sort_by,
+            sort_order=params.sort_order,
+            page=params.page,
+            page_size=params.page_size,
+        )
+
+        logger.debug(f"Retrieved {len(applications)} applications (total: {total})")
+
+        return {"applications": applications, "total": total, "page": params.page, "page_size": params.page_size}
+
+    except ValueError as e:
+        logger.error(f"Validation error in history endpoint: {e}")
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error retrieving application history: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 
 # Future API endpoints will be added here as routers

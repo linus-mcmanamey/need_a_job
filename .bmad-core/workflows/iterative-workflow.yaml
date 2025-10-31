@@ -43,8 +43,8 @@
 # ========================================================================
 
 workflow:
-  id: iterative-story-development
-  name: Job Application Automation - Iterative Story Development
+  id: iterative-workflow
+  name: Job Application Automation - Iterative Workflow
   description: >-
     FULLY AUTONOMOUS orchestrator-controlled workflow for iterative development.
     The bmad-orchestrator maintains control throughout all 28 stories across 6 epics.

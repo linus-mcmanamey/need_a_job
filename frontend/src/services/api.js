@@ -145,5 +145,29 @@ export const discoveryAPI = {
   },
 }
 
+/**
+ * Application History API endpoints
+ */
+export const historyAPI = {
+  /**
+   * List application history with filtering, sorting, and pagination
+   * @param {Object} params - Query parameters
+   * @param {string[]} params.platform - Filter by platforms (linkedin, seek, indeed)
+   * @param {string} params.date_from - Start date (YYYY-MM-DD)
+   * @param {string} params.date_to - End date (YYYY-MM-DD)
+   * @param {number} params.min_score - Minimum match score (0-100)
+   * @param {number} params.max_score - Maximum match score (0-100)
+   * @param {string[]} params.status - Filter by status
+   * @param {number} params.page - Page number (starts at 1)
+   * @param {number} params.page_size - Items per page (max 100)
+   * @param {string} params.sort_by - Column to sort by (title, company, platform, applied_date, match_score, status)
+   * @param {string} params.sort_order - Sort order (asc, desc)
+   * @returns {Promise} Application history with pagination
+   */
+  list: (params = {}) => {
+    return apiClient.get('/history', { params })
+  },
+}
+
 // Export axios instance for direct use if needed
 export default apiClient

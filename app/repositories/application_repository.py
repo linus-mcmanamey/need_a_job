@@ -349,3 +349,142 @@ class ApplicationRepository:
 
         result = self.conn.execute(query, params).fetchone()
         return result[0] if result else 0
+
+    def get_application_history(
+        self,
+        platforms: list[str] | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        min_score: int | None = None,
+        max_score: int | None = None,
+        statuses: list[str] | None = None,
+        sort_by: str = "applied_date",
+        sort_order: str = "desc",
+        page: int = 1,
+        page_size: int = 25,
+    ) -> tuple[list[dict], int]:
+        """
+        Get application history with filtering, sorting, and pagination.
+
+        Args:
+            platforms: List of platforms to filter by (linkedin, seek, indeed)
+            date_from: Start date for filtering (ISO format YYYY-MM-DD)
+            date_to: End date for filtering (ISO format YYYY-MM-DD)
+            min_score: Minimum match score (0-100)
+            max_score: Maximum match score (0-100)
+            statuses: List of statuses to filter by
+            sort_by: Column to sort by (title, company, platform, applied_date, match_score, status)
+            sort_order: Sort order (asc or desc)
+            page: Page number (starts at 1)
+            page_size: Items per page
+
+        Returns:
+            Tuple of (list of application dicts, total count)
+        """
+
+        # Map frontend sort columns to SQL columns
+        sort_column_map = {"title": "j.job_title", "company": "j.company_name", "platform": "j.platform_source", "applied_date": "a.submitted_timestamp", "match_score": "match_score", "status": "a.status"}
+
+        # Build WHERE clauses
+        where_clauses = []
+        params = []
+
+        # Filter by platforms
+        if platforms:
+            placeholders = ",".join(["?" for _ in platforms])
+            where_clauses.append(f"j.platform_source IN ({placeholders})")
+            params.extend(platforms)
+
+        # Filter by date range
+        if date_from:
+            where_clauses.append("DATE(a.submitted_timestamp) >= ?")
+            params.append(date_from)
+        if date_to:
+            where_clauses.append("DATE(a.submitted_timestamp) <= ?")
+            params.append(date_to)
+
+        # Filter by match score range
+        if min_score is not None:
+            where_clauses.append("CAST(json_extract(a.stage_outputs, '$.job_matcher.match_score') AS INTEGER) >= ?")
+            params.append(min_score)
+        if max_score is not None:
+            where_clauses.append("CAST(json_extract(a.stage_outputs, '$.job_matcher.match_score') AS INTEGER) <= ?")
+            params.append(max_score)
+
+        # Filter by statuses
+        if statuses:
+            placeholders = ",".join(["?" for _ in statuses])
+            where_clauses.append(f"a.status IN ({placeholders})")
+            params.extend(statuses)
+
+        # Build WHERE clause
+        where_sql = ""
+        if where_clauses:
+            where_sql = "WHERE " + " AND ".join(where_clauses)
+
+        # Get total count
+        count_query = f"""
+            SELECT COUNT(*)
+            FROM application_tracking a
+            JOIN jobs j ON a.job_id = j.job_id
+            {where_sql}
+        """
+        count_result = self.conn.execute(count_query, params).fetchone()
+        total = count_result[0] if count_result else 0
+
+        # Build main query
+        sort_column = sort_column_map.get(sort_by, "a.submitted_timestamp")
+        sort_direction = "ASC" if sort_order == "asc" else "DESC"
+
+        # Calculate offset
+        offset = (page - 1) * page_size
+
+        query = f"""
+            SELECT
+                a.application_id,
+                j.job_title,
+                j.company_name,
+                j.platform_source as platform,
+                a.submitted_timestamp as applied_date,
+                CAST(json_extract(a.stage_outputs, '$.job_matcher.match_score') AS INTEGER) as match_score,
+                a.status,
+                a.cv_file_path,
+                a.cl_file_path,
+                j.job_url,
+                j.location,
+                j.salary_aud_per_day,
+                j.job_description
+            FROM application_tracking a
+            JOIN jobs j ON a.job_id = j.job_id
+            {where_sql}
+            ORDER BY {sort_column} {sort_direction}
+            LIMIT ? OFFSET ?
+        """
+
+        # Add pagination params
+        query_params = params + [page_size, offset]
+
+        results = self.conn.execute(query, query_params).fetchall()
+
+        # Convert to list of dicts
+        applications = []
+        for row in results:
+            applications.append(
+                {
+                    "application_id": row[0],
+                    "job_title": row[1],
+                    "company_name": row[2],
+                    "platform": row[3],
+                    "applied_date": row[4].isoformat() if row[4] else None,
+                    "match_score": row[5] if row[5] is not None else 0,
+                    "status": row[6],
+                    "cv_file_path": row[7],
+                    "cl_file_path": row[8],
+                    "job_url": row[9],
+                    "location": row[10],
+                    "salary_aud_per_day": float(row[11]) if row[11] else None,
+                    "job_description": row[12],
+                }
+            )
+
+        return applications, total
