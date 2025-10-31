@@ -303,7 +303,7 @@ class SEEKPoller:
                 company_elem = card.find("a", {"data-automation": "jobCompany"})
                 location_elem = card.find("span", {"data-automation": "jobLocation"})
                 salary_elem = card.find("span", {"data-automation": "jobSalary"})
-                time_elem = card.find("time")
+                time_elem = card.find("span", {"data-automation": "jobListingDate"})
 
                 if not title_elem or not company_elem:
                     # Missing required fields, skip this job

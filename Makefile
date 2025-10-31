@@ -322,6 +322,92 @@ uninstall-completion: ## 🗑️  Remove shell completion
 	@echo "✅ Completion removed from shell config files"
 
 # =============================================================================
+# 🌳 Git Worktree Commands
+# =============================================================================
+
+worktree-list: ## 🌳 List all worktrees
+	@echo "🌳 Git Worktrees:"
+	@echo ""
+	@git worktree list
+
+worktree-new: ## 🌳 Create new worktree (usage: make worktree-new BRANCH=feature/my-feature)
+	@if [ -z "$(BRANCH)" ]; then \
+		echo "❌ Error: Please specify branch name"; \
+		echo "   Usage: make worktree-new BRANCH=feature/my-feature"; \
+		exit 1; \
+	fi
+	@WORKTREE_NAME=$$(echo "$(BRANCH)" | sed 's/\//-/g'); \
+	WORKTREE_PATH="../need_a_job-$$WORKTREE_NAME"; \
+	echo "🌳 Creating worktree for branch: $(BRANCH)"; \
+	echo "   Location: $$WORKTREE_PATH"; \
+	echo ""; \
+	if git show-ref --verify --quiet refs/heads/$(BRANCH); then \
+		echo "📋 Checking out existing branch: $(BRANCH)"; \
+		git worktree add "$$WORKTREE_PATH" $(BRANCH); \
+	else \
+		echo "🆕 Creating new branch: $(BRANCH)"; \
+		git worktree add -b $(BRANCH) "$$WORKTREE_PATH"; \
+	fi; \
+	echo ""; \
+	echo "✅ Worktree created!"; \
+	echo ""; \
+	echo "To switch to it:"; \
+	echo "  cd $$WORKTREE_PATH"
+
+worktree-remove: ## 🗑️  Remove worktree (usage: make worktree-remove PATH=../need_a_job-feature)
+	@if [ -z "$(PATH)" ]; then \
+		echo "❌ Error: Please specify worktree path"; \
+		echo "   Usage: make worktree-remove PATH=../need_a_job-feature"; \
+		echo ""; \
+		echo "Available worktrees:"; \
+		git worktree list; \
+		exit 1; \
+	fi
+	@echo "🗑️  Removing worktree: $(PATH)"
+	@git worktree remove $(PATH)
+	@echo "✅ Worktree removed!"
+
+worktree-prune: ## 🧹 Clean up stale worktree references
+	@echo "🧹 Pruning stale worktree references..."
+	@git worktree prune -v
+	@echo "✅ Prune complete!"
+
+worktree-main: ## 🌳 Create worktree for main branch (for quick fixes)
+	@echo "🌳 Creating worktree for main branch..."
+	@git worktree add ../need_a_job-main main
+	@echo ""
+	@echo "✅ Main worktree created at: ../need_a_job-main"
+	@echo ""
+	@echo "To switch to it:"
+	@echo "  cd ../need_a_job-main"
+
+worktree-help: ## 📖 Show worktree usage guide
+	@echo "╔════════════════════════════════════════════════════════════════╗"
+	@echo "║  Git Worktree Guide                                            ║"
+	@echo "╚════════════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "What are worktrees?"
+	@echo "  Worktrees let you work on multiple branches simultaneously"
+	@echo "  without switching. Each worktree is a separate directory."
+	@echo ""
+	@echo "Common Commands:"
+	@echo "  make worktree-list                   - List all worktrees"
+	@echo "  make worktree-new BRANCH=feature/foo - Create new worktree"
+	@echo "  make worktree-main                   - Create worktree for main"
+	@echo "  make worktree-remove PATH=../path    - Remove a worktree"
+	@echo "  make worktree-prune                  - Clean up stale references"
+	@echo ""
+	@echo "Example Workflow:"
+	@echo "  1. Create worktree:  make worktree-new BRANCH=feature/new-thing"
+	@echo "  2. Switch to it:     cd ../need_a_job-feature-new-thing"
+	@echo "  3. Work on it:       (make changes, commit, push)"
+	@echo "  4. Back to main:     cd ../need_a_job"
+	@echo "  5. Remove worktree:  make worktree-remove PATH=../need_a_job-feature-new-thing"
+	@echo ""
+	@echo "💡 Tip: You can have multiple worktrees active at once!"
+	@echo ""
+
+# =============================================================================
 # 🎓 Claude Code Commands (AI Development)
 # =============================================================================
 
@@ -414,6 +500,11 @@ help: ## 📖 Show this help message
 	@echo "══════════════════════════════════════════════════════════════════"
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## 🛠️/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## 🌐/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## 🗑️/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+	@echo "🌳 GIT WORKTREES"
+	@echo "══════════════════════════════════════════════════════════════════"
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## 🌳/ {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "🎓 CLAUDE CODE (AI Development)"
 	@echo "══════════════════════════════════════════════════════════════════"

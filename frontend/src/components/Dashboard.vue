@@ -7,6 +7,7 @@ import JobTable from './JobTable.vue'
 import PipelineView from './PipelineView.vue'
 import PendingJobs from './PendingJobs.vue'
 import SearchConfig from './SearchConfig.vue'
+import ApplicationHistory from './ApplicationHistory.vue'
 
 // Get job store
 const jobStore = useJobStore()
@@ -19,6 +20,7 @@ const tabs = [
   { id: 'jobs', label: 'Jobs', icon: '📋' },
   { id: 'pipeline', label: 'Pipeline', icon: '⚙️' },
   { id: 'pending', label: 'Pending', icon: '⏳' },
+  { id: 'history', label: 'History', icon: '🕒' },
 ]
 
 // Handle navigation from sidebar
@@ -29,7 +31,7 @@ const handleNavigate = (viewId) => {
   // 'dashboard' -> default to 'jobs'
   if (viewId === 'dashboard') {
     activeTab.value = 'jobs'
-  } else if (['jobs', 'pipeline', 'pending', 'settings'].includes(viewId)) {
+  } else if (['jobs', 'pipeline', 'pending', 'history', 'settings'].includes(viewId)) {
     activeTab.value = viewId
   }
 }
@@ -251,6 +253,11 @@ onUnmounted(() => {
         <!-- Pending Tab -->
         <div v-if="activeTab === 'pending'" class="animate-fade-in">
           <PendingJobs />
+        </div>
+
+        <!-- History Tab -->
+        <div v-if="activeTab === 'history'" class="animate-fade-in">
+          <ApplicationHistory />
         </div>
       </div>
     </div>
