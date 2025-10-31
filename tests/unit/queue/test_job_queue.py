@@ -8,7 +8,7 @@ from rq import Queue
 from rq.job import Job as RQJob
 
 from app.models.job import Job
-from app.queue.job_queue import JobQueue
+from app.job_queue.job_queue import JobQueue
 
 
 @pytest.fixture

@@ -7,8 +7,8 @@ import pytest
 from redis import ConnectionError as RedisConnectionError
 from redis import Redis
 
-import app.queue.redis_client as redis_client_module
-from app.queue.redis_client import check_redis_health, close_redis_connection, get_redis_connection
+import app.job_queue.redis_client as redis_client_module
+from app.job_queue.redis_client import check_redis_health, close_redis_connection, get_redis_connection
 
 
 @pytest.fixture(autouse=True)

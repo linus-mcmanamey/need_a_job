@@ -5,7 +5,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.queue.worker_tasks import process_job
+from app.job_queue.worker_tasks import process_job
 
 
 class TestProcessJob:

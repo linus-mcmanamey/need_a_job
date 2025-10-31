@@ -14,8 +14,8 @@ import time
 
 from loguru import logger
 
-from app.queue.job_queue import JobQueue
-from app.queue.redis_client import get_redis_connection
+from app.job_queue.job_queue import JobQueue
+from app.job_queue.redis_client import get_redis_connection
 from app.repositories.application_repository import ApplicationRepository
 from app.repositories.database import get_connection
 from app.repositories.jobs_repository import JobsRepository

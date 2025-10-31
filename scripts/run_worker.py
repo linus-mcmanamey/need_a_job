@@ -16,7 +16,7 @@ import sys
 from loguru import logger
 from rq import Worker
 
-from app.queue.redis_client import check_redis_health, get_redis_connection
+from app.job_queue.redis_client import check_redis_health, get_redis_connection
 
 
 def main():
