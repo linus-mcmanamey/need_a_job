@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { Icon } from '@iconify/vue'
 import { useSearchConfigStore } from '../stores/searchConfigStore'
 
 const searchStore = useSearchConfigStore()
@@ -131,7 +132,7 @@ const saveConfig = async () => {
         class="bg-success-900/20 border-l-4 border-success-500 rounded-xl p-5 shadow-lg animate-slide-up backdrop-blur-sm border border-success-800"
       >
         <div class="flex items-center">
-          <span class="text-success-400 mr-3 text-2xl">✅</span>
+          <Icon icon="heroicons:check-circle" class="w-6 h-6 text-success-400 mr-3" />
           <p class="text-success-300 font-bold">Configuration saved successfully!</p>
         </div>
       </div>
@@ -142,7 +143,7 @@ const saveConfig = async () => {
         class="bg-danger-900/20 border-l-4 border-danger-500 rounded-xl p-5 shadow-lg animate-slide-up backdrop-blur-sm border border-danger-800"
       >
         <div class="flex items-start">
-          <span class="text-danger-400 mr-3 text-2xl">⚠️</span>
+          <Icon icon="heroicons:exclamation-triangle" class="w-6 h-6 text-danger-400 mr-3" />
           <div class="flex-1">
             <p class="text-danger-300 font-bold">Failed to save configuration</p>
             <p class="text-danger-400 text-sm mt-1">{{ saveError }}</p>
@@ -153,7 +154,7 @@ const saveConfig = async () => {
       <!-- Job Preferences Section -->
       <div class="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 p-6">
         <h3 class="text-xl font-bold text-slate-50 mb-4 flex items-center">
-          <span class="text-2xl mr-3">💼</span>
+          <Icon icon="heroicons:briefcase" class="w-6 h-6 mr-3" />
           Job Preferences
         </h3>
 
@@ -187,7 +188,7 @@ const saveConfig = async () => {
       <!-- Location Preferences Section -->
       <div class="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 p-6">
         <h3 class="text-xl font-bold text-slate-50 mb-4 flex items-center">
-          <span class="text-2xl mr-3">📍</span>
+          <Icon icon="heroicons:map-pin" class="w-6 h-6 mr-3" />
           Location Preferences
         </h3>
 
@@ -254,7 +255,7 @@ const saveConfig = async () => {
       <!-- Keywords Section -->
       <div class="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 p-6">
         <h3 class="text-xl font-bold text-slate-50 mb-4 flex items-center">
-          <span class="text-2xl mr-3">🔑</span>
+          <Icon icon="heroicons:key" class="w-6 h-6 mr-3" />
           Job Title Keywords
         </h3>
 
@@ -378,7 +379,7 @@ const saveConfig = async () => {
       <!-- Technologies Section -->
       <div class="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 p-6">
         <h3 class="text-xl font-bold text-slate-50 mb-4 flex items-center">
-          <span class="text-2xl mr-3">🛠️</span>
+          <Icon icon="heroicons:wrench-screwdriver" class="w-6 h-6 mr-3" />
           Technology & Skills
         </h3>
 
@@ -502,7 +503,7 @@ const saveConfig = async () => {
       <!-- Salary Expectations Section -->
       <div class="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 p-6">
         <h3 class="text-xl font-bold text-slate-50 mb-4 flex items-center">
-          <span class="text-2xl mr-3">💰</span>
+          <Icon icon="heroicons:currency-dollar" class="w-6 h-6 mr-3" />
           Salary Expectations (AUD per day)
         </h3>
 
@@ -551,7 +552,7 @@ const saveConfig = async () => {
       <!-- Job Boards Section -->
       <div class="bg-slate-900 rounded-2xl shadow-lg border border-slate-800 p-6">
         <h3 class="text-xl font-bold text-slate-50 mb-4 flex items-center">
-          <span class="text-2xl mr-3">🌐</span>
+          <Icon icon="heroicons:globe-alt" class="w-6 h-6 mr-3" />
           Job Boards
         </h3>
 
@@ -695,7 +696,7 @@ const saveConfig = async () => {
             Saving...
           </span>
           <span v-else class="flex items-center gap-2">
-            <span>💾</span>
+            <Icon icon="heroicons:check-circle" class="w-5 h-5" />
             Save Configuration
           </span>
         </button>

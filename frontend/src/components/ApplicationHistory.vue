@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useHistoryStore } from '../stores/historyStore'
+import { Icon } from '@iconify/vue'
 import ApplicationDetailModal from './ApplicationDetailModal.vue'
 import PlatformDistributionChart from './PlatformDistributionChart.vue'
 import ApplicationTrendChart from './ApplicationTrendChart.vue'
@@ -26,9 +27,9 @@ const currentSortOrder = ref('desc')
 
 // Filter options
 const platformOptions = [
-  { value: 'linkedin', label: 'LinkedIn', icon: '💼' },
-  { value: 'seek', label: 'SEEK', icon: '🔍' },
-  { value: 'indeed', label: 'Indeed', icon: '📍' },
+  { value: 'linkedin', label: 'LinkedIn', icon: 'heroicons:briefcase' },
+  { value: 'seek', label: 'SEEK', icon: 'heroicons:magnifying-glass' },
+  { value: 'indeed', label: 'Indeed', icon: 'heroicons:map-pin' },
 ]
 
 const statusOptions = [
@@ -64,11 +65,11 @@ function getStatusColor(status) {
  */
 function getPlatformIcon(platform) {
   const icons = {
-    linkedin: '💼',
-    seek: '🔍',
-    indeed: '📍',
+    linkedin: 'heroicons:briefcase',
+    seek: 'heroicons:magnifying-glass',
+    indeed: 'heroicons:map-pin',
   }
-  return icons[platform] || '🔗'
+  return icons[platform] || 'heroicons:link'
 }
 
 /**
@@ -460,7 +461,7 @@ watch(
         :disabled="historyStore.filteredApplications.length === 0"
         class="px-4 py-2 bg-accent-600 text-white rounded-lg font-semibold hover:bg-accent-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-lg"
       >
-        <span class="mr-2">📥</span>
+        <Icon icon="heroicons:arrow-down-tray" class="w-5 h-5 mr-2" />
         Export CSV
       </button>
     </div>
@@ -471,7 +472,7 @@ watch(
       <div class="bg-gradient-to-br from-blue-900/40 to-blue-800/20 rounded-xl border border-blue-800 p-6">
         <div class="flex items-center justify-between mb-2">
           <span class="text-blue-300 text-sm font-medium">Total Applications</span>
-          <span class="text-3xl">📊</span>
+          <Icon icon="heroicons:chart-bar" class="w-8 h-8 text-blue-100" />
         </div>
         <p class="text-4xl font-bold text-blue-100">{{ historyStore.statistics.total }}</p>
       </div>
@@ -480,7 +481,7 @@ watch(
       <div class="bg-gradient-to-br from-green-900/40 to-green-800/20 rounded-xl border border-green-800 p-6">
         <div class="flex items-center justify-between mb-2">
           <span class="text-green-300 text-sm font-medium">This Week</span>
-          <span class="text-3xl">📅</span>
+          <Icon icon="heroicons:calendar" class="w-8 h-8 text-green-100" />
         </div>
         <p class="text-4xl font-bold text-green-100">{{ historyStore.statistics.thisWeek }}</p>
       </div>
@@ -489,7 +490,7 @@ watch(
       <div class="bg-gradient-to-br from-purple-900/40 to-purple-800/20 rounded-xl border border-purple-800 p-6">
         <div class="flex items-center justify-between mb-2">
           <span class="text-purple-300 text-sm font-medium">This Month</span>
-          <span class="text-3xl">📆</span>
+          <Icon icon="heroicons:calendar-days" class="w-8 h-8 text-purple-100" />
         </div>
         <p class="text-4xl font-bold text-purple-100">{{ historyStore.statistics.thisMonth }}</p>
       </div>
@@ -498,7 +499,7 @@ watch(
       <div class="bg-gradient-to-br from-yellow-900/40 to-yellow-800/20 rounded-xl border border-yellow-800 p-6">
         <div class="flex items-center justify-between mb-2">
           <span class="text-yellow-300 text-sm font-medium">Avg Match Score</span>
-          <span class="text-3xl">⭐</span>
+          <Icon icon="heroicons:star" class="w-8 h-8 text-yellow-100" />
         </div>
         <p class="text-4xl font-bold text-yellow-100">{{ historyStore.statistics.avgMatchScore }}%</p>
       </div>
@@ -507,7 +508,7 @@ watch(
       <div class="bg-gradient-to-br from-emerald-900/40 to-emerald-800/20 rounded-xl border border-emerald-800 p-6">
         <div class="flex items-center justify-between mb-2">
           <span class="text-emerald-300 text-sm font-medium">Success Rate</span>
-          <span class="text-3xl">🎯</span>
+          <Icon icon="heroicons:arrow-trending-up" class="w-8 h-8 text-emerald-100" />
         </div>
         <p class="text-4xl font-bold text-emerald-100">{{ historyStore.statistics.successRate }}%</p>
       </div>
@@ -518,7 +519,7 @@ watch(
       <!-- Platform Distribution Chart -->
       <div class="bg-slate-900/50 rounded-xl border border-slate-800 p-6">
         <h3 class="text-xl font-bold text-slate-100 mb-4 flex items-center">
-          <span class="mr-2">📊</span>
+          <Icon icon="heroicons:chart-bar" class="w-6 h-6 mr-2" />
           Platform Distribution
         </h3>
         <div class="h-64">
@@ -531,7 +532,7 @@ watch(
       <!-- Application Trend Chart -->
       <div class="bg-slate-900/50 rounded-xl border border-slate-800 p-6">
         <h3 class="text-xl font-bold text-slate-100 mb-4 flex items-center">
-          <span class="mr-2">📈</span>
+          <Icon icon="heroicons:chart-line" class="w-6 h-6 mr-2" />
           Application Trend (Last 12 Weeks)
         </h3>
         <div class="h-64">
@@ -575,7 +576,7 @@ watch(
                 : 'bg-slate-800 text-slate-300 hover:bg-slate-700',
             ]"
           >
-            <span class="mr-2">{{ option.icon }}</span>
+            <Icon :icon="option.icon" class="w-4 h-4 mr-2" />
             {{ option.label }}
           </button>
         </div>
@@ -676,7 +677,7 @@ watch(
       v-else-if="historyStore.filteredApplications.length === 0"
       class="text-center py-16 bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl border-2 border-dashed border-slate-700"
     >
-      <span class="text-7xl mb-6 block">📭</span>
+      <Icon icon="heroicons:inbox" class="w-28 h-28 text-slate-600 mx-auto mb-6" />
       <h3 class="text-xl font-bold text-slate-200 mb-3">No applications found</h3>
       <p class="text-slate-400 max-w-md mx-auto">
         {{ hasActiveFilters ? 'Try adjusting your filters' : 'Applications will appear here once you start applying to jobs' }}
@@ -733,7 +734,7 @@ watch(
               <!-- Platform -->
               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-primary-900/30 text-primary-300 border border-primary-800">
-                  <span class="mr-1">{{ getPlatformIcon(app.platform) }}</span>
+                  <Icon :icon="getPlatformIcon(app.platform)" class="w-3 h-3 mr-1" />
                   {{ app.platform }}
                 </span>
               </td>

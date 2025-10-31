@@ -13,17 +13,17 @@ const handleSearch = () => {
 </script>
 
 <template>
-  <div class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md border-b-2 border-slate-800 shadow-sm">
-    <div class="h-20 px-6 flex items-center justify-between">
+  <div class="sticky top-0 z-30 bg-slate-850/95 backdrop-blur-sm border-b border-slate-800/50">
+    <div class="h-16 px-6 flex items-center justify-between">
       <!-- Left Section -->
       <div class="flex items-center gap-4">
         <!-- Mobile Hamburger -->
         <button
-          class="lg:hidden p-2 rounded-lg hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-600"
+          class="lg:hidden p-2 rounded-lg hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/50"
           @click="uiStore.toggleSidebar()"
         >
           <svg
-            class="h-6 w-6 text-slate-300"
+            class="h-5 w-5 text-slate-400"
             viewBox="0 0 20 20"
             fill="currentColor"
           >
@@ -37,15 +37,15 @@ const handleSearch = () => {
             v-model="searchQuery"
             type="search"
             placeholder="Search jobs..."
-            class="w-64 xl:w-96 h-11 pl-11 pr-4 rounded-xl border-2 border-slate-700 bg-slate-800 text-sm font-medium text-slate-100 placeholder-slate-400 focus:outline-none focus:border-primary-500 focus:bg-slate-750 transition-all duration-200"
+            class="w-64 xl:w-96 h-9 pl-10 pr-4 rounded-lg border border-slate-700 bg-slate-800 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 transition-all duration-200"
             @keyup.enter="handleSearch"
           />
           <button
-            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-primary-400 transition-colors"
+            class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
             @click="handleSearch"
           >
             <svg
-              class="h-5 w-5"
+              class="h-4 w-4"
               fill="currentColor"
               viewBox="0 0 56.966 56.966"
             >
@@ -58,13 +58,13 @@ const handleSearch = () => {
       </div>
 
       <!-- Right Section -->
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
         <!-- Notifications -->
         <button
-          class="relative p-2 rounded-xl hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-600"
+          class="relative p-2 rounded-lg hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/50"
         >
           <svg
-            class="h-6 w-6 text-slate-300"
+            class="h-5 w-5 text-slate-400"
             fill="currentColor"
             viewBox="0 0 24 24"
           >
@@ -74,16 +74,16 @@ const handleSearch = () => {
             />
           </svg>
           <!-- Notification Badge -->
-          <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-danger-500 rounded-full border-2 border-slate-900"></span>
+          <span class="absolute top-1 right-1 w-2 h-2 bg-danger-500 rounded-full border border-slate-850"></span>
         </button>
 
         <!-- User Profile Dropdown -->
         <div class="relative">
           <button
-            class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-600"
+            class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/50"
             @click="dropdownOpen = !dropdownOpen"
           >
-            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white font-bold shadow-lg ring-2 ring-slate-800">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white text-sm font-semibold">
               JD
             </div>
             <svg
@@ -111,15 +111,15 @@ const handleSearch = () => {
           >
             <div
               v-if="dropdownOpen"
-              class="absolute right-0 mt-2 w-56 bg-slate-900 border-2 border-slate-800 rounded-xl shadow-xl overflow-hidden"
+              class="absolute right-0 mt-2 w-56 bg-slate-850 border border-slate-800/50 rounded-lg shadow-lg overflow-hidden"
             >
-              <div class="px-4 py-3 bg-slate-800 border-b border-slate-700">
-                <p class="text-sm font-bold text-slate-100">John Doe</p>
-                <p class="text-xs text-slate-400">john.doe@example.com</p>
+              <div class="px-4 py-3 border-b border-slate-800/50">
+                <p class="text-sm font-semibold text-slate-100">John Doe</p>
+                <p class="text-xs text-slate-400 mt-0.5">john.doe@example.com</p>
               </div>
               <a
                 href="#"
-                class="block px-4 py-3 text-sm font-semibold text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-colors flex items-center gap-2"
+                class="block px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-colors flex items-center gap-2"
               >
                 <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                   <path
@@ -132,7 +132,7 @@ const handleSearch = () => {
               </a>
               <a
                 href="#"
-                class="block px-4 py-3 text-sm font-semibold text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-colors flex items-center gap-2"
+                class="block px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-slate-100 transition-colors flex items-center gap-2"
               >
                 <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                   <path
@@ -143,10 +143,10 @@ const handleSearch = () => {
                 </svg>
                 Settings
               </a>
-              <div class="border-t border-slate-800"></div>
+              <div class="border-t border-slate-800/50"></div>
               <a
                 href="#"
-                class="block px-4 py-3 text-sm font-semibold text-danger-400 hover:bg-danger-900/20 hover:text-danger-300 transition-colors flex items-center gap-2"
+                class="block px-4 py-2.5 text-sm font-medium text-danger-400 hover:bg-danger-950/30 hover:text-danger-300 transition-colors flex items-center gap-2"
               >
                 <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                   <path

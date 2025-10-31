@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  /* Refined dark palette - lighter and cleaner */
   --color-slate-50: #f8fafc;
   --color-slate-100: #f1f5f9;
   --color-slate-200: #e2e8f0;
@@ -10,6 +11,40 @@
   --color-slate-600: #475569;
   --color-slate-700: #334155;
   --color-slate-800: #1e293b;
+  --color-slate-850: #172033;
   --color-slate-900: #0f172a;
+  --color-slate-925: #0a0f1e;
   --color-slate-950: #020617;
+}
+
+/* Enhanced Typography & Readability */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Better letter spacing for uppercase text */
+.tracking-widest {
+  letter-spacing: 0.1em;
+}
+
+/* Improved line heights for readability */
+body {
+  line-height: 1.6;
+  background-color: #0a0f1e;
+}
+
+/* Tabular numbers for better alignment */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Refined shadow utilities for cleaner look */
+.shadow-soft {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.shadow-soft-lg {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }

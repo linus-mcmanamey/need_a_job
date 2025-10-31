@@ -8,12 +8,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        VITE_API_URL: http://localhost:8000/api
-        VITE_WS_URL: ws://localhost:8000/ws/status
+      target: base  # Use dev server, not production nginx
     container_name: job_automation_frontend
+    environment:
+      # Vite dev server configuration
+      - VITE_API_URL=http://localhost:8000/api
+      - VITE_WS_URL=ws://localhost:8000/ws/status
     ports:
-      - "5173:80"
+      - "5173:5173"  # Vite dev server port
     volumes:
       # Mount source for hot reload during development
       - ./frontend:/app

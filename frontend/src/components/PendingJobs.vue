@@ -1,5 +1,6 @@
 <script setup>
 import { useJobStore } from '../stores/jobStore'
+import { Icon } from '@iconify/vue'
 import { ref } from 'vue'
 
 // Get job store
@@ -58,7 +59,7 @@ function truncate(text, length = 150) {
 
     <!-- Empty State -->
     <div v-else-if="jobStore.pending.length === 0" class="text-center py-16 bg-gradient-to-br from-success-50 to-primary-50 rounded-xl border-2 border-dashed border-success-300">
-      <span class="text-7xl mb-6 block animate-bounce">🎉</span>
+      <Icon icon="heroicons:sparkles" class="w-28 h-28 text-success-500 mx-auto mb-6 animate-bounce" />
       <h3 class="text-xl font-bold text-gray-800 mb-3">No pending jobs</h3>
       <p class="text-gray-600 max-w-md mx-auto">All jobs have been processed! Great work.</p>
     </div>
@@ -85,7 +86,7 @@ function truncate(text, length = 150) {
                 v-if="job.platform_source"
                 class="inline-flex items-center px-3 py-1.5 bg-primary-100 text-primary-700 rounded-lg text-xs font-bold border border-primary-200 shadow-sm"
               >
-                <span class="mr-1.5">🔗</span>
+                <Icon icon="heroicons:link" class="w-3 h-3 mr-1.5" />
                 {{ job.platform_source }}
               </span>
               <!-- Status Badge -->
@@ -97,8 +98,11 @@ function truncate(text, length = 150) {
                     : 'bg-danger-100 text-danger-700 border-danger-200'
                 ]"
               >
-                <span v-if="job.status === 'pending'" class="mr-1.5 animate-pulse">⏳</span>
-                <span v-else class="mr-1.5">⚠️</span>
+                <Icon
+                  :icon="job.status === 'pending' ? 'heroicons:clock' : 'heroicons:exclamation-triangle'"
+                  class="w-3 h-3 mr-1.5"
+                  :class="job.status === 'pending' ? 'animate-pulse' : ''"
+                />
                 {{ job.status || 'pending' }}
               </span>
             </div>
@@ -118,11 +122,11 @@ function truncate(text, length = 150) {
               ]"
             >
               <span v-if="processingJobs.has(job.job_id)" class="flex items-center">
-                <span class="inline-block animate-spin mr-2">⏳</span>
+                <Icon icon="heroicons:clock" class="w-5 h-5 mr-2 animate-spin" />
                 Processing...
               </span>
               <span v-else class="flex items-center">
-                <span class="mr-2">✓</span>
+                <Icon icon="heroicons:check" class="w-5 h-5 mr-2" />
                 Approve
               </span>
             </button>
@@ -139,11 +143,11 @@ function truncate(text, length = 150) {
               ]"
             >
               <span v-if="processingJobs.has(job.job_id)" class="flex items-center">
-                <span class="inline-block animate-spin mr-2">⏳</span>
+                <Icon icon="heroicons:clock" class="w-5 h-5 mr-2 animate-spin" />
                 Processing...
               </span>
               <span v-else class="flex items-center">
-                <span class="mr-2">✗</span>
+                <Icon icon="heroicons:x-mark" class="w-5 h-5 mr-2" />
                 Reject
               </span>
             </button>
@@ -156,7 +160,7 @@ function truncate(text, length = 150) {
           <div v-if="job.current_stage" class="flex items-center">
             <span class="text-sm font-bold text-gray-700 mr-2">Current Stage:</span>
             <span class="inline-flex items-center px-3 py-1 bg-accent-100 text-accent-700 rounded-lg text-sm font-semibold border border-accent-200">
-              <span class="mr-1.5">⚙️</span>
+              <Icon icon="heroicons:cog-6-tooth" class="w-4 h-4 mr-1.5" />
               {{ job.current_stage }}
             </span>
           </div>
@@ -164,7 +168,7 @@ function truncate(text, length = 150) {
           <!-- Error Info (for failed jobs) -->
           <div v-if="job.error_type || job.error_message" class="bg-danger-50 border-l-4 border-danger-500 rounded-lg p-4">
             <p class="text-sm font-bold text-danger-800 mb-2 flex items-center">
-              <span class="mr-2">⚠️</span>
+              <Icon icon="heroicons:exclamation-triangle" class="w-4 h-4 mr-2" />
               Error: {{ job.error_type || 'Unknown Error' }}
             </p>
             <p class="text-sm text-danger-700 leading-relaxed">
@@ -175,7 +179,7 @@ function truncate(text, length = 150) {
           <!-- Job Description (truncated) -->
           <div v-if="job.job_description" class="bg-gray-50 rounded-lg p-4">
             <p class="font-bold text-gray-800 mb-2 flex items-center">
-              <span class="mr-2">📝</span>
+              <Icon icon="heroicons:document-text" class="w-4 h-4 mr-2" />
               Description:
             </p>
             <p class="text-sm text-gray-700 leading-relaxed">{{ truncate(job.job_description) }}</p>
@@ -183,7 +187,7 @@ function truncate(text, length = 150) {
 
           <!-- Updated Time -->
           <div v-if="job.updated_at" class="flex items-center text-xs text-gray-500 pt-2">
-            <span class="mr-2">🕐</span>
+            <Icon icon="heroicons:clock" class="w-4 h-4 mr-2" />
             <span class="font-medium">Last updated:</span>
             <span class="ml-1">{{ new Date(job.updated_at).toLocaleString() }}</span>
           </div>

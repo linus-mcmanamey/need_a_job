@@ -80,24 +80,24 @@ const menuSections = [
 
 <template>
   <div
-    class="w-64 fixed top-0 left-0 h-screen bg-slate-900 border-r-2 border-slate-800 z-50 transition-transform duration-300 ease-in-out shadow-xl"
+    class="w-64 fixed top-0 left-0 h-screen bg-slate-850 border-r border-slate-800/50 z-50 transition-transform duration-300 ease-in-out"
     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
   >
     <!-- Logo -->
-    <div class="h-20 border-b-2 border-slate-800 flex items-center justify-center px-6 bg-slate-900">
-      <h1 class="text-2xl font-bold text-slate-50">
+    <div class="h-16 border-b border-slate-800/50 flex items-center px-6">
+      <h1 class="text-xl font-bold text-slate-50">
         JobTracker
       </h1>
     </div>
 
     <!-- Navigation -->
-    <div class="overflow-y-auto h-[calc(100vh-5rem)] py-6">
+    <div class="overflow-y-auto h-[calc(100vh-4rem)] py-4">
       <div
         v-for="section in menuSections"
         :key="section.title"
-        class="mb-8 px-4"
+        class="mb-6 px-3"
       >
-        <p class="pl-4 text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+        <p class="px-3 text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
           {{ section.title }}
         </p>
 
@@ -106,33 +106,24 @@ const menuSections = [
             v-for="item in section.items"
             :key="item.id"
             @click="handleNavigate(item.id)"
-            class="group relative flex items-center h-12 pl-4 rounded-xl cursor-pointer transition-all duration-200 w-full focus:outline-none focus:ring-2 focus:ring-slate-600"
+            class="group relative flex items-center h-10 px-3 rounded-lg cursor-pointer transition-all duration-200 w-full focus:outline-none focus:ring-2 focus:ring-primary-500/50"
             :class="activeView === item.id
-              ? 'bg-slate-800 border-2 border-slate-700 shadow-md'
-              : 'hover:bg-slate-800/50 border-2 border-transparent'"
+              ? 'bg-primary-600 text-white'
+              : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'"
           >
             <!-- Icon -->
             <svg
-              class="h-5 w-5 fill-current mr-3 transition-transform duration-200 group-hover:scale-110"
-              :class="activeView === item.id ? 'text-primary-400' : 'text-slate-400 group-hover:text-primary-400'"
+              class="h-4 w-4 fill-current mr-3 transition-colors duration-200"
+              :class="activeView === item.id ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'"
               viewBox="0 0 20 20"
             >
               <path :d="item.icon"></path>
             </svg>
 
             <!-- Label -->
-            <span
-              class="font-semibold text-sm transition-colors"
-              :class="activeView === item.id ? 'text-slate-50' : 'text-slate-300 group-hover:text-slate-50'"
-            >
+            <span class="font-medium text-sm transition-colors">
               {{ item.name }}
             </span>
-
-            <!-- Active indicator -->
-            <span
-              v-if="activeView === item.id"
-              class="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary-500 to-accent-500 rounded-l-full"
-            ></span>
           </button>
         </div>
       </div>

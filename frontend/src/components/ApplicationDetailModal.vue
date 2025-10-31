@@ -1,5 +1,6 @@
 <script setup>
 import { computed, watch, onMounted, onUnmounted } from 'vue'
+import { Icon } from '@iconify/vue'
 
 const props = defineProps({
   application: {
@@ -56,11 +57,11 @@ function getStatusColor(status) {
  */
 function getPlatformIcon(platform) {
   const icons = {
-    linkedin: '💼',
-    seek: '🔍',
-    indeed: '📍',
+    linkedin: 'heroicons:briefcase',
+    seek: 'heroicons:magnifying-glass',
+    indeed: 'heroicons:map-pin',
   }
-  return icons[platform] || '🔗'
+  return icons[platform] || 'heroicons:link'
 }
 
 /**
@@ -172,7 +173,7 @@ watch(
               <div class="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
                 <p class="text-xs text-slate-400 mb-1 font-medium">Platform</p>
                 <div class="flex items-center">
-                  <span class="text-2xl mr-2">{{ getPlatformIcon(application.platform) }}</span>
+                  <Icon :icon="getPlatformIcon(application.platform)" class="w-6 h-6 mr-2 text-slate-300" />
                   <span class="text-slate-100 font-semibold capitalize">{{ application.platform }}</span>
                 </div>
               </div>
@@ -218,7 +219,7 @@ watch(
             <!-- Job Information -->
             <div class="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
               <h3 class="text-lg font-bold text-slate-50 mb-4 flex items-center">
-                <span class="mr-2">📋</span>
+                <Icon icon="heroicons:clipboard-document-list" class="w-5 h-5 mr-2" />
                 Job Information
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -249,7 +250,7 @@ watch(
             <!-- Job Description -->
             <div v-if="application.job_description" class="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
               <h3 class="text-lg font-bold text-slate-50 mb-3 flex items-center">
-                <span class="mr-2">📝</span>
+                <Icon icon="heroicons:document-text" class="w-5 h-5 mr-2" />
                 Job Description
               </h3>
               <div class="prose prose-invert prose-sm max-w-none">
@@ -262,14 +263,14 @@ watch(
             <!-- Application Documents -->
             <div class="bg-slate-800/50 rounded-lg p-5 border border-slate-700">
               <h3 class="text-lg font-bold text-slate-50 mb-4 flex items-center">
-                <span class="mr-2">📎</span>
+                <Icon icon="heroicons:paper-clip" class="w-5 h-5 mr-2" />
                 Application Documents
               </h3>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- CV -->
                 <div class="flex items-center justify-between p-4 bg-slate-900 rounded-lg border border-slate-700">
                   <div class="flex items-center">
-                    <span class="text-3xl mr-3">📄</span>
+                    <Icon icon="heroicons:document" class="w-8 h-8 text-slate-400 mr-3" />
                     <div>
                       <p class="text-sm font-semibold text-slate-100">Resume / CV</p>
                       <p class="text-xs text-slate-400 mt-0.5">
@@ -291,7 +292,7 @@ watch(
                 <!-- Cover Letter -->
                 <div class="flex items-center justify-between p-4 bg-slate-900 rounded-lg border border-slate-700">
                   <div class="flex items-center">
-                    <span class="text-3xl mr-3">✉️</span>
+                    <Icon icon="heroicons:envelope" class="w-8 h-8 text-slate-400 mr-3" />
                     <div>
                       <p class="text-sm font-semibold text-slate-100">Cover Letter</p>
                       <p class="text-xs text-slate-400 mt-0.5">
